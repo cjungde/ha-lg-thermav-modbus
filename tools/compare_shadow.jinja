@@ -1,0 +1,116 @@
+{#-
+  Compare the production integration against the read-only shadow copy,
+  entity by entity. Paste into Developer Tools -> Template; it needs no token
+  and no files on the Home Assistant box.
+
+  What it is for: production reads the heat pump through hand-rolled pymodbus
+  calls, the shadow through Home Assistant's shared connection on the tmodbus
+  backend. The two share no transport code at all. If a register block were
+  planned differently, or a signed value decoded differently, the result would
+  still look like a plausible temperature -- it would land in the statistics
+  looking like data. Reading both at once and diffing them is what makes that
+  failure loud.
+
+  The comparison walks the SHADOW entities and looks up the production twin,
+  not the other way round: production also carries template and statistics
+  sensors that were never part of the integration (thermal_power_*,
+  compressor_speed_*_58min), and those have no counterpart by design.
+
+  Reading the output: the two sides poll at different intervals (10 s against
+  300 s), so the shadow's numbers lag by up to five minutes. Anything that
+  moves quickly -- hot gas temperature during a compressor start, flow rate at
+  pump switch-on, the compressor and defrost flags -- can differ honestly.
+  Anything that moves slowly must agree, and everything must agree while the
+  machine is idle. The age of both samples is printed so a delta can be judged
+  against how stale the reading is.
+
+  A binary sensor that differs while the compressor is running is noise. A
+  temperature off by a whole degree at standby, a pressure off by any amount,
+  or the same row differing across several runs is not.
+
+  Rows are collected into a list and joined at the end. Emitting them inside
+  the loop looks simpler but loses the line breaks to whitespace control.
+-#}
+{%- set shadow_prefix = 'thermav_testkopie_' -%}
+{%- set prod_prefix = 'lg_thermav_r290_' -%}
+
+{#- Absolute tolerance by entity-id suffix. Everything unlisted must match
+    exactly: register contents that are codes, not measurements. -#}
+{%- set tolerances = [
+  ('_hot_gas_temperature',           8.0),
+  ('_suction_temperature',           4.0),
+  ('_temperature_before_evaporator', 4.0),
+  ('_temperature_after_evaporator',  4.0),
+  ('_liquid_gas_temperature',        4.0),
+  ('_high_pressure_condenser',       4.0),
+  ('_low_pressure_evaporator',       4.0),
+  ('_flow_rate',                     6.0),
+  ('_compressor_speed',            300.0),
+  ('_outlet_temperature',            2.0),
+  ('_inlet_temperature',             2.0),
+  ('_backup_heater_outlet_temperature', 2.0),
+  ('_dhw_temperature',               1.0),
+  ('_flow_temperature_circuit_2',    1.0),
+  ('_water_pressure',                0.3),
+  ('_outdoor_temperature',           0.5),
+  ('_solar_collector_temperature',   0.5),
+  ('_room_air_temperature_circuit_1', 0.5),
+  ('_room_air_temperature_circuit_2', 0.5),
+  ('_operation_cycle_odu',           1.0)
+] -%}
+
+{%- set tolerance_of = dict(tolerances) -%}
+{%- set ns = namespace(rows=[], diff=[], missing=[], ok=0, total=0) -%}
+{%- for domain in ['sensor', 'binary_sensor'] -%}
+  {%- for e in states[domain] if shadow_prefix in e.entity_id -%}
+    {%- set key = e.entity_id.split(shadow_prefix)[1] -%}
+    {%- set prod_id = domain ~ '.' ~ prod_prefix ~ key -%}
+    {%- set ns.total = ns.total + 1 -%}
+    {%- if not has_value(prod_id) -%}
+      {%- set ns.missing = ns.missing + [key] -%}
+      {%- set ns.rows = ns.rows + ['%-38s %-14s %-14s %-9s %s' | format(
+           key, states(prod_id), e.state, '-', 'KEIN PARTNER')] -%}
+    {%- else -%}
+      {%- set p = states(prod_id) -%}
+      {%- set t = e.state -%}
+      {%- set numeric = p is match('^-?[0-9.]+$') and t is match('^-?[0-9.]+$') -%}
+      {%- set limit = tolerance_of.get('_' ~ key, 0.0) -%}
+      {%- if numeric -%}
+        {%- set d = p | float - t | float -%}
+        {%- set good = (d | abs) <= limit -%}
+        {%- set delta = d | round(2) -%}
+      {%- else -%}
+        {%- set good = p == t -%}
+        {%- set delta = '=' if good else '!=' -%}
+      {%- endif -%}
+      {%- if good -%}{%- set ns.ok = ns.ok + 1 -%}
+      {%- else -%}{%- set ns.diff = ns.diff + [key] -%}{%- endif -%}
+      {%- set ns.rows = ns.rows + ['%-38s %-14s %-14s %-9s %s' | format(
+           key, p, t, delta,
+           'ok' if good else ('ABWEICHUNG (Grenze ' ~ limit ~ ')' if numeric
+                              else 'ABWEICHUNG'))] -%}
+    {%- endif -%}
+  {%- endfor -%}
+{%- endfor -%}
+
+{%- set p_age = (now() - states.sensor.lg_thermav_r290_outlet_temperature.last_updated).total_seconds() | round(0) -%}
+{%- set t_ent = states.sensor.thermav_testkopie_outlet_temperature -%}
+{%- set t_age = (now() - t_ent.last_updated).total_seconds() | round(0) if t_ent else -1 -%}
+{%- set running = is_state('binary_sensor.lg_thermav_r290_compressor', 'on') -%}
+{%- if ns.total == 0 -%}
+Keine Entitaeten mit dem Praefix "{{ shadow_prefix }}" gefunden.
+Ist der Config-Entry "LG ThermaV R290 (Testkopie, nur lesend)" schon angelegt?
+{%- else -%}
+{{ '%-38s %-14s %-14s %-9s %s' | format('Groesse', 'produktiv', 'Testkopie', 'Delta', 'Status') }}
+{{ '-' * 95 }}
+{{ ns.rows | join('\n') }}
+{{ '-' * 95 }}
+{{ ns.ok }} von {{ ns.total }} innerhalb der Toleranz.
+{% if ns.diff %}Auffaellig: {{ ns.diff | join(', ') }}
+{% endif %}{% if ns.missing %}Ohne Partner: {{ ns.missing | join(', ') }}
+{% endif %}Alter der Stichproben: produktiv {{ p_age }} s, Testkopie {{ t_age }} s
+Zeitpunkt: {{ now().strftime('%d.%m.%Y %H:%M:%S') }}
+Verdichter: {{ 'LAEUFT' if running else 'steht' }} -- {{
+  'Schnelle Groessen duerfen jetzt abweichen, langsame nicht.' if running
+  else 'Im Stillstand muss praktisch alles zusammenfallen; jede Abweichung ist ein Befund.' }}
+{%- endif -%}

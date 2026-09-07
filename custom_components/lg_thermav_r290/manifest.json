@@ -1,0 +1,17 @@
+{
+  "codeowners": [
+    "@cjungde"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "modbus"
+  ],
+  "documentation": "https://github.com/cjungde/ha-lg-thermav-modbus",
+  "domain": "lg_thermav_r290",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/cjungde/ha-lg-thermav-modbus/issues",
+  "name": "LG ThermaV R290",
+  "requirements": [],
+  "version": "1.0.0"
+}

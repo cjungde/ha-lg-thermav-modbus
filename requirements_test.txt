@@ -1,0 +1,2 @@
+pytest>=8.0
+modbus-connection>=4.10.0

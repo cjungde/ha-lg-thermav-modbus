@@ -1,0 +1,58 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "LG ThermaV R290 — Verbindungsart",
+        "data": {
+          "connection_type": "Verbindungsart"
+        }
+      },
+      "tcp": {
+        "title": "LG ThermaV R290 — TCP-Verbindung",
+        "data": {
+          "host": "Host / IP-Adresse",
+          "port": "Port",
+          "slave_id": "Slave-ID",
+          "scan_interval": "Abfrageintervall (Sekunden)"
+        }
+      },
+      "rtu": {
+        "title": "LG ThermaV R290 — RTU-Verbindung",
+        "data": {
+          "serial_port": "Serieller Port",
+          "baudrate": "Baudrate",
+          "parity": "Parität",
+          "stopbits": "Stoppbits",
+          "slave_id": "Slave-ID",
+          "scan_interval": "Abfrageintervall (Sekunden)"
+        }
+      },
+      "reconfigure": {
+        "title": "LG ThermaV R290 — Neu konfigurieren",
+        "data": {
+          "connection_type": "Verbindungsart"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung fehlgeschlagen",
+      "invalid_slave_id": "Ungültige Slave-ID",
+      "link_settings_conflict": "Gerät wird bereits mit anderen Verbindungseinstellungen verwendet",
+      "unknown": "Unbekannter Fehler"
+    },
+    "abort": {
+      "already_configured": "Gerät ist bereits konfiguriert",
+      "reconfigure_successful": "Konfiguration erfolgreich aktualisiert"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "LG ThermaV R290 — Optionen",
+        "data": {
+          "scan_interval": "Abfrageintervall (Sekunden)"
+        }
+      }
+    }
+  }
+}
