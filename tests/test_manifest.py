@@ -63,3 +63,15 @@ def test_codeowners_is_non_empty_list() -> None:
 def test_hacs_json_is_valid() -> None:
     hacs = json.loads((REPO_ROOT / "hacs.json").read_text())
     assert hacs.get("name")
+
+
+def test_manifest_keys_are_ordered_the_way_hassfest_wants() -> None:
+    """domain, name, then alphabetical.
+
+    Hassfest enforces this and nothing else does, so a manifest rewritten by a
+    script -- which is how it gets sorted wrongly in the first place -- passes
+    every local check and fails in CI. Cheaper to catch here.
+    """
+    keys = list(json.loads((_integration_dir() / "manifest.json").read_text()))
+    assert keys[:2] == ["domain", "name"], f"first keys are {keys[:2]}"
+    assert keys[2:] == sorted(keys[2:]), "keys after domain/name are not sorted"
