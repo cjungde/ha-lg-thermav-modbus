@@ -144,6 +144,32 @@ The config flow asks for connection type first, then connection-specific paramet
 > problem alert on every pump run. **After updating, the old entity remains in the
 > registry as `unavailable` and can be removed manually.**
 
+> **Note on discrete input 10009 (cooling status).** The R290 manual (p. 158,
+> *Diskretes Register 0x02*) documents this bit as `0 = no cooling / 1 = cooling
+> operation`. On this unit the bit is set **while the heat pump is heating**.
+> Measured on 2026-09-24: `di[8] = 1` with the compressor running, flow 37.8 °C
+> above return 35.7 °C and 3487 W going into the heating circuit, operation mode
+> `Auto`, no cooling anywhere in the system.
+>
+> A read offset is ruled out. `di[1]`/`di[2]` tracked a 3-minute-on / 15-minute-off
+> pump cycle correctly to the second, `di[3]` (compressor) is consistent over days,
+> and `di[13]`–`di[16]` match the R290 manual exactly (10014 fault, 10015 emergency
+> space heating, 10016 emergency DHW, 10017 mix pump). Note that the memory map of
+> other Therma V models differs here — on the HN1600MC, 10014 is *Emergency
+> Operation Available (DHW)*. **Use the R290 manual, not a generic Therma V one.**
+>
+> The bit does not correlate with compressor state either: it stayed `on`
+> continuously from 2026-09-21 22:03 to 2026-09-24 07:02 while the unit started and
+> stopped repeatedly. What it actually reports on this model is unknown.
+>
+> The entity `binary_sensor.lg_thermav_r290_cooling_active` is therefore **not
+> usable for diagnostics** on the R290 monoblock. It is left in place because the
+> register is read anyway and the mapping follows the manual — but do not build
+> automations on it.
+>
+> This is the **second** discrete input on this model that departs from the
+> manufacturer's description, after 10001 above.
+
 ### Switches
 
 | Entity | Modbus coil |
