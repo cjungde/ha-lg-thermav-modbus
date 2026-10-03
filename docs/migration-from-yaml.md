@@ -88,16 +88,21 @@ There is no automatic migration: the entities have different ids and belong to o
 
 ## Only in basti242's setup (not implemented here)
 
-| basti242 | Register | Here |
-|---|---|---|
-| `number.hp_room_air_temp_circuit1_number` / `…circuit2_number` | Holding 3 / 6 (writable) | read-only sensor |
-| `select.hp_energy_state_select` | Holding 9 (writable) | read-only |
-| `sensor.hp_power_limit` + `number.hp_power_limit_number` | Holding 24 | not implemented |
-| `switch.hp_emergency_stop_switch` | Coil 5 | not implemented |
-| `switch.hp_active_power_limitation` | Coil 6 | not implemented |
+Whether these exist on the R290 was checked with read-only requests against a 9 kW unit on 2026-10-03 (see [register-scan.md](register-scan.md)).
+
+| basti242 | Register | On the R290 | Here |
+|---|---|---|---|
+| `number.hp_power_limit_number` + `sensor.hp_power_limit` | Holding 24 (40025) | **No answer.** Not in the manual either. | not implemented, nothing to implement |
+| `switch.hp_active_power_limitation` | Coil 6 (00007) | **No answer.** Not in the manual either. | not implemented, nothing to implement |
+| `switch.hp_emergency_stop_switch` | Coil 5 (00006) | Answers. The manual calls it *Auslöser Notaus-Betrieb* ("trigger emergency operation": 0 hold status / 1 start), a trigger rather than a switch. | read internally, deliberately **not writable** |
+| `number.hp_room_air_temp_circuit1_number` / `…circuit2_number` | Holding 3 / 6 | Readable. Whether writing has an effect was not tested. | read-only sensor |
+| `select.hp_energy_state_select` | Holding 9 | Readable. Writing was not tested. | read-only |
+
+So the two entities of basti242's setup that look like a power limit probably do nothing on this model: the addresses are not served.
 
 ## Differences that can bite when switching
 
 - **`water_flow` is inverted.** basti242 treats 10001 as a *problem* sensor per the manual (1 = flow too low). On the R290 monoblock the bit is set while water is flowing (see the note in the README). Automations built on `hp_water_flow_status` have to be flipped.
-- **Register 7 is called "Technikraum" in the YAML.** It is the same value as `Room Air Temperature Circuit 1` here. Whether it really reports room air has not been checked.
+- **Register 7 is called "Technikraum" in the YAML.** It is the same value as `Room Air Temperature Circuit 1` here. The manual lists input 30008 as *Raumlufttemp. (Kreislauf 1)*, so the integration's name follows the manual.
+- **Pressures use the same scale in both:** registers 22 and 23 count in hundredths of a bar (kPa). They are not in the manual's table; the scale comes from measurement.
 - **DHW target range:** the YAML allows 45–60 °C, this integration 35–60 °C.

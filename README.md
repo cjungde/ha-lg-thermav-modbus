@@ -44,6 +44,8 @@ Switch it on under *Settings → Devices & Services → LG ThermaV R290 → Conf
 
 **They are read-only.** The integration only ever writes a fixed list of known addresses (holding 0, 1, 2, 4, 5, 7, 8 and coils 0–4); every other write is refused before it reaches the bus, so none of these registers can be written by the integration, whichever entity or service asks. A register that stops answering leaves its sensor empty and does not affect the other values.
 
+The full result of the scan, what the manual lists and what it does not, is in [docs/register-scan.md](docs/register-scan.md).
+
 Please tell me what you see, in particular if the values move with the compressor. A first reading from my unit: input 30015 reads 64887 (−64.9 °C as a signed tenth, the pattern of a temperature channel without a sensor), input 30018 reads 12000, and all of holding 40011–40023 read 0.
 
 ---
