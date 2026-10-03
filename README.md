@@ -6,16 +6,6 @@ Replaces a hand-crafted YAML Modbus configuration with native HA entities: senso
 
 ---
 
-## Relation to ha-lg-thermav-r290
-
-This repository succeeds [cjungde/ha-lg-thermav-r290](https://github.com/cjungde/ha-lg-thermav-r290), which stays available for Home Assistant 2026.8 and older. The split exists because the two cannot be one: the version here requires Home Assistant 2026.9 and does not carry a Modbus stack of its own, and there is no way to express that as a single HACS release without dropping every user on an older core.
-
-**Do not install both.** They deliberately share the integration domain `lg_thermav_r290`, so that moving across is a straight swap — entity ids, history and long-term statistics all survive it. That same property means two copies would claim one directory. Uninstall the old one first, then install this one and restart; the config entry is read as it stands and nothing has to be re-entered.
-
-The predecessor's commit history is not reproduced here. Where a decision needs its reasoning, the reasoning was moved into the code as comments — see `number.py` on the DHW maximum, and `coordinator.py` on the flow-rate discrete input.
-
----
-
 ## Features
 
 - **Sensors** — temperatures (inlet, outlet, DHW, outdoor, refrigerant circuit), flow rate, pressures, compressor speed, error code, operation mode, control method, energy state
@@ -49,8 +39,6 @@ for a unit on a *shared* connection, which means:
 - The same device may not be claimed twice with different link settings —
   plain TCP and RTU-over-TCP on one socket, say. The config flow reports that
   as an error rather than silently reframing.
-
-Users on Home Assistant 2026.8 or older should stay on 0.0.14.
 
 ---
 
@@ -139,10 +127,8 @@ The config flow asks for connection type first, then connection-specific paramet
 > stay correctly aligned.
 >
 > The entity is therefore exposed as `binary_sensor.lg_thermav_r290_water_flow` with
-> device class `running`. Up to and including v0.x it was named
-> `..._water_flow_insufficient` with device class `problem`, which raised a false
-> problem alert on every pump run. **After updating, the old entity remains in the
-> registry as `unavailable` and can be removed manually.**
+> device class `running`. Exposing it as a `problem` sensor (as the manual suggests)
+> would raise a false problem alert on every pump run.
 
 > **Note on discrete input 10009 (cooling status).** The R290 manual (p. 158,
 > *Diskretes Register 0x02*) documents this bit as `0 = no cooling / 1 = cooling
@@ -190,10 +176,8 @@ see whether the operation actually started.
 |---|---|---|
 | `button.lg_thermav_r290_start_disinfection` | Coil 3 (trigger) | `binary_sensor.lg_thermav_r290_dhw_disinfection` (discrete 6) |
 
-> **Breaking change in 0.0.11:** this replaces `switch.lg_thermav_r290_disinfection_mode`,
-> which modelled a trigger coil as a switch and therefore always read back `off`,
-> even when the write succeeded. **After updating, the old switch remains in the
-> registry as `unavailable` and can be removed manually.** Note that the trigger
+> A trigger coil modelled as a switch would always read back `off`, even when the
+> write succeeded, which is why this is a button. Note that the trigger
 > only has an effect if disinfection is enabled on the unit itself
 > (installer menu → DHW → disinfection active; factory default is off).
 
