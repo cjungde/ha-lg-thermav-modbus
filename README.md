@@ -1,5 +1,7 @@
 # LG ThermaV R290 — Home Assistant Integration
 
+<p align="center"><img src="https://raw.githubusercontent.com/cjungde/ha-lg-thermav-modbus/main/custom_components/lg_thermav_r290/brand/icon.png" alt="LG ThermaV R290" width="128"></p>
+
 HACS custom integration for the LG ThermaV R290 heat pump via Modbus TCP or RTU.
 
 Replaces a hand-crafted YAML Modbus configuration with native HA entities: sensors, binary sensors, switches, buttons, number inputs, and select dropdowns — all updated on every poll cycle without requiring template sensors or automations.
