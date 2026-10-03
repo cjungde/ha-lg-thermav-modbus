@@ -23,6 +23,12 @@ Replaces a hand-crafted YAML Modbus configuration with native HA entities: senso
 
 ---
 
+## Coming from basti242's YAML setup?
+
+[Entity translation table](docs/migration-from-yaml.md): every entity of [basti242/homeassistant_lg_therma_v_modbus](https://github.com/basti242/homeassistant_lg_therma_v_modbus) next to its counterpart here, including the differences that matter when switching (inverted water-flow bit, missing write entities).
+
+---
+
 ## Requirements
 
 **Home Assistant 2026.9.0 or newer.** From version 1.0.0 the integration no
