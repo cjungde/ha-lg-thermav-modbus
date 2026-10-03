@@ -21,6 +21,7 @@ from .connection import params_from_entry_data
 from .const import (
     CONF_BAUDRATE,
     CONF_CONNECTION_TYPE,
+    CONF_EXPERIMENTAL,
     CONF_PARITY,
     CONF_SCAN_INTERVAL,
     CONF_SERIAL_PORT,
@@ -243,7 +244,10 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class LGThermaVOptionsFlow(config_entries.OptionsFlow):
-    """Allow changing the scan interval without re-entering connection details."""
+    """Allow changing the scan interval and the experimental switch.
+
+    Neither needs the connection details entered again.
+    """
 
     def __init__(self, entry) -> None:
         self._entry = entry
@@ -260,7 +264,11 @@ class LGThermaVOptionsFlow(config_entries.OptionsFlow):
             {
                 vol.Required(CONF_SCAN_INTERVAL, default=current): vol.All(
                     int, vol.Range(min=5, max=3600)
-                )
+                ),
+                vol.Required(
+                    CONF_EXPERIMENTAL,
+                    default=self._entry.options.get(CONF_EXPERIMENTAL, False),
+                ): bool,
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

@@ -15,11 +15,15 @@ from modbus_connection.exceptions import ModbusError, ModbusExceptionError
 
 from .connection import params_from_entry_data
 from .const import (
+    CONF_EXPERIMENTAL,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE_ID,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    WRITABLE_COILS,
+    WRITABLE_HOLDING_REGISTERS,
 )
+from .experimental import EXPERIMENTAL_BLOCKS, INPUT_FROM_MAIN_READ, register_key
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,6 +53,8 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             params_from_entry_data(dict(entry.data)),
             int(entry.data[CONF_SLAVE_ID]),
         )
+
+        self._experimental = bool(entry.options.get(CONF_EXPERIMENTAL, False))
 
         scan_interval = entry.options.get(
             CONF_SCAN_INTERVAL,
@@ -94,7 +100,10 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except ModbusError as exc:
             raise UpdateFailed(f"Modbus communication error: {exc}") from exc
 
+        experimental = await self._async_read_experimental(inp_hi)
+
         return {
+            **experimental,
             # Input registers (raw × scale)
             # inp_lo[n] = register n  (0-13)
             # inp_hi[n] = register 16+n (16-24)
@@ -178,6 +187,42 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "di_mix_pump": di[16],
         }
 
+    async def _async_read_experimental(
+        self, inp_hi: list[int]
+    ) -> dict[str, int | None]:
+        """Read the undocumented registers, when the option asks for them.
+
+        Unlike the documented reads these never fail the update. They exist to
+        be looked at, so one that stops answering — another firmware, a bus
+        hiccup — leaves its value empty and the heat pump data intact.
+        """
+        if not self._experimental:
+            return {}
+
+        values: dict[str, int | None] = {}
+        for address in INPUT_FROM_MAIN_READ:
+            values[register_key("input", address)] = inp_hi[address - 16]
+        for kind, start, count in EXPERIMENTAL_BLOCKS:
+            read = (
+                self.unit.read_input_registers
+                if kind == "input"
+                else self.unit.read_holding_registers
+            )
+            try:
+                registers = await read(start, count)
+            except ModbusError as exc:
+                _LOGGER.debug(
+                    "Experimental %s registers %d-%d not read: %s",
+                    kind,
+                    start,
+                    start + count - 1,
+                    exc,
+                )
+                registers = [None] * count
+            for offset, value in enumerate(registers):
+                values[register_key(kind, start + offset)] = value
+        return values
+
     async def async_write_coil(self, address: int, value: bool) -> None:
         """Write a single coil register (FC05).
 
@@ -185,6 +230,8 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         press or a switch being thrown, and a control that reports success
         while the machine did not move is worse than one that reports an error.
         """
+        if address not in WRITABLE_COILS:
+            raise HomeAssistantError(f"Coil {address} is not writable")
         try:
             await self.unit.write_coil(address, value)
         except ModbusError as exc:
@@ -201,6 +248,8 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         maximum. Callers that must know the value took should read it back —
         the entities do, by refreshing the coordinator after a write.
         """
+        if address not in WRITABLE_HOLDING_REGISTERS:
+            raise HomeAssistantError(f"Register {address} is not writable")
         try:
             await self.unit.write_register(address, value)
         except ModbusError as exc:

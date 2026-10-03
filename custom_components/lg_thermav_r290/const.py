@@ -9,6 +9,7 @@ CONF_BAUDRATE = "baudrate"
 CONF_PARITY = "parity"
 CONF_STOPBITS = "stopbits"
 CONF_SCAN_INTERVAL = "scan_interval"
+CONF_EXPERIMENTAL = "experimental_registers"
 
 CONNECTION_TCP = "tcp"
 CONNECTION_TCP_RTU = "tcp_rtu"
@@ -59,3 +60,10 @@ ENERGY_STATE_LABELS = {
     7: "Energy Saving Mode",
     8: "Super Energy Saving Mode",
 }
+
+# The only addresses the integration ever writes. A write to anything else is
+# refused before it reaches the bus, whoever asks: the undocumented registers
+# found by scanning (see experimental.py) must stay read-only, and coil 5 is a
+# trigger for emergency operation that no entity should reach.
+WRITABLE_HOLDING_REGISTERS = frozenset({0, 1, 2, 4, 5, 7, 8})
+WRITABLE_COILS = frozenset({0, 1, 2, 3, 4})

@@ -50,7 +50,11 @@
       "init": {
         "title": "LG ThermaV R290 — Options",
         "data": {
-          "scan_interval": "Polling interval (seconds)"
+          "scan_interval": "Polling interval (seconds)",
+          "experimental_registers": "Experimental registers"
+        },
+        "data_description": {
+          "experimental_registers": "Adds read-only sensors for 18 registers the device answers on but the manual does not document. Nothing is ever written to them. Meant for collecting data over time."
         }
       }
     }

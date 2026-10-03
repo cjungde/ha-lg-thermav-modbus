@@ -50,7 +50,11 @@
       "init": {
         "title": "LG ThermaV R290 — Optionen",
         "data": {
-          "scan_interval": "Abfrageintervall (Sekunden)"
+          "scan_interval": "Abfrageintervall (Sekunden)",
+          "experimental_registers": "Experimentelle Register"
+        },
+        "data_description": {
+          "experimental_registers": "Legt schreibgeschützte Sensoren für 18 Register an, die das Gerät beantwortet, die aber nicht im Handbuch stehen. Es wird nie darauf geschrieben. Gedacht zum Sammeln von Daten über längere Zeit."
         }
       }
     }

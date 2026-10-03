@@ -29,6 +29,25 @@ Replaces a hand-crafted YAML Modbus configuration with native HA entities: senso
 
 ---
 
+## Experimental registers
+
+The device answers on 18 registers that the manual does not list (a read-only scan on 2026-10-03, R290 9 kW):
+
+| Type | Registers |
+|---|---|
+| Input | 30015, 30018, 30064 |
+| Holding | 40011–40023, 40063, 40064 |
+
+Nothing in the manual or in the community projects I could find explains them. To find out what they are, the integration can record them over a longer time.
+
+Switch it on under *Settings → Devices & Services → LG ThermaV R290 → Configure → Experimental registers*. This adds 18 diagnostic sensors named `Experimental Input 30015`, `Experimental Holding 40011`, … They carry the raw, unscaled 16-bit value and have long-term statistics, so they can be compared with compressor speed, temperatures and defrost cycles. Switching the option off removes them again.
+
+**They are read-only.** The integration only ever writes a fixed list of known addresses (holding 0, 1, 2, 4, 5, 7, 8 and coils 0–4); every other write is refused before it reaches the bus, so none of these registers can be written by the integration, whichever entity or service asks. A register that stops answering leaves its sensor empty and does not affect the other values.
+
+Please tell me what you see, in particular if the values move with the compressor. A first reading from my unit: input 30015 reads 64887 (−64.9 °C as a signed tenth, the pattern of a temperature channel without a sensor), input 30018 reads 12000, and all of holding 40011–40023 read 0.
+
+---
+
 ## Requirements
 
 **Home Assistant 2026.9.0 or newer.** From version 1.0.0 the integration no
