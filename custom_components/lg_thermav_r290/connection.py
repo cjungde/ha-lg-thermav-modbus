@@ -25,6 +25,9 @@ from .const import (
     DEFAULT_STOPBITS,
 )
 
+# Line speed assumed for RTU frames tunnelled over TCP; see the tcp_rtu branch.
+_SOCKET_BAUDRATE = 115200
+
 
 def params_from_entry_data(
     data: dict[str, Any],
@@ -49,12 +52,22 @@ def params_from_entry_data(
     """
     connection_type = data.get(CONF_CONNECTION_TYPE, CONNECTION_TCP)
 
-    if connection_type in (CONNECTION_TCP, CONNECTION_TCP_RTU):
-        return ModbusTcpParams(
-            host=data["host"],
-            port=data.get("port", DEFAULT_PORT),
-            framer="rtu" if connection_type == CONNECTION_TCP_RTU else "socket",
+    if connection_type == CONNECTION_TCP_RTU:
+        # An RTU frame over a socket is a serial link on a socket transport,
+        # which is what the library asks for since modbus-connection 4.12.
+        # The line speed is the one the library itself assumed for this case:
+        # high enough to land on the 1.75 ms inter-frame floor. The socket
+        # ignores the line settings, so nothing about the gateway is implied.
+        host = data["host"]
+        address = f"[{host}]" if ":" in host else host
+        return ModbusSerialParams(
+            device=f"socket://{address}:{data.get('port', DEFAULT_PORT)}",
+            baudrate=_SOCKET_BAUDRATE,
+            framer="rtu",
         )
+
+    if connection_type == CONNECTION_TCP:
+        return ModbusTcpParams(host=data["host"], port=data.get("port", DEFAULT_PORT))
 
     return ModbusSerialParams(
         device=data[CONF_SERIAL_PORT],

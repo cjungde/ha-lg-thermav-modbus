@@ -61,20 +61,21 @@ TCP_ENTRY = {
 
 def test_tcp_uses_socket_framing() -> None:
     params = params_from_entry_data(TCP_ENTRY)
-    assert params == ModbusTcpParams(host="192.168.25.10", port=502, framer="socket")
+    assert params == ModbusTcpParams(host="192.168.25.10", port=502)
 
 
 def test_tcp_rtu_keeps_the_socket_but_reframes() -> None:
     """A transparent gateway needs RTU frames over the same TCP endpoint."""
     params = params_from_entry_data({**TCP_ENTRY, "connection_type": "tcp_rtu"})
-    assert params == ModbusTcpParams(host="192.168.25.10", port=502, framer="rtu")
+    assert params == ModbusSerialParams(
+        device="socket://192.168.25.10:502", baudrate=115200, framer="rtu"
+    )
 
 
 def test_the_two_tcp_framings_do_not_compare_equal() -> None:
-    """They share an endpoint, so only inequality keeps them off one socket."""
+    """One socket cannot carry both framings, so they must not share a connection."""
     plain = params_from_entry_data(TCP_ENTRY)
     tunnelled = params_from_entry_data({**TCP_ENTRY, "connection_type": "tcp_rtu"})
-    assert plain.endpoint == tunnelled.endpoint
     assert plain != tunnelled
 
 
@@ -85,6 +86,13 @@ def test_entries_for_different_units_on_one_gateway_share_parameters() -> None:
     assert heat_pump == meter
 
 
+def test_tcp_rtu_brackets_an_ipv6_host() -> None:
+    params = params_from_entry_data(
+        {**TCP_ENTRY, "connection_type": "tcp_rtu", "host": "fd00::10"}
+    )
+    assert params.device == "socket://[fd00::10]:502"
+
+
 def test_missing_port_falls_back_to_the_default() -> None:
     params = params_from_entry_data({"connection_type": "tcp", "host": "10.0.0.5"})
     assert params.port == 502
@@ -93,7 +101,7 @@ def test_missing_port_falls_back_to_the_default() -> None:
 def test_absent_connection_type_is_read_as_tcp() -> None:
     """Entries predating the three-way choice stored no type at all."""
     params = params_from_entry_data({"host": "10.0.0.5", "port": 502})
-    assert params == ModbusTcpParams(host="10.0.0.5", port=502, framer="socket")
+    assert params == ModbusTcpParams(host="10.0.0.5", port=502)
 
 
 def test_serial_carries_every_line_setting() -> None:
