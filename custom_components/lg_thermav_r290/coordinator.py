@@ -117,8 +117,13 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "temp_heatgas": round(inp_hi[3] * 0.1, 1),
             "temp_before_vaporiser": round(inp_hi[4] * 0.1, 1),
             "temp_after_vaporiser": round(inp_hi[5] * 0.1, 1),
-            "high_pressure": round(inp_hi[6] * 0.1, 1),
-            "low_pressure": round(inp_hi[7] * 0.1, 1),
+            # Registers 22/23 count in hundredths of a bar, unlike register 13
+            # (water pressure, tenths). Measured 2026-10-03: with 0.1 the
+            # condenser read 63-80 bar at standstill and 220.6 bar at
+            # 3600 rpm; with 0.01 that is 6-8 bar (pressure equalised, high
+            # and low side within 1 bar) and 22.1 bar under load.
+            "high_pressure": round(inp_hi[6] * 0.01, 2),
+            "low_pressure": round(inp_hi[7] * 0.01, 2),
             "compressor_rpm": int(round(inp_hi[8] * 60)),
             "device_group": device_group,
             "product_info": product_info,
