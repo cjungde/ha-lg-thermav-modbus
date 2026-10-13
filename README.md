@@ -146,6 +146,8 @@ Answering only proves the register exists, not that writing it has an effect. A 
 
 ## Entities
 
+A ready-to-paste dashboard with temperatures, compressor, COP, controls and per-day statistics, built from Home Assistant's own cards: [docs/dashboard.md](docs/dashboard.md).
+
 ### Sensors
 
 | Entity | Description | Unit |
