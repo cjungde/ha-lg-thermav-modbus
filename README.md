@@ -292,6 +292,7 @@ Switch on **Compressor modulation limit** in the integration's options. Holding 
 
 ## Notes
 
+- **History and time series.** Every numeric sensor has a state class, so it is kept in Home Assistant's long-term statistics, not only in the recorder history that is purged after a few days. That includes codes such as *Error Code* and *Energy Control Signal*. Text states (*Operation Mode*, *Control Method*, both *Energy State* sensors and the two selects) cannot go into long-term statistics or a numeric time series database (InfluxDB, VictoriaMetrics), so each also carries its code as the numeric attribute `register_value`, which the `influxdb` integration exports as a field. Binary sensors and switches arrive there as 0/1. Home Assistant itself only keeps long-term statistics for sensors, not for binary sensors, switches, numbers or selects.
 - **Naming.** *(Reported)* marks a value the heat pump reports itself (its registers), *(Calculated)* one this integration computes from flow rate × ΔT. Every unique id is the entity's name as an id; the full scheme is in [docs/naming.md](docs/naming.md). Up to 1.2.0 the unique ids were inconsistent; on the first start of 1.3.0 they are migrated automatically in the entity registry, so **entity ids, history, statistics and automations stay as they are**. Some sensors also had other names; on an existing installation only their displayed name changes, so the entity ids may differ from the ones listed here:
 
   | Old name (entity id up to 1.2.0) | New name |
