@@ -5,7 +5,7 @@ from __future__ import annotations
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from .test_config_flow import DOMAIN, RTU, defaults
+from .test_config_flow import DOMAIN, RTU, defaults, form_input, options_are_sections
 
 
 def _entry(hass, options) -> MockConfigEntry:
@@ -40,12 +40,13 @@ async def test_options_without_a_check_keep_the_values(hass, unit) -> None:
         result["flow_id"], {"next_step_id": "options"}
     )
     assert result["step_id"] == "options"
+    assert options_are_sections(result)
     values = defaults(result)
     assert values["energy_registers"] is True
     assert values["scan_interval"] == 30
     assert values["power_limit"] is False
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], values
+        result["flow_id"], form_input(result, values)
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert entry.options["scan_interval"] == 30
@@ -74,7 +75,9 @@ async def test_check_ticks_what_answers_and_switches_nothing_off(hass, unit) -> 
     assert status["power_limit"] == "✗"
     assert status["checked"] != "–"
 
-    await hass.config_entries.options.async_configure(result["flow_id"], values)
+    await hass.config_entries.options.async_configure(
+        result["flow_id"], form_input(result, values)
+    )
     assert entry.options["detected"]["energy_registers"] is True
     assert entry.options["detected"]["power_limit"] is False
 

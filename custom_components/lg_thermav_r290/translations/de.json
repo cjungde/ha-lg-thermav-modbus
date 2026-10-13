@@ -36,21 +36,67 @@
       "features": {
         "title": "LG ThermaV R290 — Optionale Register",
         "description": "| Optionale Register | Gerät antwortet |\n|---|:-:|\n| Energieregister | {energy_registers} |\n| Begrenzung der Verdichtermodulation | {compressor_modulation_limit} |\n| Leistungsbegrenzung | {power_limit} |\n\n✓ antwortet · ✗ keine Antwort\n\nGruppen, die antworten und gefahrlos eingeschaltet werden können, sind angehakt. Die Leistungsbegrenzung wird auch dann nicht angehakt, wenn sie antwortet: Ob das Gerät den Grenzwert tatsächlich einhält, ist noch nicht bestätigt. Die Taste für Notbetrieb und die experimentellen Register werden nie angehakt. Alles lässt sich später unter Konfigurieren ändern.",
-        "data": {
-          "energy_registers": "Energieregister",
-          "compressor_modulation_limit": "Begrenzung der Verdichtermodulation",
-          "power_limit": "Leistungsbegrenzung",
-          "emergency_operation_button": "Taste für Notbetrieb",
-          "experimental_registers": "Experimentelle Register",
-          "poll_statistics": "Abfragestatistik"
-        },
-        "data_description": {
-          "energy_registers": "Legt schreibgeschützte Sensoren für elektrische Leistung, kumulierte Energie, Bedarf vs. Versorgung und thermische Leistung aus den Input-Registern 34-51 an (32-Bit-Werte). Nicht jedes Gerät liefert sie: Antwortet das Gerät nicht, bleiben die Sensoren ohne Wert und es wird nur alle paar Abfragen erneut versucht.",
-          "compressor_modulation_limit": "Legt einen Schieberegler (40-100 %) für die maximale Verdichtermodulation an, Holding-Register 23. Nicht jedes Gerät liefert es; solange es nicht antwortet, bleibt der Regler nicht verfügbar. Geschrieben werden kann das Register nur, solange diese Option aktiv ist.",
-          "power_limit": "Legt einen Schalter (Coil 6, „Wirkleistungsbegrenzung“) an, der die Leistungsbegrenzung des Geräts einschaltet, und ein Feld (0,1-25,0 kW, Holding-Register 24) für den Grenzwert. Im Handbuch dokumentiert, aber nicht jedes Gerät liefert sie; solange sie nicht antworten, bleiben beide nicht verfügbar. Ob das Gerät seine Leistung tatsächlich unter dem Grenzwert hält, ist noch nicht bestätigt: mit einem separaten Zähler prüfen. Geschrieben werden können beide nur, solange diese Option aktiv ist.",
-          "emergency_operation_button": "Legt eine Taste an, die den Notbetrieb des Geräts startet (Coil 5, „Auslöser Notaus-Betrieb“). Im Notbetrieb heizt das Gerät in der Regel mit dem Heizstab und verbraucht deutlich mehr Strom als die Wärmepumpe. Coil 5 kann nur geschrieben werden, solange diese Option aktiv ist.",
-          "experimental_registers": "Legt schreibgeschützte Sensoren für 18 Register an, die das Gerät beantwortet, die aber nicht im Handbuch stehen. Es wird nie darauf geschrieben. Gedacht zum Sammeln von Daten über längere Zeit.",
-          "poll_statistics": "Legt zwei Diagnose-Sensoren an: Abfragedauer (wie lange eine Abfrage dauert, in ms) und Buslast (diese Zeit als Anteil am Abfrageintervall, in %). Um einzuschätzen, wie stark der Bus ausgelastet ist, etwa bevor das Abfrageintervall verkürzt wird. Es wird nichts zusätzlich vom Gerät gelesen."
+        "sections": {
+          "energy_registers": {
+            "name": "Energieregister",
+            "description": "Legt schreibgeschützte Sensoren für elektrische Leistung, kumulierte Energie, Bedarf vs. Versorgung und thermische Leistung aus den Input-Registern 34-51 an (32-Bit-Werte). Nicht jedes Gerät liefert sie: Antwortet das Gerät nicht, bleiben die Sensoren ohne Wert und es wird nur alle paar Abfragen erneut versucht.",
+            "data": {
+              "energy_registers": "Einschalten"
+            },
+            "data_description": {
+              "energy_registers": "Legt 13 Sensoren an, nur lesend:\n\n- **Electrical Power Total System** — W, gesamtes System inkl. Heizstab (Input 30035–36)\n- **Electrical Power Heat Pump** — W (30037–38)\n- **Electrical Energy Total / Space Heating / Space Cooling / DHW** — kWh-Zähler (30039–46)\n- **Demand vs Supply** — Stufe 0–12, ohne Einheit (30047–48)\n- **Thermal Power (Reported)** — W, Angabe des Geräts (30049–50)\n- **Thermal Energy Space Heating** — kWh-Zähler (30051–52)\n- **COP (Reported)** — thermische ÷ elektrische Leistung der Wärmepumpe\n- **COP System (Reported)** — thermische ÷ elektrische Leistung des gesamten Systems\n- **COP (Calculated)** — Durchfluss × ΔT ÷ elektrische Leistung\n- **COP Heating (Cumulative)** — thermische ÷ elektrische Energie für die Raumheizung\n\nDie elektrischen Werte des Geräts liegen meist zu hoch; für Abrechnung oder einen verlässlichen COP einen separaten Zähler verwenden."
+            }
+          },
+          "compressor_modulation_limit": {
+            "name": "Begrenzung der Verdichtermodulation",
+            "description": "Legt einen Schieberegler (40-100 %) für die maximale Verdichtermodulation an, Holding-Register 23. Nicht jedes Gerät liefert es; solange es nicht antwortet, bleibt der Regler nicht verfügbar. Geschrieben werden kann das Register nur, solange diese Option aktiv ist.",
+            "data": {
+              "compressor_modulation_limit": "Einschalten"
+            },
+            "data_description": {
+              "compressor_modulation_limit": "Legt an:\n\n- **Max Compressor Modulation** — Regler 40–100 % (Holding 40024). Wie weit der Verdichter modulieren darf; leer, solange keine Begrenzung gesetzt ist."
+            }
+          },
+          "power_limit": {
+            "name": "Leistungsbegrenzung",
+            "description": "Legt einen Schalter (Coil 6, „Wirkleistungsbegrenzung“) an, der die Leistungsbegrenzung des Geräts einschaltet, und ein Feld (0,1-25,0 kW, Holding-Register 24) für den Grenzwert. Im Handbuch dokumentiert, aber nicht jedes Gerät liefert sie; solange sie nicht antworten, bleiben beide nicht verfügbar. Ob das Gerät seine Leistung tatsächlich unter dem Grenzwert hält, ist noch nicht bestätigt: mit einem separaten Zähler prüfen. Geschrieben werden können beide nur, solange diese Option aktiv ist.",
+            "data": {
+              "power_limit": "Einschalten"
+            },
+            "data_description": {
+              "power_limit": "Legt an:\n\n- **Power Limit** — Schalter (Coil 00007), schaltet die Begrenzung ein\n- **Max Electrical Power** — 0,1–25,0 kW (Holding 40025), der Grenzwert"
+            }
+          },
+          "emergency_operation_button": {
+            "name": "Taste für Notbetrieb",
+            "description": "Legt eine Taste an, die den Notbetrieb des Geräts startet (Coil 5, „Auslöser Notaus-Betrieb“). Im Notbetrieb heizt das Gerät in der Regel mit dem Heizstab und verbraucht deutlich mehr Strom als die Wärmepumpe. Coil 5 kann nur geschrieben werden, solange diese Option aktiv ist.",
+            "data": {
+              "emergency_operation_button": "Einschalten"
+            },
+            "data_description": {
+              "emergency_operation_button": "Legt an:\n\n- **Start Emergency Operation** — Taste (Coil 00006)\n\nOb Notbetrieb möglich ist, zeigen *Emergency Heating/Cooling Available* und *Emergency DHW Available*."
+            }
+          },
+          "experimental_registers": {
+            "name": "Experimentelle Register",
+            "description": "Legt schreibgeschützte Sensoren für 18 Register an, die das Gerät beantwortet, die aber nicht im Handbuch stehen. Es wird nie darauf geschrieben. Gedacht zum Sammeln von Daten über längere Zeit.",
+            "data": {
+              "experimental_registers": "Einschalten"
+            },
+            "data_description": {
+              "experimental_registers": "Legt 18 Diagnose-Sensoren mit den Rohwerten von Registern an, die nicht im Handbuch stehen, nur lesend:\n\n- **Experimental Input 30015, 30018, 30064**\n- **Experimental Holding 40011 … 40023, 40063, 40064**\n\nEin Block, auf den das Gerät nicht antwortet, wird bis zum nächsten Neustart nicht mehr abgefragt."
+            }
+          },
+          "poll_statistics": {
+            "name": "Abfragestatistik",
+            "description": "Legt zwei Diagnose-Sensoren an: Abfragedauer (wie lange eine Abfrage dauert, in ms) und Buslast (diese Zeit als Anteil am Abfrageintervall, in %). Um einzuschätzen, wie stark der Bus ausgelastet ist, etwa bevor das Abfrageintervall verkürzt wird. Es wird nichts zusätzlich vom Gerät gelesen.",
+            "data": {
+              "poll_statistics": "Einschalten"
+            },
+            "data_description": {
+              "poll_statistics": "Legt 2 Diagnose-Sensoren an:\n\n- **Poll Duration** — ms pro Abfrage, mit der Zahl der Lesezugriffe als Attribut\n- **Bus Load** — Abfragedauer in % des Abfrageintervalls"
+            }
+          }
         }
       }
     },
@@ -86,21 +132,69 @@
         "title": "LG ThermaV R290 — Optionen",
         "description": "| Option | An | Gerät antwortet |\n|---|:-:|:-:|\n| Energieregister | {energy_registers_on} | {energy_registers} |\n| Begrenzung der Verdichtermodulation | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Leistungsbegrenzung ¹ | {power_limit_on} | {power_limit} |\n| Taste für Notbetrieb | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimentelle Register | {experimental_registers_on} | {experimental_registers} |\n| Abfragestatistik | {poll_statistics_on} | {poll_statistics} |\n\n✓ antwortet · ✗ keine Antwort · – nicht geprüft · ➕ antwortet, kann eingeschaltet werden\n\n¹ Ob das Gerät die Leistungsbegrenzung tatsächlich einhält, ist noch nicht bestätigt. Taste für Notbetrieb, experimentelle Register und Abfragestatistik werden nicht geprüft.\n\nLetzte Prüfung: {checked}",
         "data": {
-          "scan_interval": "Abfrageintervall (Sekunden)",
-          "energy_registers": "Energieregister",
-          "compressor_modulation_limit": "Begrenzung der Verdichtermodulation",
-          "power_limit": "Leistungsbegrenzung",
-          "emergency_operation_button": "Taste für Notbetrieb",
-          "experimental_registers": "Experimentelle Register",
-          "poll_statistics": "Abfragestatistik"
+          "scan_interval": "Abfrageintervall (Sekunden)"
         },
-        "data_description": {
-          "energy_registers": "Legt schreibgeschützte Sensoren für elektrische Leistung, kumulierte Energie, Bedarf vs. Versorgung und thermische Leistung aus den Input-Registern 34-51 an (32-Bit-Werte). Nicht jedes Gerät liefert sie: Antwortet das Gerät nicht, bleiben die Sensoren ohne Wert und es wird nur alle paar Abfragen erneut versucht.",
-          "compressor_modulation_limit": "Legt einen Schieberegler (40-100 %) für die maximale Verdichtermodulation an, Holding-Register 23. Nicht jedes Gerät liefert es; solange es nicht antwortet, bleibt der Regler nicht verfügbar. Geschrieben werden kann das Register nur, solange diese Option aktiv ist.",
-          "power_limit": "Legt einen Schalter (Coil 6, „Wirkleistungsbegrenzung“) an, der die Leistungsbegrenzung des Geräts einschaltet, und ein Feld (0,1-25,0 kW, Holding-Register 24) für den Grenzwert. Im Handbuch dokumentiert, aber nicht jedes Gerät liefert sie; solange sie nicht antworten, bleiben beide nicht verfügbar. Ob das Gerät seine Leistung tatsächlich unter dem Grenzwert hält, ist noch nicht bestätigt: mit einem separaten Zähler prüfen. Geschrieben werden können beide nur, solange diese Option aktiv ist.",
-          "emergency_operation_button": "Legt eine Taste an, die den Notbetrieb des Geräts startet (Coil 5, „Auslöser Notaus-Betrieb“). Im Notbetrieb heizt das Gerät in der Regel mit dem Heizstab und verbraucht deutlich mehr Strom als die Wärmepumpe. Coil 5 kann nur geschrieben werden, solange diese Option aktiv ist.",
-          "experimental_registers": "Legt schreibgeschützte Sensoren für 18 Register an, die das Gerät beantwortet, die aber nicht im Handbuch stehen. Es wird nie darauf geschrieben. Gedacht zum Sammeln von Daten über längere Zeit.",
-          "poll_statistics": "Legt zwei Diagnose-Sensoren an: Abfragedauer (wie lange eine Abfrage dauert, in ms) und Buslast (diese Zeit als Anteil am Abfrageintervall, in %). Um einzuschätzen, wie stark der Bus ausgelastet ist, etwa bevor das Abfrageintervall verkürzt wird. Es wird nichts zusätzlich vom Gerät gelesen."
+        "sections": {
+          "energy_registers": {
+            "name": "Energieregister",
+            "description": "Legt schreibgeschützte Sensoren für elektrische Leistung, kumulierte Energie, Bedarf vs. Versorgung und thermische Leistung aus den Input-Registern 34-51 an (32-Bit-Werte). Nicht jedes Gerät liefert sie: Antwortet das Gerät nicht, bleiben die Sensoren ohne Wert und es wird nur alle paar Abfragen erneut versucht.",
+            "data": {
+              "energy_registers": "Einschalten"
+            },
+            "data_description": {
+              "energy_registers": "Legt 13 Sensoren an, nur lesend:\n\n- **Electrical Power Total System** — W, gesamtes System inkl. Heizstab (Input 30035–36)\n- **Electrical Power Heat Pump** — W (30037–38)\n- **Electrical Energy Total / Space Heating / Space Cooling / DHW** — kWh-Zähler (30039–46)\n- **Demand vs Supply** — Stufe 0–12, ohne Einheit (30047–48)\n- **Thermal Power (Reported)** — W, Angabe des Geräts (30049–50)\n- **Thermal Energy Space Heating** — kWh-Zähler (30051–52)\n- **COP (Reported)** — thermische ÷ elektrische Leistung der Wärmepumpe\n- **COP System (Reported)** — thermische ÷ elektrische Leistung des gesamten Systems\n- **COP (Calculated)** — Durchfluss × ΔT ÷ elektrische Leistung\n- **COP Heating (Cumulative)** — thermische ÷ elektrische Energie für die Raumheizung\n\nDie elektrischen Werte des Geräts liegen meist zu hoch; für Abrechnung oder einen verlässlichen COP einen separaten Zähler verwenden."
+            }
+          },
+          "compressor_modulation_limit": {
+            "name": "Begrenzung der Verdichtermodulation",
+            "description": "Legt einen Schieberegler (40-100 %) für die maximale Verdichtermodulation an, Holding-Register 23. Nicht jedes Gerät liefert es; solange es nicht antwortet, bleibt der Regler nicht verfügbar. Geschrieben werden kann das Register nur, solange diese Option aktiv ist.",
+            "data": {
+              "compressor_modulation_limit": "Einschalten"
+            },
+            "data_description": {
+              "compressor_modulation_limit": "Legt an:\n\n- **Max Compressor Modulation** — Regler 40–100 % (Holding 40024). Wie weit der Verdichter modulieren darf; leer, solange keine Begrenzung gesetzt ist."
+            }
+          },
+          "power_limit": {
+            "name": "Leistungsbegrenzung",
+            "description": "Legt einen Schalter (Coil 6, „Wirkleistungsbegrenzung“) an, der die Leistungsbegrenzung des Geräts einschaltet, und ein Feld (0,1-25,0 kW, Holding-Register 24) für den Grenzwert. Im Handbuch dokumentiert, aber nicht jedes Gerät liefert sie; solange sie nicht antworten, bleiben beide nicht verfügbar. Ob das Gerät seine Leistung tatsächlich unter dem Grenzwert hält, ist noch nicht bestätigt: mit einem separaten Zähler prüfen. Geschrieben werden können beide nur, solange diese Option aktiv ist.",
+            "data": {
+              "power_limit": "Einschalten"
+            },
+            "data_description": {
+              "power_limit": "Legt an:\n\n- **Power Limit** — Schalter (Coil 00007), schaltet die Begrenzung ein\n- **Max Electrical Power** — 0,1–25,0 kW (Holding 40025), der Grenzwert"
+            }
+          },
+          "emergency_operation_button": {
+            "name": "Taste für Notbetrieb",
+            "description": "Legt eine Taste an, die den Notbetrieb des Geräts startet (Coil 5, „Auslöser Notaus-Betrieb“). Im Notbetrieb heizt das Gerät in der Regel mit dem Heizstab und verbraucht deutlich mehr Strom als die Wärmepumpe. Coil 5 kann nur geschrieben werden, solange diese Option aktiv ist.",
+            "data": {
+              "emergency_operation_button": "Einschalten"
+            },
+            "data_description": {
+              "emergency_operation_button": "Legt an:\n\n- **Start Emergency Operation** — Taste (Coil 00006)\n\nOb Notbetrieb möglich ist, zeigen *Emergency Heating/Cooling Available* und *Emergency DHW Available*."
+            }
+          },
+          "experimental_registers": {
+            "name": "Experimentelle Register",
+            "description": "Legt schreibgeschützte Sensoren für 18 Register an, die das Gerät beantwortet, die aber nicht im Handbuch stehen. Es wird nie darauf geschrieben. Gedacht zum Sammeln von Daten über längere Zeit.",
+            "data": {
+              "experimental_registers": "Einschalten"
+            },
+            "data_description": {
+              "experimental_registers": "Legt 18 Diagnose-Sensoren mit den Rohwerten von Registern an, die nicht im Handbuch stehen, nur lesend:\n\n- **Experimental Input 30015, 30018, 30064**\n- **Experimental Holding 40011 … 40023, 40063, 40064**\n\nEin Block, auf den das Gerät nicht antwortet, wird bis zum nächsten Neustart nicht mehr abgefragt."
+            }
+          },
+          "poll_statistics": {
+            "name": "Abfragestatistik",
+            "description": "Legt zwei Diagnose-Sensoren an: Abfragedauer (wie lange eine Abfrage dauert, in ms) und Buslast (diese Zeit als Anteil am Abfrageintervall, in %). Um einzuschätzen, wie stark der Bus ausgelastet ist, etwa bevor das Abfrageintervall verkürzt wird. Es wird nichts zusätzlich vom Gerät gelesen.",
+            "data": {
+              "poll_statistics": "Einschalten"
+            },
+            "data_description": {
+              "poll_statistics": "Legt 2 Diagnose-Sensoren an:\n\n- **Poll Duration** — ms pro Abfrage, mit der Zahl der Lesezugriffe als Attribut\n- **Bus Load** — Abfragedauer in % des Abfrageintervalls"
+            }
+          }
         }
       }
     },

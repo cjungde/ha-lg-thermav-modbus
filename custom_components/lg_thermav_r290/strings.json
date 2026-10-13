@@ -36,21 +36,67 @@
       "features": {
         "title": "LG ThermaV R290 — Optional registers",
         "description": "| Optional registers | Unit answers |\n|---|:-:|\n| Energy registers | {energy_registers} |\n| Compressor modulation limit | {compressor_modulation_limit} |\n| Power limit | {power_limit} |\n\n✓ answers · ✗ no answer\n\nGroups that answered and are safe to switch on are ticked. The power limit is not ticked even when it answers: whether the unit really keeps to the limit is not confirmed yet. The emergency operation button and the experimental registers are never ticked. Everything can be changed later under Configure.",
-        "data": {
-          "energy_registers": "Energy registers",
-          "compressor_modulation_limit": "Compressor modulation limit",
-          "power_limit": "Power limit",
-          "emergency_operation_button": "Emergency operation button",
-          "experimental_registers": "Experimental registers",
-          "poll_statistics": "Poll statistics"
-        },
-        "data_description": {
-          "energy_registers": "Adds read-only sensors for electrical power, cumulative energy, demand vs. supply and thermal power from input registers 34-51 (32-bit values). Not every unit serves them: a unit that does not answer simply leaves the sensors without a value, and is asked again only every few polls.",
-          "compressor_modulation_limit": "Adds a slider (40-100 %) for the maximum compressor modulation, holding register 23. Not every unit serves it; while it does not answer the slider stays unavailable. Writing this register is only possible while this option is on.",
-          "power_limit": "Adds a switch (coil 6, \"Wirkleistungsbegrenzung\") that turns the unit's power limit on, and a box (0.1-25.0 kW, holding register 24) for the limit. Documented in the manual, but not every unit serves them; while they do not answer, both stay unavailable. Whether the unit actually keeps its power below the limit is not confirmed yet: check against a separate meter. Both can only be written while this option is on.",
-          "emergency_operation_button": "Adds a button that starts the unit's emergency operation (coil 5, \"Auslöser Notaus-Betrieb\"). Emergency operation typically heats with the backup heater and draws far more power than the heat pump. Coil 5 can only be written while this option is on.",
-          "experimental_registers": "Adds read-only sensors for 18 registers the device answers on but the manual does not document. Nothing is ever written to them. Meant for collecting data over time.",
-          "poll_statistics": "Adds two diagnostic sensors: Poll Duration (how long a poll takes, in ms) and Bus Load (that time as a share of the poll interval, in %). For judging how much the bus carries, e.g. before shortening the poll interval. Nothing extra is read from the unit."
+        "sections": {
+          "energy_registers": {
+            "name": "Energy registers",
+            "description": "Adds read-only sensors for electrical power, cumulative energy, demand vs. supply and thermal power from input registers 34-51 (32-bit values). Not every unit serves them: a unit that does not answer simply leaves the sensors without a value, and is asked again only every few polls.",
+            "data": {
+              "energy_registers": "Switch on"
+            },
+            "data_description": {
+              "energy_registers": "Adds 13 sensors, read only:\n\n- **Electrical Power Total System** — W, whole system incl. backup heater (input 30035–36)\n- **Electrical Power Heat Pump** — W (30037–38)\n- **Electrical Energy Total / Space Heating / Space Cooling / DHW** — kWh counters (30039–46)\n- **Demand vs Supply** — level 0–12, no unit (30047–48)\n- **Thermal Power (Reported)** — W, the unit's own figure (30049–50)\n- **Thermal Energy Space Heating** — kWh counter (30051–52)\n- **COP (Reported)** — thermal ÷ electrical power of the heat pump\n- **COP System (Reported)** — thermal ÷ electrical power of the whole system\n- **COP (Calculated)** — flow rate × ΔT ÷ electrical power\n- **COP Heating (Cumulative)** — thermal ÷ electrical energy for space heating\n\nThe unit's electrical figures tend to read high; for billing or a COP to rely on, use a separate meter."
+            }
+          },
+          "compressor_modulation_limit": {
+            "name": "Compressor modulation limit",
+            "description": "Adds a slider (40-100 %) for the maximum compressor modulation, holding register 23. Not every unit serves it; while it does not answer the slider stays unavailable. Writing this register is only possible while this option is on.",
+            "data": {
+              "compressor_modulation_limit": "Switch on"
+            },
+            "data_description": {
+              "compressor_modulation_limit": "Adds:\n\n- **Max Compressor Modulation** — slider 40–100 % (holding 40024). How far the compressor may modulate; empty while no limit is set."
+            }
+          },
+          "power_limit": {
+            "name": "Power limit",
+            "description": "Adds a switch (coil 6, \"Wirkleistungsbegrenzung\") that turns the unit's power limit on, and a box (0.1-25.0 kW, holding register 24) for the limit. Documented in the manual, but not every unit serves them; while they do not answer, both stay unavailable. Whether the unit actually keeps its power below the limit is not confirmed yet: check against a separate meter. Both can only be written while this option is on.",
+            "data": {
+              "power_limit": "Switch on"
+            },
+            "data_description": {
+              "power_limit": "Adds:\n\n- **Power Limit** — switch (coil 00007), turns the limit on\n- **Max Electrical Power** — 0.1–25.0 kW (holding 40025), the limit"
+            }
+          },
+          "emergency_operation_button": {
+            "name": "Emergency operation button",
+            "description": "Adds a button that starts the unit's emergency operation (coil 5, \"Auslöser Notaus-Betrieb\"). Emergency operation typically heats with the backup heater and draws far more power than the heat pump. Coil 5 can only be written while this option is on.",
+            "data": {
+              "emergency_operation_button": "Switch on"
+            },
+            "data_description": {
+              "emergency_operation_button": "Adds:\n\n- **Start Emergency Operation** — button (coil 00006)\n\nWhether it is possible shows in *Emergency Heating/Cooling Available* and *Emergency DHW Available*."
+            }
+          },
+          "experimental_registers": {
+            "name": "Experimental registers",
+            "description": "Adds read-only sensors for 18 registers the device answers on but the manual does not document. Nothing is ever written to them. Meant for collecting data over time.",
+            "data": {
+              "experimental_registers": "Switch on"
+            },
+            "data_description": {
+              "experimental_registers": "Adds 18 diagnostic sensors with the raw values of registers the manual does not document, read only:\n\n- **Experimental Input 30015, 30018, 30064**\n- **Experimental Holding 40011 … 40023, 40063, 40064**\n\nA block the unit does not answer is not asked again until the next restart."
+            }
+          },
+          "poll_statistics": {
+            "name": "Poll statistics",
+            "description": "Adds two diagnostic sensors: Poll Duration (how long a poll takes, in ms) and Bus Load (that time as a share of the poll interval, in %). For judging how much the bus carries, e.g. before shortening the poll interval. Nothing extra is read from the unit.",
+            "data": {
+              "poll_statistics": "Switch on"
+            },
+            "data_description": {
+              "poll_statistics": "Adds 2 diagnostic sensors:\n\n- **Poll Duration** — ms per poll, with the number of reads as attribute\n- **Bus Load** — poll duration as % of the poll interval"
+            }
+          }
         }
       }
     },
@@ -86,21 +132,69 @@
         "title": "LG ThermaV R290 — Options",
         "description": "| Option | On | Unit answers |\n|---|:-:|:-:|\n| Energy registers | {energy_registers_on} | {energy_registers} |\n| Compressor modulation limit | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Power limit ¹ | {power_limit_on} | {power_limit} |\n| Emergency operation button | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimental registers | {experimental_registers_on} | {experimental_registers} |\n| Poll statistics | {poll_statistics_on} | {poll_statistics} |\n\n✓ answers · ✗ no answer · – not checked · ➕ answers, can be switched on\n\n¹ Whether the unit really keeps to the power limit is not confirmed yet. The emergency operation button, the experimental registers and the poll statistics are not checked.\n\nLast check: {checked}",
         "data": {
-          "scan_interval": "Polling interval (seconds)",
-          "energy_registers": "Energy registers",
-          "compressor_modulation_limit": "Compressor modulation limit",
-          "power_limit": "Power limit",
-          "emergency_operation_button": "Emergency operation button",
-          "experimental_registers": "Experimental registers",
-          "poll_statistics": "Poll statistics"
+          "scan_interval": "Polling interval (seconds)"
         },
-        "data_description": {
-          "energy_registers": "Adds read-only sensors for electrical power, cumulative energy, demand vs. supply and thermal power from input registers 34-51 (32-bit values). Not every unit serves them: a unit that does not answer simply leaves the sensors without a value, and is asked again only every few polls.",
-          "compressor_modulation_limit": "Adds a slider (40-100 %) for the maximum compressor modulation, holding register 23. Not every unit serves it; while it does not answer the slider stays unavailable. Writing this register is only possible while this option is on.",
-          "power_limit": "Adds a switch (coil 6, \"Wirkleistungsbegrenzung\") that turns the unit's power limit on, and a box (0.1-25.0 kW, holding register 24) for the limit. Documented in the manual, but not every unit serves them; while they do not answer, both stay unavailable. Whether the unit actually keeps its power below the limit is not confirmed yet: check against a separate meter. Both can only be written while this option is on.",
-          "emergency_operation_button": "Adds a button that starts the unit's emergency operation (coil 5, \"Auslöser Notaus-Betrieb\"). Emergency operation typically heats with the backup heater and draws far more power than the heat pump. Coil 5 can only be written while this option is on.",
-          "experimental_registers": "Adds read-only sensors for 18 registers the device answers on but the manual does not document. Nothing is ever written to them. Meant for collecting data over time.",
-          "poll_statistics": "Adds two diagnostic sensors: Poll Duration (how long a poll takes, in ms) and Bus Load (that time as a share of the poll interval, in %). For judging how much the bus carries, e.g. before shortening the poll interval. Nothing extra is read from the unit."
+        "sections": {
+          "energy_registers": {
+            "name": "Energy registers",
+            "description": "Adds read-only sensors for electrical power, cumulative energy, demand vs. supply and thermal power from input registers 34-51 (32-bit values). Not every unit serves them: a unit that does not answer simply leaves the sensors without a value, and is asked again only every few polls.",
+            "data": {
+              "energy_registers": "Switch on"
+            },
+            "data_description": {
+              "energy_registers": "Adds 13 sensors, read only:\n\n- **Electrical Power Total System** — W, whole system incl. backup heater (input 30035–36)\n- **Electrical Power Heat Pump** — W (30037–38)\n- **Electrical Energy Total / Space Heating / Space Cooling / DHW** — kWh counters (30039–46)\n- **Demand vs Supply** — level 0–12, no unit (30047–48)\n- **Thermal Power (Reported)** — W, the unit's own figure (30049–50)\n- **Thermal Energy Space Heating** — kWh counter (30051–52)\n- **COP (Reported)** — thermal ÷ electrical power of the heat pump\n- **COP System (Reported)** — thermal ÷ electrical power of the whole system\n- **COP (Calculated)** — flow rate × ΔT ÷ electrical power\n- **COP Heating (Cumulative)** — thermal ÷ electrical energy for space heating\n\nThe unit's electrical figures tend to read high; for billing or a COP to rely on, use a separate meter."
+            }
+          },
+          "compressor_modulation_limit": {
+            "name": "Compressor modulation limit",
+            "description": "Adds a slider (40-100 %) for the maximum compressor modulation, holding register 23. Not every unit serves it; while it does not answer the slider stays unavailable. Writing this register is only possible while this option is on.",
+            "data": {
+              "compressor_modulation_limit": "Switch on"
+            },
+            "data_description": {
+              "compressor_modulation_limit": "Adds:\n\n- **Max Compressor Modulation** — slider 40–100 % (holding 40024). How far the compressor may modulate; empty while no limit is set."
+            }
+          },
+          "power_limit": {
+            "name": "Power limit",
+            "description": "Adds a switch (coil 6, \"Wirkleistungsbegrenzung\") that turns the unit's power limit on, and a box (0.1-25.0 kW, holding register 24) for the limit. Documented in the manual, but not every unit serves them; while they do not answer, both stay unavailable. Whether the unit actually keeps its power below the limit is not confirmed yet: check against a separate meter. Both can only be written while this option is on.",
+            "data": {
+              "power_limit": "Switch on"
+            },
+            "data_description": {
+              "power_limit": "Adds:\n\n- **Power Limit** — switch (coil 00007), turns the limit on\n- **Max Electrical Power** — 0.1–25.0 kW (holding 40025), the limit"
+            }
+          },
+          "emergency_operation_button": {
+            "name": "Emergency operation button",
+            "description": "Adds a button that starts the unit's emergency operation (coil 5, \"Auslöser Notaus-Betrieb\"). Emergency operation typically heats with the backup heater and draws far more power than the heat pump. Coil 5 can only be written while this option is on.",
+            "data": {
+              "emergency_operation_button": "Switch on"
+            },
+            "data_description": {
+              "emergency_operation_button": "Adds:\n\n- **Start Emergency Operation** — button (coil 00006)\n\nWhether it is possible shows in *Emergency Heating/Cooling Available* and *Emergency DHW Available*."
+            }
+          },
+          "experimental_registers": {
+            "name": "Experimental registers",
+            "description": "Adds read-only sensors for 18 registers the device answers on but the manual does not document. Nothing is ever written to them. Meant for collecting data over time.",
+            "data": {
+              "experimental_registers": "Switch on"
+            },
+            "data_description": {
+              "experimental_registers": "Adds 18 diagnostic sensors with the raw values of registers the manual does not document, read only:\n\n- **Experimental Input 30015, 30018, 30064**\n- **Experimental Holding 40011 … 40023, 40063, 40064**\n\nA block the unit does not answer is not asked again until the next restart."
+            }
+          },
+          "poll_statistics": {
+            "name": "Poll statistics",
+            "description": "Adds two diagnostic sensors: Poll Duration (how long a poll takes, in ms) and Bus Load (that time as a share of the poll interval, in %). For judging how much the bus carries, e.g. before shortening the poll interval. Nothing extra is read from the unit.",
+            "data": {
+              "poll_statistics": "Switch on"
+            },
+            "data_description": {
+              "poll_statistics": "Adds 2 diagnostic sensors:\n\n- **Poll Duration** — ms per poll, with the number of reads as attribute\n- **Bus Load** — poll duration as % of the poll interval"
+            }
+          }
         }
       }
     },

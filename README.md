@@ -134,7 +134,7 @@ Answering only proves the register exists, not that writing it has an effect. A 
 
 **Configure** opens a menu. At the top, a table shows per optional group whether it is on and what the unit answered on the last check; ➕ marks a group the unit answers on but that is off, i.e. what could be switched on. Below it:
 
-- **Options**: the poll interval and the optional groups, with the same table above them.
+- **Options**: the poll interval and the optional groups, with the same table above them. Each option is a section you can expand: it says what the option is for and lists every entity it adds (name, unit, register). Sections of options that are on open expanded; the others stay collapsed.
 - **Check the optional registers**: asks the unit again (up to about 30 seconds), then opens the options with the groups that answered ticked, as at setup. Nothing is switched off. Useful on an installation set up before 1.5.0 (the table shows – until then) or after a firmware update.
 
 <img src="docs/images/setup-menu.png" alt="Configure: a table of the optional groups with the columns On and Unit answers, and the menu entries Options and Check the optional registers" width="400"><br>
