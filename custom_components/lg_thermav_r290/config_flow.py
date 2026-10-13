@@ -21,6 +21,7 @@ from .connection import params_from_entry_data
 from .const import (
     CONF_BAUDRATE,
     CONF_CONNECTION_TYPE,
+    CONF_EMERGENCY_OPERATION,
     CONF_ENERGY_REGISTERS,
     CONF_EXPERIMENTAL,
     CONF_MODULATION_LIMIT,
@@ -277,6 +278,10 @@ class LGThermaVOptionsFlow(config_entries.OptionsFlow):
                 vol.Required(
                     CONF_MODULATION_LIMIT,
                     default=self._entry.options.get(CONF_MODULATION_LIMIT, False),
+                ): bool,
+                vol.Required(
+                    CONF_EMERGENCY_OPERATION,
+                    default=self._entry.options.get(CONF_EMERGENCY_OPERATION, False),
                 ): bool,
                 vol.Required(
                     CONF_EXPERIMENTAL,

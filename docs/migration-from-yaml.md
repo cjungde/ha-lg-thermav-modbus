@@ -94,7 +94,7 @@ Whether these exist on the R290 was checked with read-only requests against a 9 
 |---|---|---|---|
 | `number.hp_power_limit_number` + `sensor.hp_power_limit` | Holding 24 (40025) | **No answer.** Not in the manual either. | not implemented, nothing to implement |
 | `switch.hp_active_power_limitation` | Coil 6 (00007) | **No answer.** Not in the manual either. | not implemented, nothing to implement |
-| `switch.hp_emergency_stop_switch` | Coil 5 (00006) | Answers. The manual calls it *Auslöser Notaus-Betrieb* ("trigger emergency operation": 0 hold status / 1 start), a trigger rather than a switch. | read internally, deliberately **not writable** |
+| `switch.hp_emergency_stop_switch` | Coil 5 (00006) | Answers. The manual calls it *Auslöser Notaus-Betrieb* ("trigger emergency operation": 0 hold status / 1 start), a trigger rather than a switch. | `button.lg_thermav_r290_start_emergency_operation`, only with the *Emergency operation button* option (off by default) |
 | `number.hp_room_air_temp_circuit1_number` / `…circuit2_number` | Holding 3 / 6 | Readable. Whether writing has an effect was not tested. | read-only sensor |
 | `select.hp_energy_state_select` | Holding 9 | Readable. Writing was not tested. | read-only |
 

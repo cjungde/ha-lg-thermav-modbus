@@ -15,6 +15,7 @@ from modbus_connection.exceptions import ModbusError, ModbusExceptionError
 
 from .connection import params_from_entry_data
 from .const import (
+    CONF_EMERGENCY_OPERATION,
     CONF_ENERGY_REGISTERS,
     CONF_EXPERIMENTAL,
     CONF_MODULATION_LIMIT,
@@ -22,6 +23,7 @@ from .const import (
     CONF_SLAVE_ID,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    EMERGENCY_OPERATION_WRITABLE_COILS,
     MODULATION_LIMIT_WRITABLE_HOLDING_REGISTERS,
     WRITABLE_COILS,
     WRITABLE_HOLDING_REGISTERS,
@@ -75,6 +77,12 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             WRITABLE_HOLDING_REGISTERS | MODULATION_LIMIT_WRITABLE_HOLDING_REGISTERS
             if self._modulation_limit
             else WRITABLE_HOLDING_REGISTERS
+        )
+        # Coil 5 likewise: writable only while its option is on.
+        self._writable_coils = (
+            WRITABLE_COILS | EMERGENCY_OPERATION_WRITABLE_COILS
+            if entry.options.get(CONF_EMERGENCY_OPERATION, False)
+            else WRITABLE_COILS
         )
 
         scan_interval = entry.options.get(
@@ -178,7 +186,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "coil_silent_mode": coils[2],
             "coil_start_disinfection": coils[3],
             "coil_emergency_stop": coils[4],
-            "coil_emergency_operation_trigger": coils[5],
+            "coil_start_emergency_operation": coils[5],
             # Discrete inputs
             # Discrete input 10001. The manual documents this as
             # "0 = flow rate OK / 1 = flow rate too low", but on the R290
@@ -316,7 +324,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         press or a switch being thrown, and a control that reports success
         while the machine did not move is worse than one that reports an error.
         """
-        if address not in WRITABLE_COILS:
+        if address not in self._writable_coils:
             raise HomeAssistantError(f"Coil {address} is not writable")
         try:
             await self.unit.write_coil(address, value)

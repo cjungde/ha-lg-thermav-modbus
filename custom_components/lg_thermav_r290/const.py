@@ -12,6 +12,7 @@ CONF_SCAN_INTERVAL = "scan_interval"
 CONF_EXPERIMENTAL = "experimental_registers"
 CONF_ENERGY_REGISTERS = "energy_registers"
 CONF_MODULATION_LIMIT = "compressor_modulation_limit"
+CONF_EMERGENCY_OPERATION = "emergency_operation_button"
 
 CONNECTION_TCP = "tcp"
 CONNECTION_TCP_RTU = "tcp_rtu"
@@ -72,10 +73,13 @@ ENERGY_STATE_DISPLAY = {
 
 # The only addresses the integration ever writes. A write to anything else is
 # refused before it reaches the bus, whoever asks: the undocumented registers
-# found by scanning (see experimental.py) must stay read-only, and coil 5 is a
-# trigger for emergency operation that no entity should reach.
+# found by scanning (see experimental.py) must stay read-only.
 WRITABLE_HOLDING_REGISTERS = frozenset({0, 1, 2, 4, 5, 7, 8})
 # Writable only while the option that creates its entity is on: holding 23 is
 # the compressor modulation limit (see limits.py), which not every unit serves.
 MODULATION_LIMIT_WRITABLE_HOLDING_REGISTERS = frozenset({23})
 WRITABLE_COILS = frozenset({0, 1, 2, 3, 4})
+# Coil 5 (00006, "Auslöser Notaus-Betrieb") starts emergency operation, which
+# typically means heating with the backup heater. It is writable only while
+# the option that creates its button is on; otherwise no entity reaches it.
+EMERGENCY_OPERATION_WRITABLE_COILS = frozenset({5})
