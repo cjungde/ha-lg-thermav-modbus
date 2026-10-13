@@ -67,6 +67,7 @@ register a value comes from, followed by the key of the entity that shows it:
 | `holding_` | holding register (FC03) | `holding_dhw_target_temperature` |
 | `coil_` | coil (FC01) | `coil_heating_cooling` |
 | `discrete_` | discrete input (FC02) | `discrete_compressor` |
+| `poll_` | no register: the polling itself (`pollstats.py`) | `poll_duration_ms` |
 
 Two entities that show the same register share its data key: *Energy Control
 Signal* and *Energy State (Reported)* both read `input_energy_control_signal`.

@@ -73,7 +73,7 @@ async def test_all_options_create_their_entities(hass, unit) -> None:
         "sensor.lg_thermav_r290_experimental_input_30015",
     ):
         assert entity_id in entities, entity_id
-    assert len(entities) == 107
+    assert len(entities) == 109  # incl. the two disabled poll sensors
 
 
 async def test_writes_reach_the_unit(hass, unit) -> None:

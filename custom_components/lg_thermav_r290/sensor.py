@@ -26,17 +26,19 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    PERCENTAGE,
     EntityCategory,
     UnitOfEnergy,
     UnitOfPower,
     UnitOfPressure,
     UnitOfTemperature,
+    UnitOfTime,
     UnitOfVolumeFlowRate,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import cop
+from . import cop, pollstats
 from .const import (
     CONF_ENERGY_REGISTERS,
     CONF_EXPERIMENTAL,
@@ -417,6 +419,35 @@ _COP_SENSORS: tuple[LGCalculatedSensorDescription, ...] = (
 # --- Setup ------------------------------------------------------------------
 
 
+# How long a poll takes and how much of the poll interval that is (see
+# pollstats.py). Diagnostic, disabled by default: they change on every poll.
+_POLL_SENSORS: tuple[LGSensorDescription, ...] = (
+    LGSensorDescription(
+        key=pollstats.KEY_POLL_DURATION,
+        data_key=pollstats.DATA_KEY_POLL_DURATION,
+        name="Poll Duration",
+        icon="mdi:timer-outline",
+        native_unit_of_measurement=UnitOfTime.MILLISECONDS,
+        device_class=SensorDeviceClass.DURATION,
+        suggested_unit_of_measurement=UnitOfTime.MILLISECONDS,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+    ),
+    LGSensorDescription(
+        key=pollstats.KEY_BUS_LOAD,
+        data_key=pollstats.DATA_KEY_BUS_LOAD,
+        name="Bus Load",
+        icon="mdi:gauge",
+        native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=1,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+    ),
+)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -427,6 +458,7 @@ async def async_setup_entry(
         *(LGSensor(coordinator, entry, d) for d in _SENSORS),
         *(LGLabelSensor(coordinator, entry, d) for d in _LABEL_SENSORS),
         *(LGCalculatedSensor(coordinator, entry, d) for d in _THERMAL_POWER_SENSORS),
+        *(LGPollSensor(coordinator, entry, d) for d in _POLL_SENSORS),
     ]
     if entry.options.get(CONF_ENERGY_REGISTERS, False):
         entities.extend(LGEnergySensor(coordinator, entry, r) for r in ENERGY_REGISTERS)
@@ -582,3 +614,11 @@ class LGExperimentalSensor(LGEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         return self._data(self._data_key)
+
+
+class LGPollSensor(LGSensor):
+    """Poll Duration / Bus Load, with the requests of the poll as attribute."""
+
+    @property
+    def extra_state_attributes(self) -> dict[str, int | None]:
+        return {"requests": self._data(pollstats.DATA_KEY_POLL_REQUESTS)}

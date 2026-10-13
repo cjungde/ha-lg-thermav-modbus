@@ -169,6 +169,15 @@ Answering only proves the register exists, not that writing it has an effect. A 
 | `sensor.lg_thermav_r290_energy_state` | Energy state (label), holding 9: the command register | — |
 | `sensor.lg_thermav_r290_energy_state_reported` | Energy state (label), input 11: the state the unit reports as active | — |
 
+#### Poll statistics (diagnostic, disabled by default)
+
+| Entity | Description | Unit |
+|---|---|---|
+| `sensor.lg_thermav_r290_poll_duration` | How long the last poll took, from its first request to its last, including any wait for the bus; attribute `requests`: the reads in that poll | ms |
+| `sensor.lg_thermav_r290_bus_load` | Poll duration ÷ poll interval: how much of the time this integration keeps the bus busy | % |
+
+Both are under *Diagnostic* on the device page, with long-term statistics. Enable them in *Settings → Entities* to see how much your bus carries, e.g. before shortening the poll interval or switching on more options. On a bus of its own (a USB adapter) *Bus Load* is the whole bus; on a gateway shared with other devices, it is this integration's share plus its waiting.
+
 Both energy state sensors show the value in front of its name, `0 – Not Used` … `8 – Super Energy Saving Mode`; a value outside 0–8 shows as the bare number. (Up to 1.2.0, *Energy State* showed the name alone, e.g. `Normal Operation`; automations comparing its state need the new text.)
 
 ### Energy registers (optional)
