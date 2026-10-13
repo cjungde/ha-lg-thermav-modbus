@@ -148,6 +148,8 @@ Switch on **Energy registers** in the integration's options. These are 32-bit va
 
 The block is read in one request, high word first. A unit that does not answer leaves the sensors without a value and does not affect the other entities; after three misses in a row the read is skipped for 20 polls before it is tried again, so a unit that does not serve the block costs a few timeouts, not one per poll. Registers 52–55 (cumulative thermal yield for cooling and DHW) are not read; they do not answer on a 12 kW unit. Switching the option off removes the sensors again.
 
+The option also adds `sensor.lg_thermav_r290_heating_cop_cumulative`: thermal energy for space heating (input 50) divided by electrical energy for space heating (input 40). Both are counters since the unit's counters were last reset, so this is a long-term average (closer to a seasonal performance factor), not the COP of the moment. It has no value until electrical energy has been counted.
+
 `thermal_power_heat_pump_register` is the unit's own figure and is separate from the computed `thermal_power_*` sensors below.
 
 ### Binary sensors

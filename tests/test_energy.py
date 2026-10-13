@@ -154,3 +154,27 @@ def test_a_healthy_unit_is_never_paused() -> None:
     for _ in range(100):
         assert backoff.should_try()
         assert not backoff.record(True)
+
+
+def test_heating_cop_divides_thermal_by_electrical() -> None:
+    assert energy.heating_cop(12_000, 3_000) == 4.0
+    assert energy.heating_cop(10_000, 3_000) == 3.33
+
+
+def test_heating_cop_is_none_without_electrical_energy() -> None:
+    """Not 0: a 0 would read as a terrible COP and skew statistics."""
+    assert energy.heating_cop(5_000, 0) is None
+    assert energy.heating_cop(None, 3_000) is None
+    assert energy.heating_cop(5_000, None) is None
+
+
+def test_heating_cop_reads_inputs_50_and_40() -> None:
+    """The keys it divides are the data keys of input 50 and input 40."""
+    by_address = {r.address: r for r in energy.ENERGY_REGISTERS}
+    assert by_address[50].data_key == energy.THERMAL_ENERGY_HEATING_KEY
+    assert by_address[40].data_key == energy.ELECTRICAL_ENERGY_HEATING_KEY
+
+
+def test_heating_cop_is_removed_with_the_energy_sensors() -> None:
+    assert energy.HEATING_COP_KEY.startswith(energy.ENERGY_UNIQUE_ID_PREFIX)
+    assert energy.HEATING_COP_KEY not in {r.data_key for r in energy.ENERGY_REGISTERS}

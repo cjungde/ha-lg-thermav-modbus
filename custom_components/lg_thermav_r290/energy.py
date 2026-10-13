@@ -106,6 +106,28 @@ def decode_block(registers: list[int]) -> dict[str, int]:
     return values
 
 
+# Heating COP from the two cumulative space-heating counters (input 50 / 40).
+# Its unique id carries the energy prefix, so it is removed with the energy
+# sensors when the option is switched off.
+HEATING_COP_KEY = "energy_reg_heating_cop"
+THERMAL_ENERGY_HEATING_KEY = "energy_reg_thermal_energy_heating"
+ELECTRICAL_ENERGY_HEATING_KEY = "energy_reg_energy_heating"
+
+
+def heating_cop(thermal_wh: int | None, electrical_wh: int | None) -> float | None:
+    """Cumulative heating COP: thermal energy over electrical energy.
+
+    Both counters run since the unit's counters were last reset, so this is a
+    long-term average (closer to a seasonal performance factor), not the COP
+    of the moment. None while either counter is missing or no electrical
+    energy has been counted yet, rather than a 0 that would read as a
+    terrible COP and pull down long-term statistics.
+    """
+    if thermal_wh is None or electrical_wh is None or electrical_wh <= 0:
+        return None
+    return round(thermal_wh / electrical_wh, 2)
+
+
 class RetryBackoff:
     """Stop asking a unit that does not answer, but ask again later.
 
