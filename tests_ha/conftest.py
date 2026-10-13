@@ -21,6 +21,7 @@ from pathlib import Path
 import sys
 import types
 
+from homeassistant.exceptions import HomeAssistantError
 from modbus_connection.exceptions import ModbusTimeoutError
 import pytest
 
@@ -66,13 +67,40 @@ class FakeUnit:
 
 
 class Bus:
-    """The stub's state: which unit it hands out."""
+    """The stub's state: the unit it hands out, and who holds which link.
+
+    Like the shared connection, a device can be held by several entries only
+    with the same link settings; borrowing it with other settings while it is
+    held is refused.
+    """
 
     unit: FakeUnit = FakeUnit()
+    held: dict[str, object] = {}
+
+
+def _endpoint(params) -> str:
+    """The device a set of link settings talks to: socket or serial port."""
+    device = getattr(params, "device", None)
+    if device is None:
+        return f"{params.host}:{params.port}"
+    return device.removeprefix("socket://")
+
+
+def _get_unit(hass, entry, params, slave):
+    Bus.held[entry.entry_id] = params
+
+    def release() -> None:
+        Bus.held.pop(entry.entry_id, None)
+
+    entry.async_on_unload(release)
+    return Bus.unit
 
 
 @contextlib.asynccontextmanager
 async def _temporary_unit(hass, params, slave):
+    for held in Bus.held.values():
+        if _endpoint(held) == _endpoint(params) and held != params:
+            raise HomeAssistantError("held with different link settings")
     yield Bus.unit
 
 
@@ -81,7 +109,7 @@ async def _setup(hass, config):
 
 
 _modbus = types.ModuleType("homeassistant.components.modbus")
-_modbus.async_get_unit = lambda *args, **kwargs: Bus.unit
+_modbus.async_get_unit = _get_unit
 _modbus.async_get_temporary_unit = _temporary_unit
 _modbus.async_setup = _setup
 sys.modules["homeassistant.components.modbus"] = _modbus
@@ -103,4 +131,5 @@ def auto_enable_custom_integrations(enable_custom_integrations):
 def unit():
     """A fresh fake unit for the test; set .silent to leave addresses out."""
     Bus.unit = FakeUnit()
+    Bus.held.clear()
     return Bus.unit

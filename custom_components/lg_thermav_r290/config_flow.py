@@ -198,12 +198,42 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(step_id="user", data_schema=_SCHEMA_CONNECTION_TYPE)
 
+    async def _test(self, data: dict) -> str | None:
+        """Test the connection settings; for a reconfigure, around the entry.
+
+        While the entry being reconfigured is loaded, it holds its unit on the
+        shared connection. New settings for the same device with different
+        link settings (TCP <-> TCP-RTU on one host, another baud rate on one
+        serial port) then collide with the entry's own hold and are refused as
+        "link_settings_conflict", naming the user's own entry as the other
+        party. So on that error the entry is unloaded, releasing its hold, and
+        the test is repeated. If the new settings still fail, the entry is set
+        up again with its old ones; if they work, the reconfigure reloads it
+        with the new ones.
+        """
+        error = await _test_connection(self.hass, data)
+        entry = self._reconfigure_entry
+        if (
+            error != "link_settings_conflict"
+            or entry is None
+            or entry.state is not config_entries.ConfigEntryState.LOADED
+        ):
+            return error
+        await self.hass.config_entries.async_unload(entry.entry_id)
+        error = "unknown"
+        try:
+            error = await _test_connection(self.hass, data)
+        finally:
+            if error is not None:
+                await self.hass.config_entries.async_setup(entry.entry_id)
+        return error
+
     async def async_step_tcp(self, user_input=None) -> FlowResult:
         errors: dict[str, str] = {}
         defaults = self._reconfigure_entry.data if self._reconfigure_entry else {}
         if user_input is not None:
             data = {CONF_CONNECTION_TYPE: self._connection_type, **user_input}
-            error = await _test_connection(self.hass, data)
+            error = await self._test(data)
             if error is None:
                 if self._reconfigure_entry:
                     return self.async_update_reload_and_abort(
@@ -231,7 +261,7 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         defaults = self._reconfigure_entry.data if self._reconfigure_entry else {}
         if user_input is not None:
             data = {CONF_CONNECTION_TYPE: CONNECTION_RTU, **user_input}
-            error = await _test_connection(self.hass, data)
+            error = await self._test(data)
             if error is None:
                 if self._reconfigure_entry:
                     return self.async_update_reload_and_abort(
@@ -292,14 +322,6 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
     async def async_step_reconfigure(self, user_input=None) -> FlowResult:
-        # Known limitation: the entry being reconfigured still holds its unit
-        # while this flow runs. Changing the framing (tcp <-> tcp_rtu) without
-        # changing host or port therefore collides with the entry's own hold and
-        # is reported as "link_settings_conflict" -- technically true, but it
-        # names the user's own entry as the other party. Removing and re-adding
-        # the entry is the way through. Fixing it properly means releasing the
-        # hold before probing, which needs care around a failed probe leaving
-        # the entry unloaded.
         self._reconfigure_entry = self.hass.config_entries.async_get_entry(
             self.context["entry_id"]
         )
