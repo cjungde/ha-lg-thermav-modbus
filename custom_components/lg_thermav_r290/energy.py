@@ -70,9 +70,7 @@ ENERGY_REGISTERS: tuple[EnergyRegister, ...] = (
     # Reads 0-12 on a 12 kW unit: not a percentage. What the number means (a
     # step, or kW of demand) is not established, so it carries no unit.
     EnergyRegister("demand_vs_supply", 46, "Demand vs Supply", KIND_VALUE),
-    EnergyRegister(
-        "thermal_power", 48, "Thermal Power (Heat Pump Register)", KIND_POWER
-    ),
+    EnergyRegister("thermal_power", 48, "Thermal Power (Reported)", KIND_POWER),
     EnergyRegister(
         "thermal_energy_heating",
         50,

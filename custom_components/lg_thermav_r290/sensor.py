@@ -338,7 +338,7 @@ async def async_setup_entry(
             coordinator,
             entry,
             "thermal_power_total",
-            "Thermal Power Total",
+            "Thermal Power (Calculated)",
             dhw_filter=None,
         )
     )
@@ -347,7 +347,7 @@ async def async_setup_entry(
             coordinator,
             entry,
             "thermal_power_dhw",
-            "Thermal Power DHW",
+            "Thermal Power DHW (Calculated)",
             dhw_filter=True,
         )
     )
@@ -356,7 +356,7 @@ async def async_setup_entry(
             coordinator,
             entry,
             "thermal_power_heating_circuit",
-            "Thermal Power Heating Circuit",
+            "Thermal Power Heating Circuit (Calculated)",
             dhw_filter=False,
         )
     )
@@ -478,7 +478,7 @@ class LGHeatingCopSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
     """
 
     _attr_has_entity_name = True
-    _attr_name = "Heating COP (Cumulative)"
+    _attr_name = "COP Heating (Cumulative)"
     _attr_icon = "mdi:heat-pump-outline"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 2
@@ -626,7 +626,7 @@ class LGCurrentCopSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
     """
 
     _attr_has_entity_name = True
-    _attr_name = "COP Current"
+    _attr_name = "COP (Reported)"
     _attr_icon = "mdi:heat-pump"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 2
@@ -649,13 +649,13 @@ class LGCurrentCopSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
 class LGSystemCopSensor(LGCurrentCopSensor):
     """System COP of the moment: input 48 (thermal) / input 34 (total system).
 
-    Same calculation and idle threshold as COP Current, but over the total
+    Same calculation and idle threshold as COP (Reported), but over the total
     system's electrical power, which also counts consumers the heat pump
     figure (input 36) leaves out, such as a backup heater. Where 34 and 36
     are equal, both COPs are equal.
     """
 
-    _attr_name = "COP System"
+    _attr_name = "COP System (Reported)"
     _attr_icon = "mdi:home-lightning-bolt-outline"
     _cop_key = COP_SYSTEM_KEY
     _electrical_key = ELECTRICAL_POWER_SYSTEM_KEY
@@ -664,7 +664,7 @@ class LGSystemCopSensor(LGCurrentCopSensor):
 class LGCalculatedCopSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
     """COP from the integration's own thermal power: flow × ΔT ÷ input 36.
 
-    A cross-check of COP Current: the electrical side is the same (the heat
+    A cross-check of COP (Reported): the electrical side is the same (the heat
     pump's power, input 36), but the thermal side is computed from flow rate
     and inlet/outlet temperature (cop.thermal_power_w) instead of taken from
     the unit's thermal power register (input 48). Same idle rule: no value

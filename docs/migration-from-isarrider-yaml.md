@@ -57,7 +57,7 @@ For basti242's YAML setup, which this one grew out of, see [migration-from-yaml.
 
 | Option | Gives you | YAML counterpart |
 |---|---|---|
-| **Energy registers** | Input 34–51 as sensors, plus *Heating COP (Cumulative)* and *COP Current* | `hp_ENERGY_*`, `hp_Demand_vs_Supply`, the COP template |
+| **Energy registers** | Input 34–51 as sensors, plus *COP Heating (Cumulative)* and *COP (Reported)* | `hp_ENERGY_*`, `hp_Demand_vs_Supply`, the COP template |
 | **Compressor modulation limit** | The *Max Compressor Modulation* slider on holding 23 | `hp_compressor_modulation` + `input_number.hp_compressor_modulation_slider` + two automations |
 
 Optional:
@@ -104,7 +104,7 @@ The power limit (holding 24 + coil 6) is **not** in the integration yet; see [§
 | 42–43 | `hp_energy_accumulative_cool` | `lg_thermav_r290_electrical_energy_space_cooling` | as above |
 | 44–45 | `hp_energy_accumulative_dhw` | `lg_thermav_r290_electrical_energy_dhw` | as above |
 | 46–47 | `hp_demand_vs_supply` | `lg_thermav_r290_demand_vs_supply` | *Energy registers* option. **No unit** (the YAML says %); it reads 0–12 on the 12 kW. |
-| 48–49 | `hp_energy_instantaneous_total_th` | `lg_thermav_r290_thermal_power_heat_pump_register` | *Energy registers* option. W, uint32. |
+| 48–49 | `hp_energy_instantaneous_total_th` | `lg_thermav_r290_thermal_power_reported` | *Energy registers* option. W, uint32. |
 | 50–51 | `hp_energy_accumulative_heat_th` | `lg_thermav_r290_thermal_energy_space_heating` | *Energy registers* option. Wh (shown as kWh). |
 | 52–55 | commented out (`hp_ENERGY_ACCUMULATIVE_COOL_TH`, `…_DHW_TH`) | not read | Do not answer on the 12 kW. Reading them in the same block would drop the whole energy read. |
 | 9997 | `hp_product_group` | `lg_thermav_r290_device_group` | **Disabled by default**: enable it in the entity settings. |
@@ -202,7 +202,7 @@ The register values behind the options are identical: operation mode Cooling 0, 
 | YAML template | Integration | Difference |
 |---|---|---|
 | `sensor.hp_energy_state` (*HP Energy State*) | `sensor.lg_thermav_r290_energy_state_reported` | Same register (input 11). Labels are English instead of German, with the value in front (`2 – Normal Operation`); a value outside 0–8 shows as the number instead of *Unknown*. Not to be confused with `sensor.lg_thermav_r290_energy_state`, which labels holding 9; see [§10](#10-differences-that-can-bite). |
-| `sensor.hp_heating_cop_calculated` (*HP Heating COP (Calculated)*) | `sensor.lg_thermav_r290_heating_cop_cumulative` (*Energy registers* option) | Same formula, input 50 ÷ input 40. No value instead of `0` while no electrical energy is counted. No unit (the YAML uses `COP`). |
+| `sensor.hp_heating_cop_calculated` (*HP Heating COP (Calculated)*) | `sensor.lg_thermav_r290_cop_heating_cumulative` (*Energy registers* option) | Same formula, input 50 ÷ input 40. No value instead of `0` while no electrical energy is counted. No unit (the YAML uses `COP`). |
 | *HP DHW COP (Calculated)* (commented out) | none | Its thermal counter (input 54) does not answer on the 12 kW. |
 
 ---
@@ -240,7 +240,7 @@ A side effect worth knowing: the YAML notes that a slider change can take up to 
 
 ### Values and units
 
-- **The electrical values the unit reports are not reliable.** Compared against a smart meter on the 12 kW unit, the reported electrical power (input 34–37) was usually **too high**; the energy counters (input 38–45) are presumably derived from it and likely too high as well (not measured separately). The COP sensors built on them (*COP Current*, *COP System*, *COP (Calculated)*, *Heating COP (Cumulative)*) inherit that error and tend to come out too low. For the Energy dashboard or a COP you want to rely on, use an external meter for the electrical side.
+- **The electrical values the unit reports are not reliable.** Compared against a smart meter on the 12 kW unit, the reported electrical power (input 34–37) was usually **too high**; the energy counters (input 38–45) are presumably derived from it and likely too high as well (not measured separately). The COP sensors built on them (*COP (Reported)*, *COP System (Reported)*, *COP (Calculated)*, *COP Heating (Cumulative)*) inherit that error and tend to come out too low. For the Energy dashboard or a COP you want to rely on, use an external meter for the electrical side.
 - **Input 16 (liquid gas temperature) is 100× larger here.** The YAML scales it by 0.001 (marked "Scale???"), the integration by 0.1, measured against the other refrigerant temperatures. A YAML reading of 0.25 °C is 25.0 °C here. History from the two is not comparable.
 - **Input 17 is not a temperature.** The YAML shows `hp_temp_pipe_out` as a constant 12.00 °C (raw 12000 × 0.001). The integration does not present it as a sensor. With the *Experimental registers* option it appears raw as `Experimental Input 30018`.
 - **Demand vs Supply has no unit.** The YAML shows %, but the register reads 0–12 on the 12 kW, so it is not a percentage.
@@ -288,9 +288,9 @@ Which of the two follows SG-Ready on a 12 kW has not been checked yet; compare b
 
 ## 12. Only in the integration
 
-- **Computed thermal power**: `sensor.lg_thermav_r290_thermal_power_total`, `…_thermal_power_heating_circuit`, `…_thermal_power_dhw`, from flow rate and ΔT each poll (`Q = flow/60 × ΔT × 4186 W`). Independent of the energy registers.
-- **Current COP**: `sensor.lg_thermav_r290_cop_current` (*Energy registers* option), input 48 ÷ input 36, no value while the electrical power is below 100 W.
-- **System COP**: `sensor.lg_thermav_r290_cop_system` (*Energy registers* option), input 48 ÷ input 34 (total system), same idle rule. Lower than the current COP whenever something besides the heat pump, such as a backup heater, draws power.
+- **Computed thermal power**: `sensor.lg_thermav_r290_thermal_power_calculated`, `…_thermal_power_heating_circuit_calculated`, `…_thermal_power_dhw_calculated`, from flow rate and ΔT each poll (`Q = flow/60 × ΔT × 4186 W`). Independent of the energy registers.
+- **Current COP**: `sensor.lg_thermav_r290_cop_reported` (*Energy registers* option), input 48 ÷ input 36, no value while the electrical power is below 100 W.
+- **System COP**: `sensor.lg_thermav_r290_cop_system_reported` (*Energy registers* option), input 48 ÷ input 34 (total system), same idle rule. Lower than the current COP whenever something besides the heat pump, such as a backup heater, draws power.
 - **Calculated COP**: `sensor.lg_thermav_r290_cop_calculated` (*Energy registers* option), thermal power from flow rate × ΔT ÷ input 36. A cross-check of the current COP, which uses the unit's own thermal power (input 48).
 - **Text sensors for the selects**: `sensor.lg_thermav_r290_operation_mode`, `sensor.lg_thermav_r290_control_method`.
 - **Energy states as binary sensors**: `binary_sensor.lg_thermav_r290_energy_state_not_used`, `…_forced_off`, `…_normal_operation`, `…_on_recommendation`, `…_on_command`, `…_on_command_step_2`, `…_on_recommendation_step_1`, `…_energy_saving_mode`, `…_super_energy_saving_mode` (one per value of holding 9).

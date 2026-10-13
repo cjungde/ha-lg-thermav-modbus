@@ -83,7 +83,7 @@ There is no automatic migration: the entities have different ids and belong to o
 
 ## Only in this integration
 
-- Computed thermal power: `…_thermal_power_total`, `…_thermal_power_heating_circuit`, `…_thermal_power_dhw`.
+- Computed thermal power: `…_thermal_power_calculated`, `…_thermal_power_heating_circuit_calculated`, `…_thermal_power_dhw_calculated`.
 - The energy states 0–8 as individual binary sensors.
 
 ## Only in basti242's setup (not implemented here)

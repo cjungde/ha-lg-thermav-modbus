@@ -124,9 +124,9 @@ The config flow asks for connection type first, then connection-specific paramet
 | `sensor.lg_thermav_r290_low_pressure_evaporator` | Low pressure (evaporator) | bar |
 | `sensor.lg_thermav_r290_compressor_speed` | Compressor speed | rpm |
 | `sensor.lg_thermav_r290_error_code` | Error code | — |
-| `sensor.lg_thermav_r290_thermal_power_total` | Total thermal power output | W |
-| `sensor.lg_thermav_r290_thermal_power_heating_circuit` | Heating circuit thermal power | W |
-| `sensor.lg_thermav_r290_thermal_power_dhw` | DHW thermal power | W |
+| `sensor.lg_thermav_r290_thermal_power_calculated` | Thermal power, calculated from flow rate × ΔT | W |
+| `sensor.lg_thermav_r290_thermal_power_heating_circuit_calculated` | Same, while not heating DHW (0 otherwise) | W |
+| `sensor.lg_thermav_r290_thermal_power_dhw_calculated` | Same, while heating DHW (0 otherwise) | W |
 | `sensor.lg_thermav_r290_operation_mode` | Operation mode (label) | — |
 | `sensor.lg_thermav_r290_control_method` | Control method (label) | — |
 | `sensor.lg_thermav_r290_energy_state` | Energy state (label), holding 9: the command register | — |
@@ -138,7 +138,7 @@ Both energy state sensors show the value in front of its name, `0 – Not Used` 
 
 Switch on **Energy registers** in the integration's options. These are 32-bit values in input registers 34–51 that the manual does not list. Not every unit serves them: a read-only scan of a 9 kW unit got no answer from input 25–62, while a 12 kW unit answers on 34–51.
 
-> **Do not rely on the electrical values.** The electrical power and energy the heat pump reports (input 34–45) deviate noticeably from a calibrated meter: compared against a smart meter on the 12 kW unit, the unit usually reported **too high** a power. The energy counters are presumably derived from that power and are then likely too high as well; that part has not been measured separately. Treat all of them as the unit's own estimate. Everything built on them inherits the error, and since the electrical side is in the denominator, the COPs tend to come out **too low**: *COP Current*, *COP System*, *COP (Calculated)* and *Heating COP (Cumulative)*. For billing, the Energy dashboard or a COP you want to rely on, measure the heat pump's electrical consumption with a separate meter (a smart meter, or a dedicated meter in the heat pump's supply) and use that instead.
+> **Do not rely on the electrical values.** The electrical power and energy the heat pump reports (input 34–45) deviate noticeably from a calibrated meter: compared against a smart meter on the 12 kW unit, the unit usually reported **too high** a power. The energy counters are presumably derived from that power and are then likely too high as well; that part has not been measured separately. Treat all of them as the unit's own estimate. Everything built on them inherits the error, and since the electrical side is in the denominator, the COPs tend to come out **too low**: *COP (Reported)*, *COP System (Reported)*, *COP (Calculated)* and *COP Heating (Cumulative)*. For billing, the Energy dashboard or a COP you want to rely on, measure the heat pump's electrical consumption with a separate meter (a smart meter, or a dedicated meter in the heat pump's supply) and use that instead.
 
 | Entity | Registers | Unit |
 | --- | --- | --- |
@@ -149,20 +149,20 @@ Switch on **Energy registers** in the integration's options. These are 32-bit va
 | `sensor.lg_thermav_r290_electrical_energy_space_cooling` | 42–43 | Wh (shown as kWh) |
 | `sensor.lg_thermav_r290_electrical_energy_dhw` | 44–45 | Wh (shown as kWh) |
 | `sensor.lg_thermav_r290_demand_vs_supply` | 46–47 | none (reads 0–12 on a 12 kW unit) |
-| `sensor.lg_thermav_r290_thermal_power_heat_pump_register` | 48–49 | W |
+| `sensor.lg_thermav_r290_thermal_power_reported` | 48–49 | W |
 | `sensor.lg_thermav_r290_thermal_energy_space_heating` | 50–51 | Wh (shown as kWh) |
 
 The block is read in one request, high word first. A unit that does not answer leaves the sensors without a value and does not affect the other entities; after three misses in a row the read is skipped for 20 polls before it is tried again, so a unit that does not serve the block costs a few timeouts, not one per poll. Registers 52–55 (cumulative thermal yield for cooling and DHW) are not read; they do not answer on a 12 kW unit. Switching the option off removes the sensors again.
 
-The option also adds `sensor.lg_thermav_r290_heating_cop_cumulative`: thermal energy for space heating (input 50) divided by electrical energy for space heating (input 40). Both are counters since the unit's counters were last reset, so this is a long-term average (closer to a seasonal performance factor), not the COP of the moment. It has no value until electrical energy has been counted.
+The option also adds `sensor.lg_thermav_r290_cop_heating_cumulative`: thermal energy for space heating (input 50) divided by electrical energy for space heating (input 40). Both are counters since the unit's counters were last reset, so this is a long-term average (closer to a seasonal performance factor), not the COP of the moment. It has no value until electrical energy has been counted.
 
-`thermal_power_heat_pump_register` is the unit's own figure and is separate from the computed `thermal_power_*` sensors below.
+`thermal_power_reported` is the unit's own figure and is separate from the computed `thermal_power_*` sensors below.
 
-The option also adds `sensor.lg_thermav_r290_cop_current`: the unit's thermal power (input 48) divided by the heat pump's electrical power (input 36), the COP of the moment, in space heating and DHW alike. It has no value while the electrical power is below 100 W, i.e. while the unit idles, so standby periods do not drag down its statistics.
+The option also adds `sensor.lg_thermav_r290_cop_reported`: the unit's thermal power (input 48) divided by the heat pump's electrical power (input 36), the COP of the moment, in space heating and DHW alike. It has no value while the electrical power is below 100 W, i.e. while the unit idles, so standby periods do not drag down its statistics.
 
-`sensor.lg_thermav_r290_cop_system` is the same, but over the total system's electrical power (input 34) instead of the heat pump's (input 36). Where the two are equal, so are the COPs; when something the heat pump figure leaves out draws power, such as a backup heater, the system COP is the lower, more honest one.
+`sensor.lg_thermav_r290_cop_system_reported` is the same, but over the total system's electrical power (input 34) instead of the heat pump's (input 36). Where the two are equal, so are the COPs; when something the heat pump figure leaves out draws power, such as a backup heater, the system COP is the lower, more honest one.
 
-`sensor.lg_thermav_r290_cop_calculated` is a cross-check of `cop_current`: same electrical side (input 36), but the thermal side is the integration's own figure from flow rate × ΔT (the same calculation as `thermal_power_total`) instead of the unit's thermal power register (input 48). If the two COPs agree, the unit's thermal figure can be trusted; if they differ consistently, one of the two thermal values is off. Same idle rule (no value below 100 W).
+`sensor.lg_thermav_r290_cop_calculated` is a cross-check of `cop_reported`: same electrical side (input 36), but the thermal side is the integration's own figure from flow rate × ΔT (the same calculation as `thermal_power_calculated`) instead of the unit's thermal power register (input 48). If the two COPs agree, the unit's thermal figure can be trusted; if they differ consistently, one of the two thermal values is off. Same idle rule (no value below 100 W).
 
 ### Binary sensors
 
@@ -292,6 +292,19 @@ Switch on **Compressor modulation limit** in the integration's options. Holding 
 
 ## Notes
 
+- **Naming.** *(Reported)* marks a value the heat pump reports itself (its registers), *(Calculated)* one this integration computes from flow rate × ΔT. Up to 1.2.0 these sensors had other names. Existing installations keep their entity ids and history; only the displayed names change, so the ids may differ from the ones listed here:
+
+  | Old name (entity id up to 1.2.0) | New name |
+  |---|---|
+  | Thermal Power Total (`…_thermal_power_total`) | Thermal Power (Calculated) |
+  | Thermal Power Heating Circuit (`…_thermal_power_heating_circuit`) | Thermal Power Heating Circuit (Calculated) |
+  | Thermal Power DHW (`…_thermal_power_dhw`) | Thermal Power DHW (Calculated) |
+  | Thermal Power (Heat Pump Register) (`…_thermal_power_heat_pump_register`) | Thermal Power (Reported) |
+  | COP Current (`…_cop_current`) | COP (Reported) |
+  | COP System (`…_cop_system`) | COP System (Reported) |
+  | Heating COP (Cumulative) (`…_heating_cop_cumulative`) | COP Heating (Cumulative) |
+
+  To get the new ids on an existing installation, rename the entity ids in *Settings → Entities* (history moves with the rename).
 - Flow rate uses Home Assistant's unit `L/min` and device class `volume_flow_rate` (before: plain `l/min`, no device class). The values are the same, but after updating, *Developer tools → Statistics* may report that the unit of `sensor.lg_thermav_r290_flow_rate` changed; choose *Update the unit* there, nothing needs converting.
 - Thermal power formula: `Q [W] = (flow_rate [l/min] / 60) × (outlet_temp − inlet_temp) [K] × 4186 [J/(l·K)]`
 - Heating circuit / DHW split is based on the `di_dhw_heating` discrete input; when DHW is active the full flow is attributed to DHW and the heating circuit sensor reports 0, and vice versa.
