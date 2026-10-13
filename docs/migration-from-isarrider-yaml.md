@@ -280,7 +280,7 @@ Which of the two follows SG-Ready on a 12 kW has not been checked yet; compare b
 
 | YAML | Status |
 |---|---|
-| Power limit: `sensor.hp_power_limitation` (holding 24), `input_number.hp_power_limitation_slider`, `switch.hp_active_power_limit` (coil 6), automations `hp_power_limit_write` / `hp_power_limit_sync` | Not in the integration yet. The addresses come from a community forum, they do not answer on the scanned 9 kW, and nobody has confirmed on an R290 that writing them has an effect. A draft implementation, behind an off-by-default *unverified* option, waits for that check. |
+| Power limit: `sensor.hp_power_limitation` (holding 24), `input_number.hp_power_limitation_slider`, `switch.hp_active_power_limit` (coil 6), automations `hp_power_limit_write` / `hp_power_limit_sync` | Not in the integration yet. The 12 kW manual documents them (coil 00007 *Wirkleistungsbegrenzung*: 0 not used / 1 limit the power per 40025), but they do not answer on the scanned 9 kW, and nobody has confirmed on a 12 kW that writing them has an effect. A draft implementation, behind an off-by-default *unverified* option, waits for that check. |
 | Labels for the ODU operation cycle (input 1) | The YAML comment gives 0 Off, 1 Standby, 2 Running, 3 Defrost; LG's table for 30002 gives 0 Standby/Off, 1 Cooling, 2 Heating. Until a unit's history shows which is right, the integration exposes the raw number only. A draft label sensor exists. |
 | *HP DHW COP (Calculated)* (commented out) | Its thermal counter does not answer on the 12 kW. |
 
