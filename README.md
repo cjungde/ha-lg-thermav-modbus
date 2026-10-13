@@ -121,7 +121,16 @@ After the connection test, the setup asks the unit once which optional register 
 
 Answering only proves the register exists, not that writing it has an effect. A unit that does not serve a group stays silent, so each missing group waits for a request timeout: on a unit that has none of them, the check takes up to about 30 seconds, shown as progress. It runs only then, never while polling.
 
+<p>
+<img src="docs/images/setup-progress.png" alt="Setup: progress while the optional registers are checked" width="400"><br>
+<img src="docs/images/setup-features.png" alt="Setup, last step: the check result and the optional register groups, energy registers and compressor modulation limit ticked" width="400">
+</p>
+
+*Illustrations of a 12 kW unit that answers on all three groups; Home Assistant's own dialogs look slightly different.*
+
 The last result is shown again under *Configure*. Tick **Check the optional registers again** there to repeat the check, e.g. on an installation set up before 1.5.0 or after a firmware update. The form then comes back with the groups that answered ticked; nothing is switched off.
+
+<img src="docs/images/setup-options.png" alt="Configure: the last check result, the options, and Check the optional registers again" width="400">
 
 ---
 
