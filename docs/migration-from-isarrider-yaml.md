@@ -47,7 +47,7 @@ For basti242's YAML setup, which this one grew out of, see [migration-from-yaml.
   | `slave: 1` (on every entity) | Slave ID 1 |
   | `scan_interval: 10` (on every entity) | Poll interval, see below |
 
-- **Poll interval.** The YAML polls every 10 s. The integration defaults to 30 s and reads everything in one cycle. To keep the 10 s rhythm, set *Poll interval* to 10 in the integration's options (allowed range 5–3600 s). The identity registers 9997/9998, which the YAML reads every 3600 s, are read once per start.
+- **Poll interval.** The YAML polls every 10 s, and so does the integration by default; it reads everything in one cycle. The interval can be changed in the integration's options (allowed range 5–3600 s). The identity registers 9997/9998, which the YAML reads every 3600 s, are read once per start.
 
 ---
 
@@ -383,7 +383,7 @@ Replace `modbus.write_register` / `modbus.write_coil` calls and helper writes wi
 2. Export or screenshot dashboards and automations that use `hp_*` entities or the helpers.
 3. Remove (or comment out) the YAML package: the `modbus:` hub, `input_number:`, `input_select:`, `template:` and `automation:` parts. Restart Home Assistant.
 4. *Settings → Devices & Services → Add Integration → LG ThermaV R290*: connection type RTU, the same `/dev/serial/by-id/…` port, 9600, N, 1, slave 1.
-5. *Configure*: poll interval 10 s (if you want the YAML rhythm), **Energy registers** on, **Compressor modulation limit** on. Experimental registers only if you want to record the undocumented addresses.
+5. *Configure*: **Energy registers** on, **Compressor modulation limit** on. Experimental registers only if you want to record the undocumented addresses.
 6. Enable the disabled-by-default sensors you used: device group, product information, room air temperature circuit 1/2 (holding).
 7. Compare the values from step 1 with the new entities. Compressor modulation shows *unknown* if no limit is set.
 8. Update the Energy dashboard: pick the new electrical energy sensors (and the thermal one if you use it).

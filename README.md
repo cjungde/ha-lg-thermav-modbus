@@ -19,7 +19,7 @@ Replaces a hand-crafted YAML Modbus configuration with native HA entities: senso
 - **Number inputs** — flow temperature setpoints (circuit 1, circuit 2), DHW target temperature, heating curve shift values (circuit 1, circuit 2); optional max compressor modulation (40–100 %)
 - **Select inputs** — operation mode (Heating / Cooling / Auto), control method (outlet temp / inlet temp / room air)
 - Supports **Modbus TCP**, **Modbus TCP-RTU**, and **Modbus RTU** (serial)
-- Configurable poll interval (default 30 s), reconfigurable without restart
+- Configurable poll interval (default 10 s), reconfigurable without restart
 - Shares one Modbus connection with every other integration on the same gateway
 
 ---
@@ -100,7 +100,7 @@ The config flow asks for connection type first, then connection-specific paramet
 | Parity | N | RTU only |
 | Stop bits | 1 | RTU only |
 | Slave ID | 1 | 1–247 |
-| Poll interval | 30 s | Adjustable in Options |
+| Poll interval | 10 s | Adjustable in Options (5–3600 s). Entries set up before the default changed keep their stored value. |
 | Energy registers | off | Options; input 34–51, not served by every unit |
 | Compressor modulation limit | off | Options; holding 23, not served by every unit |
 
