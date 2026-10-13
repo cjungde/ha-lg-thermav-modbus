@@ -25,6 +25,7 @@ from typing import Any
 from modbus_connection.exceptions import ModbusError
 
 from .const import (
+    CONF_COMPRESSOR_STATISTICS,
     CONF_EMERGENCY_OPERATION,
     CONF_ENERGY_REGISTERS,
     CONF_EXPERIMENTAL,
@@ -48,6 +49,7 @@ GROUPS = (
     CONF_POWER_LIMIT,
     CONF_EMERGENCY_OPERATION,
     CONF_EXPERIMENTAL,
+    CONF_COMPRESSOR_STATISTICS,
     CONF_POLL_STATISTICS,
 )
 

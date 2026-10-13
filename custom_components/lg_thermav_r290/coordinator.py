@@ -12,10 +12,13 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 from modbus_connection.exceptions import ModbusError, ModbusExceptionError
 
+from .compressor_stats import CompressorStats
 from .connection import params_from_entry_data
 from .const import (
+    CONF_COMPRESSOR_STATISTICS,
     CONF_EMERGENCY_OPERATION,
     CONF_ENERGY_REGISTERS,
     CONF_EXPERIMENTAL,
@@ -56,6 +59,11 @@ from .power_limit import (
 _LOGGER = logging.getLogger(__name__)
 
 
+def _monotonic() -> float:
+    """The clock the compressor statistics run on (replaced in tests)."""
+    return time.monotonic()
+
+
 def _signed16(value: int) -> int:
     """Convert an unsigned 16-bit register value to a signed integer."""
     return value - 65536 if value >= 32768 else value
@@ -87,6 +95,13 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         self._experimental = bool(entry.options.get(CONF_EXPERIMENTAL, False))
         self._experimental_gate = BlockGate()
+        # Starts, run time and average speed, counted per poll from data
+        # already read (compressor_stats.py); only with its option.
+        self.compressor_stats = (
+            CompressorStats()
+            if entry.options.get(CONF_COMPRESSOR_STATISTICS, False)
+            else None
+        )
         self._energy = bool(entry.options.get(CONF_ENERGY_REGISTERS, False))
         self._energy_backoff = RetryBackoff()
         self._modulation_limit = bool(entry.options.get(CONF_MODULATION_LIMIT, False))
@@ -131,6 +146,14 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.unit.reads = 0
         start = time.monotonic()
         data = await self._async_poll()
+        if self.compressor_stats is not None:
+            on = data.get("discrete_compressor")
+            self.compressor_stats.add(
+                None if on is None else bool(on),
+                data.get("input_compressor_speed"),
+                _monotonic(),
+                dt_util.now().date().isoformat(),
+            )
         data.update(
             stats(
                 time.monotonic() - start,

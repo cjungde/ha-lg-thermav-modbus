@@ -108,6 +108,7 @@ The config flow asks for connection type first, then connection-specific paramet
 | Power limit | off | Options; coil 6 + holding 24, not served by every unit; effect not confirmed yet |
 | Emergency operation button | off | Options; coil 5 |
 | Experimental registers | off | Options; 18 undocumented registers, read only |
+| Compressor statistics | off | Options; *Compressor Starts*, *Run Time*, *Average Speed* |
 | Poll statistics | off | Options; *Poll Duration* and *Bus Load* diagnostic sensors |
 
 #### Which options the unit supports
@@ -121,6 +122,7 @@ After the connection test, the setup asks the unit once which optional register 
 | Power limit | coil 6, then holding 24 | no: whether the unit keeps to the limit is not confirmed yet |
 | Emergency operation button | — | never: coil 5 answers on every unit; the option is off because of what it does |
 | Experimental registers | — | never |
+| Compressor statistics | — | never: nothing to check on the unit |
 | Poll statistics | — | never: nothing to check on the unit |
 
 Answering only proves the register exists, not that writing it has an effect. A unit that does not serve a group stays silent, so each missing group waits for a request timeout: on a unit that has none of them, the check takes up to about 30 seconds, shown as progress. It runs only then, never while polling.
@@ -182,6 +184,18 @@ The electrical figures the unit reports tend to read high, so COPs built on them
 | | `sensor.lg_thermav_r290_cop_cumulative_external_meter` | that thermal energy ÷ your meter's energy, both counted from when the sensor was set: the seasonal performance factor (JAZ) over that period; attributes `since`, `thermal_energy_kwh`, `electrical_energy_kwh` |
 
 Both counters are kept across restarts. Gaps over five minutes (Home Assistant down, the unit not answering) are not counted rather than guessed; a reset of your meter's counter counts as growth from zero. Choosing another energy sensor starts a new period. The thermal side is flow rate × ΔT, which reads 0 while cooling or defrosting.
+
+#### Compressor statistics (option)
+
+Switch on **Compressor statistics** in *Configure → Options*. Counted from the *Compressor* status and *Compressor Speed* on every poll; nothing extra is read from the unit.
+
+| Entity | What it shows |
+|---|---|
+| `sensor.lg_thermav_r290_compressor_starts` | starts, a `total_increasing` counter: starts per day or per hour come from Home Assistant's statistics (e.g. a *Statistic* card, *change* per day). Attribute `last_run_minutes`: the run in progress, or the last one |
+| `sensor.lg_thermav_r290_compressor_run_time` | hours the compressor ran, a counter |
+| `sensor.lg_thermav_r290_compressor_average_speed` | rpm while running, today; resets at midnight, so the history shows one value per day. Standstill is left out. Attributes `day`, `run_hours_today` |
+
+Many short runs mean the unit is cycling, which costs efficiency and wear; a low average speed over long runs means it mostly modulates at the bottom of its range. All three are kept across restarts; a gap over five minutes is not counted, and a restart never counts as a start.
 
 #### Poll statistics (option)
 

@@ -14,6 +14,7 @@ CONF_ENERGY_REGISTERS = "energy_registers"
 CONF_MODULATION_LIMIT = "compressor_modulation_limit"
 CONF_EMERGENCY_OPERATION = "emergency_operation_button"
 CONF_POLL_STATISTICS = "poll_statistics"
+CONF_COMPRESSOR_STATISTICS = "compressor_statistics"
 # Sensors of the user's own electricity meter (entity ids), see external_meter.py.
 CONF_EXTERNAL_POWER = "external_power_sensor"
 CONF_EXTERNAL_ENERGY = "external_energy_sensor"

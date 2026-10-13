@@ -63,6 +63,7 @@ async def test_all_options_create_their_entities(hass, unit) -> None:
         "emergency_operation_button": True,
         "experimental_registers": True,
         "poll_statistics": True,
+        "compressor_statistics": True,
     }
     entry = await _set_up(hass, options)
     entities = _entities(hass, entry)
@@ -78,7 +79,7 @@ async def test_all_options_create_their_entities(hass, unit) -> None:
         "sensor.lg_thermav_r290_bus_load",
     ):
         assert entity_id in entities, entity_id
-    assert len(entities) == 109
+    assert len(entities) == 112
 
 
 async def test_writes_reach_the_unit(hass, unit) -> None:

@@ -47,8 +47,9 @@ from homeassistant.helpers.restore_state import ExtraStoredData, RestoreEntity
 from homeassistant.util import dt as dt_util
 from homeassistant.util.unit_conversion import EnergyConverter, PowerConverter
 
-from . import cop, external_meter, pollstats
+from . import compressor_stats, cop, external_meter, pollstats
 from .const import (
+    CONF_COMPRESSOR_STATISTICS,
     CONF_ENERGY_REGISTERS,
     CONF_EXPERIMENTAL,
     CONF_EXTERNAL_ENERGY,
@@ -481,6 +482,16 @@ async def async_setup_entry(
         )
     else:
         remove_entities(hass, entry, "sensor", EXPERIMENTAL_OPTION_KEYS)
+    if entry.options.get(CONF_COMPRESSOR_STATISTICS, False):
+        entities.extend(
+            [
+                LGCompressorStartsSensor(coordinator, entry),
+                LGCompressorRunTimeSensor(coordinator, entry),
+                LGCompressorAverageSpeedSensor(coordinator, entry),
+            ]
+        )
+    else:
+        remove_entities(hass, entry, "sensor", compressor_stats.KEYS)
     power_sensor = entry.options.get(CONF_EXTERNAL_POWER)
     energy_sensor = entry.options.get(CONF_EXTERNAL_ENERGY)
     if power_sensor:
@@ -833,3 +844,97 @@ class LGCumulativeCopSensor(LGEntity, RestoreEntity, SensorEntity):
             "thermal_energy_kwh": round(self._thermal.kwh, 3),
             "electrical_energy_kwh": round(self._electrical.kwh, 3),
         }
+
+
+# --- Compressor statistics (compressor_stats.py) -----------------------------
+
+
+class _CompressorStatsData(ExtraStoredData):
+    def __init__(self, data: dict[str, Any]) -> None:
+        self._data = data
+
+    def as_dict(self) -> dict[str, Any]:
+        return self._data
+
+
+class LGCompressorStartsSensor(LGEntity, RestoreEntity, SensorEntity):
+    """How often the compressor started; also keeps all counts over restarts.
+
+    The coordinator does the counting; this entity stores the whole state as
+    restore data, so starts, run time and today's average continue after a
+    restart.
+    """
+
+    _attr_name = "Compressor Starts"
+    _attr_icon = "mdi:counter"
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+
+    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator, entry, compressor_stats.KEY_COMPRESSOR_STARTS)
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        last = await self.async_get_last_extra_data()
+        if last is not None and self.coordinator.compressor_stats is not None:
+            self.coordinator.compressor_stats.restore(last.as_dict())
+
+    @property
+    def extra_restore_state_data(self) -> ExtraStoredData:
+        stats = self.coordinator.compressor_stats
+        return _CompressorStatsData(stats.state() if stats else {})
+
+    @property
+    def native_value(self) -> int | None:
+        stats = self.coordinator.compressor_stats
+        return None if stats is None else stats.starts
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        stats = self.coordinator.compressor_stats
+        last = None if stats is None else stats.last_run_s
+        return {"last_run_minutes": None if last is None else round(last / 60, 1)}
+
+
+class LGCompressorRunTimeSensor(LGEntity, SensorEntity):
+    """Hours the compressor ran, a total counter."""
+
+    _attr_name = "Compressor Run Time"
+    _attr_icon = "mdi:timer-cog-outline"
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_native_unit_of_measurement = UnitOfTime.HOURS
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_suggested_display_precision = 1
+
+    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator, entry, compressor_stats.KEY_COMPRESSOR_RUN_TIME)
+
+    @property
+    def native_value(self) -> float | None:
+        stats = self.coordinator.compressor_stats
+        return None if stats is None else round(stats.run_hours, 3)
+
+
+class LGCompressorAverageSpeedSensor(LGEntity, SensorEntity):
+    """Average compressor speed while running, today (reset at midnight)."""
+
+    _attr_name = "Compressor Average Speed"
+    _attr_icon = "mdi:speedometer"
+    _attr_native_unit_of_measurement = "rpm"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(
+            coordinator, entry, compressor_stats.KEY_COMPRESSOR_AVERAGE_SPEED
+        )
+
+    @property
+    def native_value(self) -> int | None:
+        stats = self.coordinator.compressor_stats
+        return None if stats is None else stats.average_rpm_today
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        stats = self.coordinator.compressor_stats
+        if stats is None:
+            return {}
+        return {"day": stats.day, "run_hours_today": round(stats.day_run_s / 3600, 2)}

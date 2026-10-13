@@ -87,6 +87,16 @@
               "experimental_registers": "Legt 18 Diagnose-Sensoren mit den Rohwerten von Registern an, die nicht im Handbuch stehen, nur lesend:\n\n- **Experimental Input 30015, 30018, 30064**\n- **Experimental Holding 40011 … 40023, 40063, 40064**\n\nEin Block, auf den das Gerät nicht antwortet, wird bis zum nächsten Neustart nicht mehr abgefragt."
             }
           },
+          "compressor_statistics": {
+            "name": "Verdichterstatistik",
+            "description": "Zählt Starts und Laufzeit des Verdichters und mittelt seine Drehzahl, aus den ohnehin abgefragten Werten; es wird nichts zusätzlich vom Gerät gelesen. Viele kurze Läufe bedeuten, dass das Gerät taktet, was Effizienz und Verschleiß kostet.",
+            "data": {
+              "compressor_statistics": "Einschalten"
+            },
+            "data_description": {
+              "compressor_statistics": "Legt an:\n\n- **Compressor Starts** — ein Zähler; Starts pro Tag oder Stunde liefert die Statistik. Attribut: Dauer des letzten Laufs\n- **Compressor Run Time** — Stunden, ein Zähler\n- **Compressor Average Speed** — Drehzahl während des Laufs, heute (Rücksetzung um Mitternacht)\n\nAlle drei bleiben über Neustarts erhalten."
+            }
+          },
           "poll_statistics": {
             "name": "Abfragestatistik",
             "description": "Legt zwei Diagnose-Sensoren an: Abfragedauer (wie lange eine Abfrage dauert, in ms) und Buslast (diese Zeit als Anteil am Abfrageintervall, in %). Um einzuschätzen, wie stark der Bus ausgelastet ist, etwa bevor das Abfrageintervall verkürzt wird. Es wird nichts zusätzlich vom Gerät gelesen.",
@@ -118,7 +128,7 @@
     "step": {
       "init": {
         "title": "LG ThermaV R290 — Konfigurieren",
-        "description": "| Option | An | Gerät antwortet |\n|---|:-:|:-:|\n| Energieregister | {energy_registers_on} | {energy_registers} |\n| Begrenzung der Verdichtermodulation | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Leistungsbegrenzung ¹ | {power_limit_on} | {power_limit} |\n| Taste für Notbetrieb | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimentelle Register | {experimental_registers_on} | {experimental_registers} |\n| Abfragestatistik | {poll_statistics_on} | {poll_statistics} |\n\n✓ antwortet · ✗ keine Antwort · – nicht geprüft · ➕ antwortet, kann eingeschaltet werden\n\n¹ Ob das Gerät die Leistungsbegrenzung tatsächlich einhält, ist noch nicht bestätigt. Taste für Notbetrieb, experimentelle Register und Abfragestatistik werden nicht geprüft.\n\nLetzte Prüfung: {checked}",
+        "description": "| Option | An | Gerät antwortet |\n|---|:-:|:-:|\n| Energieregister | {energy_registers_on} | {energy_registers} |\n| Begrenzung der Verdichtermodulation | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Leistungsbegrenzung ¹ | {power_limit_on} | {power_limit} |\n| Taste für Notbetrieb | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimentelle Register | {experimental_registers_on} | {experimental_registers} |\n| Verdichterstatistik | {compressor_statistics_on} | {compressor_statistics} |\n| Abfragestatistik | {poll_statistics_on} | {poll_statistics} |\n\n✓ antwortet · ✗ keine Antwort · – nicht geprüft · ➕ antwortet, kann eingeschaltet werden\n\n¹ Ob das Gerät die Leistungsbegrenzung tatsächlich einhält, ist noch nicht bestätigt. Taste für Notbetrieb, experimentelle Register und die Statistiken werden nicht geprüft.\n\nLetzte Prüfung: {checked}",
         "menu_options": {
           "options": "Optionen (Abfrageintervall, optionale Register)",
           "detect": "Optionale Register prüfen"
@@ -130,7 +140,7 @@
       },
       "options": {
         "title": "LG ThermaV R290 — Optionen",
-        "description": "| Option | An | Gerät antwortet |\n|---|:-:|:-:|\n| Energieregister | {energy_registers_on} | {energy_registers} |\n| Begrenzung der Verdichtermodulation | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Leistungsbegrenzung ¹ | {power_limit_on} | {power_limit} |\n| Taste für Notbetrieb | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimentelle Register | {experimental_registers_on} | {experimental_registers} |\n| Abfragestatistik | {poll_statistics_on} | {poll_statistics} |\n\n✓ antwortet · ✗ keine Antwort · – nicht geprüft · ➕ antwortet, kann eingeschaltet werden\n\n¹ Ob das Gerät die Leistungsbegrenzung tatsächlich einhält, ist noch nicht bestätigt. Taste für Notbetrieb, experimentelle Register und Abfragestatistik werden nicht geprüft.\n\nLetzte Prüfung: {checked}",
+        "description": "| Option | An | Gerät antwortet |\n|---|:-:|:-:|\n| Energieregister | {energy_registers_on} | {energy_registers} |\n| Begrenzung der Verdichtermodulation | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Leistungsbegrenzung ¹ | {power_limit_on} | {power_limit} |\n| Taste für Notbetrieb | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimentelle Register | {experimental_registers_on} | {experimental_registers} |\n| Verdichterstatistik | {compressor_statistics_on} | {compressor_statistics} |\n| Abfragestatistik | {poll_statistics_on} | {poll_statistics} |\n\n✓ antwortet · ✗ keine Antwort · – nicht geprüft · ➕ antwortet, kann eingeschaltet werden\n\n¹ Ob das Gerät die Leistungsbegrenzung tatsächlich einhält, ist noch nicht bestätigt. Taste für Notbetrieb, experimentelle Register und die Statistiken werden nicht geprüft.\n\nLetzte Prüfung: {checked}",
         "data": {
           "scan_interval": "Abfrageintervall (Sekunden)"
         },
@@ -183,6 +193,16 @@
             },
             "data_description": {
               "experimental_registers": "Legt 18 Diagnose-Sensoren mit den Rohwerten von Registern an, die nicht im Handbuch stehen, nur lesend:\n\n- **Experimental Input 30015, 30018, 30064**\n- **Experimental Holding 40011 … 40023, 40063, 40064**\n\nEin Block, auf den das Gerät nicht antwortet, wird bis zum nächsten Neustart nicht mehr abgefragt."
+            }
+          },
+          "compressor_statistics": {
+            "name": "Verdichterstatistik",
+            "description": "Zählt Starts und Laufzeit des Verdichters und mittelt seine Drehzahl, aus den ohnehin abgefragten Werten; es wird nichts zusätzlich vom Gerät gelesen. Viele kurze Läufe bedeuten, dass das Gerät taktet, was Effizienz und Verschleiß kostet.",
+            "data": {
+              "compressor_statistics": "Einschalten"
+            },
+            "data_description": {
+              "compressor_statistics": "Legt an:\n\n- **Compressor Starts** — ein Zähler; Starts pro Tag oder Stunde liefert die Statistik. Attribut: Dauer des letzten Laufs\n- **Compressor Run Time** — Stunden, ein Zähler\n- **Compressor Average Speed** — Drehzahl während des Laufs, heute (Rücksetzung um Mitternacht)\n\nAlle drei bleiben über Neustarts erhalten."
             }
           },
           "poll_statistics": {
