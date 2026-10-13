@@ -13,6 +13,7 @@ CONF_EXPERIMENTAL = "experimental_registers"
 CONF_ENERGY_REGISTERS = "energy_registers"
 CONF_MODULATION_LIMIT = "compressor_modulation_limit"
 CONF_EMERGENCY_OPERATION = "emergency_operation_button"
+CONF_POWER_LIMIT = "power_limit"
 
 CONNECTION_TCP = "tcp"
 CONNECTION_TCP_RTU = "tcp_rtu"
@@ -87,3 +88,7 @@ WRITABLE_COILS = frozenset({0, 1, 2, 3, 4})
 # typically means heating with the backup heater. It is writable only while
 # the option that creates its button is on; otherwise no entity reaches it.
 EMERGENCY_OPERATION_WRITABLE_COILS = frozenset({5})
+# Coil 6 (00007) switches the power limit, holding 24 (40025) holds it (see
+# power_limit.py). Writable only while the power limit option is on.
+POWER_LIMIT_WRITABLE_COILS = frozenset({6})
+POWER_LIMIT_WRITABLE_HOLDING_REGISTERS = frozenset({24})

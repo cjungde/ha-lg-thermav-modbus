@@ -86,14 +86,14 @@ There is no automatic migration: the entities have different ids and belong to o
 - Computed thermal power: `…_thermal_power_calculated`, `…_thermal_power_heating_circuit_calculated`, `…_thermal_power_dhw_calculated`.
 - The energy states 0–8 as individual binary sensors.
 
-## Only in basti242's setup (not implemented here)
+## Registers only basti242's setup used
 
 Whether these exist on the R290 was checked with read-only requests against a 9 kW unit on 2026-10-03 (see [register-scan.md](register-scan.md)).
 
 | basti242 | Register | On the R290 | Here |
 |---|---|---|---|
-| `number.hp_power_limit_number` + `sensor.hp_power_limit` | Holding 24 (40025) | **No answer** on the scanned 9 kW. Documented in the 12 kW manual as the power limit that coil 00007 applies. | not implemented yet; untested on a unit that answers |
-| `switch.hp_active_power_limitation` | Coil 6 (00007) | **No answer** on the scanned 9 kW. The 12 kW manual lists it as *Wirkleistungsbegrenzung* (0 not used / 1 limit per 40025). | not implemented yet; untested on a unit that answers |
+| `number.hp_power_limit_number` + `sensor.hp_power_limit` | Holding 24 (40025) | **No answer** on the scanned 9 kW. Documented in the 12 kW manual as the power limit that coil 00007 applies. | `number.lg_thermav_r290_max_electrical_power`, only with the *Power limit* option (off by default); effect not confirmed yet |
+| `switch.hp_active_power_limitation` | Coil 6 (00007) | **No answer** on the scanned 9 kW. The 12 kW manual lists it as *Wirkleistungsbegrenzung* (0 not used / 1 limit per 40025). | `switch.lg_thermav_r290_power_limit`, only with the *Power limit* option (off by default) |
 | `switch.hp_emergency_stop_switch` | Coil 5 (00006) | Answers. The manual calls it *Auslöser Notaus-Betrieb* ("trigger emergency operation": 0 hold status / 1 start), a trigger rather than a switch. | `button.lg_thermav_r290_start_emergency_operation`, only with the *Emergency operation button* option (off by default) |
 | `number.hp_room_air_temp_circuit1_number` / `…circuit2_number` | Holding 3 / 6 | Readable. Whether writing has an effect was not tested. | read-only sensor |
 | `select.hp_energy_state_select` | Holding 9 | Readable. Writing was not tested. | read-only |

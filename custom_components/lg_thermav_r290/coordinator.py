@@ -19,12 +19,15 @@ from .const import (
     CONF_ENERGY_REGISTERS,
     CONF_EXPERIMENTAL,
     CONF_MODULATION_LIMIT,
+    CONF_POWER_LIMIT,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE_ID,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     EMERGENCY_OPERATION_WRITABLE_COILS,
     MODULATION_LIMIT_WRITABLE_HOLDING_REGISTERS,
+    POWER_LIMIT_WRITABLE_COILS,
+    POWER_LIMIT_WRITABLE_HOLDING_REGISTERS,
     WRITABLE_COILS,
     WRITABLE_HOLDING_REGISTERS,
 )
@@ -36,6 +39,12 @@ from .energy import (
 )
 from .experimental import EXPERIMENTAL_BLOCKS, INPUT_FROM_MAIN_READ, data_key
 from .limits import DATA_KEY_MAX_COMPRESSOR_MODULATION, MODULATION_LIMIT_REGISTER
+from .power_limit import (
+    DATA_KEY_MAX_ELECTRICAL_POWER,
+    DATA_KEY_POWER_LIMIT,
+    POWER_LIMIT_COIL,
+    POWER_LIMIT_REGISTER,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -71,19 +80,22 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._energy_backoff = RetryBackoff()
         self._modulation_limit = bool(entry.options.get(CONF_MODULATION_LIMIT, False))
         self._modulation_backoff = RetryBackoff()
-        # Holding 23 joins the write whitelist only while its option is on;
-        # with the option off the integration cannot write it at all.
-        self._writable_holding = (
-            WRITABLE_HOLDING_REGISTERS | MODULATION_LIMIT_WRITABLE_HOLDING_REGISTERS
-            if self._modulation_limit
-            else WRITABLE_HOLDING_REGISTERS
-        )
-        # Coil 5 likewise: writable only while its option is on.
-        self._writable_coils = (
-            WRITABLE_COILS | EMERGENCY_OPERATION_WRITABLE_COILS
-            if entry.options.get(CONF_EMERGENCY_OPERATION, False)
-            else WRITABLE_COILS
-        )
+        self._power_limit = bool(entry.options.get(CONF_POWER_LIMIT, False))
+        self._power_limit_backoff = RetryBackoff()
+        # Holding 23, holding 24 and coils 5 and 6 join the write whitelists
+        # only while their option is on; with the option off the integration
+        # cannot write them at all.
+        writable_holding = set(WRITABLE_HOLDING_REGISTERS)
+        writable_coils = set(WRITABLE_COILS)
+        if self._modulation_limit:
+            writable_holding |= MODULATION_LIMIT_WRITABLE_HOLDING_REGISTERS
+        if entry.options.get(CONF_EMERGENCY_OPERATION, False):
+            writable_coils |= EMERGENCY_OPERATION_WRITABLE_COILS
+        if self._power_limit:
+            writable_holding |= POWER_LIMIT_WRITABLE_HOLDING_REGISTERS
+            writable_coils |= POWER_LIMIT_WRITABLE_COILS
+        self._writable_holding = frozenset(writable_holding)
+        self._writable_coils = frozenset(writable_coils)
 
         scan_interval = entry.options.get(
             CONF_SCAN_INTERVAL,
@@ -132,11 +144,13 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         experimental = await self._async_read_experimental(inp_hi)
         energy = await self._async_read_energy()
         modulation_limit = await self._async_read_modulation_limit()
+        power_limit = await self._async_read_power_limit()
 
         return {
             **experimental,
             **energy,
             **modulation_limit,
+            **power_limit,
             # Input registers (raw × scale)
             # inp_lo[n] = register n  (0-13)
             # inp_hi[n] = register 16+n (16-24)
@@ -320,6 +334,39 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return {}
         self._modulation_backoff.record(True)
         return {DATA_KEY_MAX_COMPRESSOR_MODULATION: registers[0]}
+
+    async def _async_read_power_limit(self) -> dict[str, int]:
+        """Read the power limit (coil 6 and holding 24), when the option asks.
+
+        Each address in its own request: a coil that does not answer must not
+        take the main coil read with it. Same rules as the other optional
+        reads otherwise: the pair counts as one feature, a unit that does not
+        serve it leaves both entities unavailable without failing the update,
+        and is asked again only every few polls.
+        """
+        if not self._power_limit or not self._power_limit_backoff.should_try():
+            return {}
+        try:
+            coils = await self.unit.read_coils(POWER_LIMIT_COIL, 1)
+            registers = await self.unit.read_holding_registers(POWER_LIMIT_REGISTER, 1)
+        except ModbusError as exc:
+            if self._power_limit_backoff.record(False):
+                _LOGGER.warning(
+                    "Power limit (coil %d / holding %d) did not answer; pausing "
+                    "the read for a while. This unit may not serve it - switch "
+                    "the option off in the integration's options if so (%s)",
+                    POWER_LIMIT_COIL,
+                    POWER_LIMIT_REGISTER,
+                    exc,
+                )
+            else:
+                _LOGGER.debug("Power limit not read: %s", exc)
+            return {}
+        self._power_limit_backoff.record(True)
+        return {
+            DATA_KEY_POWER_LIMIT: int(bool(coils[0])),
+            DATA_KEY_MAX_ELECTRICAL_POWER: registers[0],
+        }
 
     async def async_write_coil(self, address: int, value: bool) -> None:
         """Write a single coil register (FC05).

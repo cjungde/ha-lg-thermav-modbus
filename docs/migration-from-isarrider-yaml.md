@@ -59,6 +59,7 @@ For basti242's YAML setup, which this one grew out of, see [migration-from-yaml.
 |---|---|---|
 | **Energy registers** | Input 34–51 as sensors, plus *COP Heating (Cumulative)* and *COP (Reported)* | `hp_ENERGY_*`, `hp_Demand_vs_Supply`, the COP template |
 | **Compressor modulation limit** | The *Max Compressor Modulation* slider on holding 23 | `hp_compressor_modulation` + `input_number.hp_compressor_modulation_slider` + two automations |
+| **Power limit** | The *Power Limit* switch (coil 6) and *Max Electrical Power* (holding 24, 0.1–25.0 kW) | `hp_power_limitation` + `input_number.hp_power_limitation_slider` + `hp_active_power_limit` + two automations |
 
 Optional:
 
@@ -66,7 +67,7 @@ Optional:
 |---|---|
 | **Experimental registers** | Raw diagnostic sensors for 18 undocumented addresses, including input 17 (see [§3](#3-sensors-input-registers-fc04)) |
 
-The power limit (holding 24 + coil 6) is **not** in the integration yet; see [§11](#11-only-in-the-yaml-not-in-the-integration).
+Whether the unit actually keeps its power below the power limit is not confirmed yet; check against your smart meter after switching (README, *Power limit*).
 
 ---
 
@@ -129,9 +130,9 @@ In the YAML every holding register is a read sensor, and the writable ones get a
 | 8 | `sensor.hp_dhw_target_temp` | `number.lg_thermav_r290_dhw_target_temperature` | yes, 35–65 °C |
 | 9 | `sensor.hp_energy_state_input_raw` | `sensor.lg_thermav_r290_energy_state` (label) and `binary_sensor.lg_thermav_r290_energy_state_*` (one per value 0–8) | no (read only in both) |
 | 23 | `sensor.hp_compressor_modulation` | `number.lg_thermav_r290_max_compressor_modulation` (*Compressor modulation limit* option) | yes, 40–100 %, only while the option is on |
-| 24 | `sensor.hp_power_limitation` | not in the integration yet | — |
+| 24 | `sensor.hp_power_limitation` | `number.lg_thermav_r290_max_electrical_power` (*Power limit* option) | yes, 0.1–25.0 kW, only while the option is on |
 
-The integration only ever writes a fixed list of addresses: holding 0, 1, 2, 4, 5, 7, 8, plus holding 23 while its option is on. Every other write is refused before it reaches the bus.
+The integration only ever writes a fixed list of addresses: holding 0, 1, 2, 4, 5, 7, 8, plus holding 23 and holding 24 while their options are on. Every other write is refused before it reaches the bus.
 
 ---
 
@@ -145,7 +146,7 @@ The integration only ever writes a fixed list of addresses: holding 0, 1, 2, 4, 
 | 3 | `hp_dhw_desinfection_mode` | `button.lg_thermav_r290_start_disinfection` | **A button, not a switch.** See [§10](#10-differences-that-can-bite). |
 | 4 | `hp_emergency_stop_switch_off` (YAML comment: emergency operation, space heating) | `switch.lg_thermav_r290_emergency_stop` | Same coil. The manual calls 00005 *Notaus* (emergency stop: 0 normal / 1 emergency stop); the YAML comment is wrong. |
 | 5 | `hp_emergency_stop_switch_on` (YAML comment: emergency operation, DHW) | `button.lg_thermav_r290_start_emergency_operation`, only with the *Emergency operation button* option | **A button, not a switch.** See [§10](#10-differences-that-can-bite). |
-| 6 | `hp_active_power_limit` | not in the integration yet | See [§11](#11-only-in-the-yaml-not-in-the-integration). |
+| 6 | `hp_active_power_limit` | `switch.lg_thermav_r290_power_limit`, only with the *Power limit* option | The manual calls 00007 *Wirkleistungsbegrenzung*: 0 not used / 1 limit the power per 40025. |
 
 The YAML verifies each switch by reading its coil back. The integration does the same: after every write it refreshes, so a switch shows what the unit stored.
 
@@ -189,7 +190,7 @@ All nine helpers can be deleted after switching. Their job (a control in the UI 
 | `input_number.hp_hk2_target_temperatur` | 20–40 °C, step 1 | `number.lg_thermav_r290_target_temperature_circuit_2_underfloor` | 20–40 °C, step 1 |
 | `input_number.hp_dhw_target_temperatur` | 40–60 °C, step 1 | `number.lg_thermav_r290_dhw_target_temperature` | **35–65 °C**, step 1 |
 | `input_number.hp_compressor_modulation_slider` | 40–100 %, slider | `number.lg_thermav_r290_max_compressor_modulation` | 40–100 %, slider (*Compressor modulation limit* option) |
-| `input_number.hp_power_limitation_slider` | 0.1–25.0 kW, slider | not in the integration yet | — |
+| `input_number.hp_power_limitation_slider` | 0.1–25.0 kW, slider | `number.lg_thermav_r290_max_electrical_power` | 0.1–25.0 kW, step 0.1, box (*Power limit* option) |
 | `input_select.hp_set_operation_mode` | Kühlen / Heizen / Auto | `select.lg_thermav_r290_operation_mode` | Cooling / Heating / Auto |
 | `input_select.hp_set_control_method` | Wasserauslasstemp. Steuerung / Wassereinlasstemp. Steuerung / Raumluftsteuerung | `select.lg_thermav_r290_control_method` | Outlet Water Temp Control / Inlet Water Temp Control / Room Air Control |
 
@@ -229,8 +230,8 @@ All 18 automations can be deleted after switching. Each pair (helper → registe
 | `hp_automation_set_target_temperatur_input_slider_update` | holding 8 → input_number | same |
 | `hp_automation_set_hp_comp_target_percent_modbus_update` | slider → holding 23 | `number.lg_thermav_r290_max_compressor_modulation` |
 | `hp_compressor_mod_sync` | holding 23 → slider | same |
-| `hp_power_limit_write` | slider ×10 → holding 24 | not in the integration yet |
-| `hp_power_limit_sync` | holding 24 → slider | not in the integration yet |
+| `hp_power_limit_write` | slider ×10 → holding 24 | `number.lg_thermav_r290_max_electrical_power` |
+| `hp_power_limit_sync` | holding 24 → slider | same |
 
 A side effect worth knowing: the YAML notes that a slider change can take up to 60 s to show in the state sensors. In the integration a write is followed by an immediate refresh, so the entity shows the stored value right away.
 
@@ -272,7 +273,7 @@ Which of the two follows SG-Ready on a 12 kW has not been checked yet; compare b
 ### Polling and failures
 
 - **One poll cycle reads everything.** The YAML schedules each entity separately. If a documented block fails, the whole update fails and all entities go unavailable together, rather than single sensors going stale.
-- **Optional registers never fail the update.** If the energy block or holding 23 stop answering, only their entities lose their value; after three misses in a row that read pauses for 20 polls.
+- **Optional registers never fail the update.** If the energy block, holding 23 or the power limit (coil 6 / holding 24) stop answering, only their entities lose their value; after three misses in a row that read pauses for 20 polls.
 
 ---
 
@@ -280,7 +281,6 @@ Which of the two follows SG-Ready on a 12 kW has not been checked yet; compare b
 
 | YAML | Status |
 |---|---|
-| Power limit: `sensor.hp_power_limitation` (holding 24), `input_number.hp_power_limitation_slider`, `switch.hp_active_power_limit` (coil 6), automations `hp_power_limit_write` / `hp_power_limit_sync` | Not in the integration yet. The 12 kW manual documents them (coil 00007 *Wirkleistungsbegrenzung*: 0 not used / 1 limit the power per 40025), but they do not answer on the scanned 9 kW, and nobody has confirmed on a 12 kW that writing them has an effect. A draft implementation, behind an off-by-default *unverified* option, waits for that check. |
 | *HP DHW COP (Calculated)* (commented out) | Its thermal counter does not answer on the 12 kW. |
 
 ---
@@ -387,7 +387,7 @@ Replace `modbus.write_register` / `modbus.write_coil` calls and helper writes wi
 2. Export or screenshot dashboards and automations that use `hp_*` entities or the helpers.
 3. Remove (or comment out) the YAML package: the `modbus:` hub, `input_number:`, `input_select:`, `template:` and `automation:` parts. Restart Home Assistant.
 4. *Settings → Devices & Services → Add Integration → LG ThermaV R290*: connection type RTU, the same `/dev/serial/by-id/…` port, 9600, N, 1, slave 1.
-5. *Configure*: **Energy registers** on, **Compressor modulation limit** on. Experimental registers only if you want to record the undocumented addresses.
+5. *Configure*: **Energy registers** on, **Compressor modulation limit** on, **Power limit** on if you used it. Experimental registers only if you want to record the undocumented addresses.
 6. Enable the disabled-by-default sensors you used: target room air temperature circuit 1/2 (the old *room air temperature circuit 1/2 (holding)*).
 7. Compare the values from step 1 with the new entities. Compressor modulation shows *unknown* if no limit is set.
 8. Update the Energy dashboard. For the electrical consumption, prefer an external meter over the unit's own counters, which deviate from a smart meter (see [§10](#10-differences-that-can-bite)); the unit's thermal counter can be added if you use it.
