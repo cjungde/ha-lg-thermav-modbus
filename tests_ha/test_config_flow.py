@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from homeassistant import config_entries
-from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.data_entry_flow import FlowResultType, section
 
 DOMAIN = "lg_thermav_r290"
 RTU = {
@@ -18,7 +18,50 @@ LIKE_9_KW = {("input", 34), ("holding", 23), ("coil", 6)}
 
 
 def defaults(result) -> dict:
-    return {str(key): key.default() for key in result["data_schema"].schema}
+    """The form's defaults, flat: the toggles in sections included."""
+    values = {}
+    for key, value in result["data_schema"].schema.items():
+        if isinstance(value, section):
+            for field in value.schema.schema:
+                values[str(field)] = field.default()
+        else:
+            values[str(key)] = key.default()
+    return values
+
+
+def form_input(result, values: dict) -> dict:
+    """Flat values as the form submits them: nested per section."""
+    submitted = {}
+    for key, value in result["data_schema"].schema.items():
+        name = str(key)
+        if isinstance(value, section):
+            submitted[name] = {
+                str(field): values[str(field)] for field in value.schema.schema
+            }
+        else:
+            submitted[name] = values[name]
+    return submitted
+
+
+def options_are_sections(result) -> bool:
+    """Each option is a section holding its own toggle, expanded when on."""
+    for name in (
+        "energy_registers",
+        "compressor_modulation_limit",
+        "power_limit",
+        "emergency_operation_button",
+        "experimental_registers",
+        "poll_statistics",
+    ):
+        value = result["data_schema"].schema[name]
+        if not isinstance(value, section):
+            return False
+        fields = list(value.schema.schema)
+        if [str(f) for f in fields] != [name]:
+            return False
+        if value.options["collapsed"] is fields[0].default():
+            return False
+    return True
 
 
 async def _to_features_step(hass):
@@ -46,6 +89,7 @@ async def test_a_unit_that_answers_everywhere(hass, unit) -> None:
         "power_limit": "✓",
     }
     # Only the safe groups are ticked, never the power limit.
+    assert options_are_sections(result)
     assert defaults(result) == {
         "energy_registers": True,
         "compressor_modulation_limit": True,
@@ -56,7 +100,7 @@ async def test_a_unit_that_answers_everywhere(hass, unit) -> None:
     }
 
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], defaults(result)
+        result["flow_id"], form_input(result, defaults(result))
     )
     await hass.async_block_till_done()
     assert result["type"] is FlowResultType.CREATE_ENTRY
@@ -87,7 +131,9 @@ async def test_a_unit_like_the_scanned_9_kw(hass, unit) -> None:
 
 async def test_the_same_unit_cannot_be_added_twice(hass, unit) -> None:
     result = await _to_features_step(hass)
-    await hass.config_entries.flow.async_configure(result["flow_id"], defaults(result))
+    await hass.config_entries.flow.async_configure(
+        result["flow_id"], form_input(result, defaults(result))
+    )
     await hass.async_block_till_done()
 
     flow = hass.config_entries.flow

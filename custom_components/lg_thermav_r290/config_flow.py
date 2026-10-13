@@ -9,7 +9,7 @@ from typing import Any
 from homeassistant import config_entries
 from homeassistant.components.modbus import async_get_temporary_unit
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.data_entry_flow import FlowResult
+from homeassistant.data_entry_flow import FlowResult, section
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.selector import (
     NumberSelector,
@@ -167,10 +167,31 @@ async def _detect(hass: HomeAssistant, data: dict) -> dict[str, bool]:
 
 
 def _option_group_fields(defaults: dict[str, Any]) -> dict:
-    return {
-        vol.Required(key, default=bool(defaults.get(key, False))): bool
-        for key in GROUPS
-    }
+    """One collapsible section per option, holding its toggle.
+
+    Collapsed, a section shows the option's name; expanded, what the option
+    is for (the section's description), its toggle, and the entities it adds
+    (the toggle's help text, which Home Assistant renders as Markdown). The
+    sections of options that are on open expanded, so the form shows at a
+    glance what is on; the others can be expanded to see what they would add.
+    """
+    fields = {}
+    for key in GROUPS:
+        on = bool(defaults.get(key, False))
+        fields[vol.Required(key)] = section(
+            vol.Schema({vol.Required(key, default=on): bool}),
+            {"collapsed": not on},
+        )
+    return fields
+
+
+def _flatten_option_groups(user_input: dict[str, Any]) -> dict[str, Any]:
+    """The submitted form with each section's toggle as a plain option."""
+    values = dict(user_input)
+    for key in GROUPS:
+        if isinstance(values.get(key), dict):
+            values[key] = bool(values[key].get(key, False))
+    return values
 
 
 class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -310,7 +331,7 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 title=self._title,
                 data=self._data,
                 options={
-                    **user_input,
+                    **_flatten_option_groups(user_input),
                     CONF_DETECTED: self._detected,
                     CONF_DETECTED_AT: dt_util.utcnow().isoformat(),
                 },
@@ -403,7 +424,7 @@ class LGThermaVOptionsFlow(config_entries.OptionsFlow):
             return self.async_create_entry(
                 title="",
                 data={
-                    **user_input,
+                    **_flatten_option_groups(user_input),
                     CONF_DETECTED: self._detected,
                     CONF_DETECTED_AT: self._detected_at,
                 },
