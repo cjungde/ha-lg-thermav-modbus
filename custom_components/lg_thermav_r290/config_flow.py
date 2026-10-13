@@ -16,6 +16,7 @@ from homeassistant.helpers.selector import (
     NumberSelectorConfig,
     NumberSelectorMode,
 )
+from homeassistant.util import dt as dt_util
 from modbus_connection.exceptions import ModbusError, ModbusExceptionError
 import voluptuous as vol
 
@@ -23,12 +24,7 @@ from .connection import params_from_entry_data
 from .const import (
     CONF_BAUDRATE,
     CONF_CONNECTION_TYPE,
-    CONF_EMERGENCY_OPERATION,
-    CONF_ENERGY_REGISTERS,
-    CONF_EXPERIMENTAL,
-    CONF_MODULATION_LIMIT,
     CONF_PARITY,
-    CONF_POWER_LIMIT,
     CONF_SCAN_INTERVAL,
     CONF_SERIAL_PORT,
     CONF_SLAVE_ID,
@@ -44,7 +40,15 @@ from .const import (
     DEFAULT_STOPBITS,
     DOMAIN,
 )
-from .detect import CONF_DETECTED, detect, placeholders, suggested
+from .detect import (
+    CONF_DETECTED,
+    CONF_DETECTED_AT,
+    GROUPS,
+    detect,
+    placeholders,
+    status_placeholders,
+    suggested,
+)
 from .migration import UNIQUE_ID_MINOR_VERSION
 
 _LOGGER = logging.getLogger(__name__)
@@ -162,22 +166,10 @@ async def _detect(hass: HomeAssistant, data: dict) -> dict[str, bool]:
         return {}
 
 
-# CONF_DETECT_AGAIN is a one-shot checkbox in the options, never stored.
-CONF_DETECT_AGAIN = "detect_again"
-# The optional register groups, in the order the forms show them.
-_OPTION_GROUPS = (
-    CONF_ENERGY_REGISTERS,
-    CONF_MODULATION_LIMIT,
-    CONF_POWER_LIMIT,
-    CONF_EMERGENCY_OPERATION,
-    CONF_EXPERIMENTAL,
-)
-
-
 def _option_group_fields(defaults: dict[str, Any]) -> dict:
     return {
         vol.Required(key, default=bool(defaults.get(key, False))): bool
-        for key in _OPTION_GROUPS
+        for key in GROUPS
     }
 
 
@@ -287,7 +279,11 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_create_entry(
                 title=self._title,
                 data=self._data,
-                options={**user_input, CONF_DETECTED: self._detected},
+                options={
+                    **user_input,
+                    CONF_DETECTED: self._detected,
+                    CONF_DETECTED_AT: dt_util.utcnow().isoformat(),
+                },
             )
         return self.async_show_form(
             step_id="features",
@@ -332,59 +328,82 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return LGThermaVOptionsFlow(config_entry)
 
 
-class LGThermaVOptionsFlow(config_entries.OptionsFlow):
-    """Allow changing the scan interval and the optional register groups.
+def _checked_at(value: str | None) -> str:
+    """When the registers were last checked, in local time, or – if never."""
+    when = dt_util.parse_datetime(value) if value else None
+    if when is None:
+        return "–"
+    return dt_util.as_local(when).strftime("%Y-%m-%d %H:%M")
 
-    Neither needs the connection details entered again. The result of the
-    last register check is shown next to the groups; ticking "check again"
-    runs it anew and then shows the form once more.
+
+class LGThermaVOptionsFlow(config_entries.OptionsFlow):
+    """Configure: a menu with a status table, the options, and the check.
+
+    The menu shows per optional group whether it is on and whether the unit
+    answered on the last check, so it is visible what could be switched on.
+    "Check the optional registers" runs the check (see detect.py) and then
+    opens the options with what answered ticked; nothing is switched off.
     """
 
     def __init__(self, entry) -> None:
         self._entry = entry
         self._detected: dict[str, bool] | None = entry.options.get(CONF_DETECTED)
+        self._detected_at: str | None = entry.options.get(CONF_DETECTED_AT)
         self._detect_task: asyncio.Task | None = None
-        # The form's values while a check runs, to show them again after it.
-        self._pending: dict[str, Any] | None = None
+        # Option values to show after a check: the current ones plus what
+        # answered.
+        self._suggested: dict[str, Any] | None = None
+
+    def _current(self) -> dict[str, Any]:
+        return {
+            CONF_SCAN_INTERVAL: self._entry.options.get(
+                CONF_SCAN_INTERVAL,
+                self._entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+            ),
+            **{key: self._entry.options.get(key, False) for key in GROUPS},
+        }
+
+    def _placeholders(self, options: dict[str, Any]) -> dict[str, str]:
+        return {
+            **status_placeholders(self._detected, options),
+            "checked": _checked_at(self._detected_at),
+        }
 
     async def async_step_init(self, user_input=None) -> FlowResult:
+        return self.async_show_menu(
+            step_id="init",
+            menu_options=["options", "detect"],
+            description_placeholders=self._placeholders(self._current()),
+        )
+
+    async def async_step_options(self, user_input=None) -> FlowResult:
         if user_input is not None:
-            values = dict(user_input)
-            if values.pop(CONF_DETECT_AGAIN, False):
-                self._pending = values
-                self._detect_task = None
-                return await self.async_step_detect()
             return self.async_create_entry(
-                title="", data={**values, CONF_DETECTED: self._detected}
+                title="",
+                data={
+                    **user_input,
+                    CONF_DETECTED: self._detected,
+                    CONF_DETECTED_AT: self._detected_at,
+                },
             )
 
-        if self._pending is not None:
-            defaults = suggested(self._detected, self._pending)
-        else:
-            defaults = {
-                CONF_SCAN_INTERVAL: self._entry.options.get(
-                    CONF_SCAN_INTERVAL,
-                    self._entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
-                ),
-                **{key: self._entry.options.get(key, False) for key in _OPTION_GROUPS},
-            }
+        defaults = self._suggested or self._current()
         schema = vol.Schema(
             {
                 vol.Required(
                     CONF_SCAN_INTERVAL, default=defaults[CONF_SCAN_INTERVAL]
                 ): vol.All(int, vol.Range(min=5, max=3600)),
                 **_option_group_fields(defaults),
-                vol.Required(CONF_DETECT_AGAIN, default=False): bool,
             }
         )
         return self.async_show_form(
-            step_id="init",
+            step_id="options",
             data_schema=schema,
-            description_placeholders=placeholders(self._detected),
+            description_placeholders=self._placeholders(self._current()),
         )
 
     async def async_step_detect(self, user_input=None) -> FlowResult:
-        """Check the optional registers again, on the entry's own connection."""
+        """Check the optional registers, on the entry's own connection."""
         if self._detect_task is None:
             self._detect_task = self.hass.async_create_task(
                 _detect(self.hass, dict(self._entry.data))
@@ -396,4 +415,6 @@ class LGThermaVOptionsFlow(config_entries.OptionsFlow):
                 progress_task=self._detect_task,
             )
         self._detected = self._detect_task.result()
-        return self.async_show_progress_done(next_step_id="init")
+        self._detected_at = dt_util.utcnow().isoformat()
+        self._suggested = suggested(self._detected, self._current())
+        return self.async_show_progress_done(next_step_id="options")
