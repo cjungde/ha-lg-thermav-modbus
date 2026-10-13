@@ -150,6 +150,8 @@ The block is read in one request, high word first. A unit that does not answer l
 
 `thermal_power_heat_pump_register` is the unit's own figure and is separate from the computed `thermal_power_*` sensors below.
 
+The option also adds `sensor.lg_thermav_r290_cop_current`: the unit's thermal power (input 48) divided by the heat pump's electrical power (input 36), the COP of the moment, in space heating and DHW alike. It has no value while the electrical power is below 100 W, i.e. while the unit idles, so standby periods do not drag down its statistics.
+
 ### Binary sensors
 
 | Entity | Description |
