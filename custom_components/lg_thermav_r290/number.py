@@ -50,8 +50,12 @@ _NUMBERS: tuple[LGNumberDescription, ...] = (
         data_key="target_temp_circuit1",
         register_address=2,
         name="Target Temperature Circuit 1 (Radiators)",
-        native_min_value=30,
-        native_max_value=50,
+        # 20-60 °C, the range the YAML setups offered. The unit applies its
+        # own limits on top: a value outside what it accepts is acknowledged
+        # and then stored clamped (seen on the DHW setpoint), and the refresh
+        # after the write shows what it actually stored.
+        native_min_value=20,
+        native_max_value=60,
         native_step=1,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=NumberDeviceClass.TEMPERATURE,
