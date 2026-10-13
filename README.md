@@ -243,7 +243,7 @@ see whether the operation actually started.
 |---|---|---|
 | `number.lg_thermav_r290_target_temperature_circuit_1_radiators` | 30–50 °C | 2 (×0.1) |
 | `number.lg_thermav_r290_target_temperature_circuit_2_underfloor` | 20–40 °C | 5 (×0.1) |
-| `number.lg_thermav_r290_dhw_target_temperature` | 35–60 °C | 8 (×0.1) |
+| `number.lg_thermav_r290_dhw_target_temperature` | 35–65 °C | 8 (×0.1) |
 | `number.lg_thermav_r290_setpoint_shift_circuit_1` | −5…+5 K | 4 (signed) |
 | `number.lg_thermav_r290_setpoint_shift_circuit_2` | −5…+5 K | 7 (signed) |
 | `number.lg_thermav_r290_max_compressor_modulation` | 40–100 % | 23 (optional, see below) |
@@ -286,7 +286,7 @@ Switch on **Compressor modulation limit** in the integration's options. Holding 
 - Thermal power formula: `Q [W] = (flow_rate [l/min] / 60) × (outlet_temp − inlet_temp) [K] × 4186 [J/(l·K)]`
 - Heating circuit / DHW split is based on the `di_dhw_heating` discrete input; when DHW is active the full flow is attributed to DHW and the heating circuit sensor reports 0, and vice versa.
 - Shift values (holding regs 4, 7) are stored as two's-complement uint16; values ≥ 32768 are interpreted as negative.
-- Tested on LG ThermaV R290 9 kW via Modbus TCP, slave ID 33.
+- Tested on LG ThermaV R290 9 kW via Modbus TCP, slave ID 33, and on a 12 kW unit via Modbus RTU (USB serial adapter), slave ID 1. The energy registers (input 34–51) and the compressor modulation limit (holding 23) answer on the 12 kW only.
 - `tools/make_shadow.py` builds a read-only copy of the integration under a
   second domain so a change to the Modbus layer can be measured against the
   running one on the same hardware. See `tools/README.md`.
