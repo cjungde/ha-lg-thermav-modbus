@@ -124,6 +124,7 @@ The config flow asks for connection type first, then connection-specific paramet
 | `sensor.lg_thermav_r290_low_pressure_evaporator` | Low pressure (evaporator) | bar |
 | `sensor.lg_thermav_r290_compressor_speed` | Compressor speed | rpm |
 | `sensor.lg_thermav_r290_error_code` | Error code | — |
+| `sensor.lg_thermav_r290_operation_state_odu` | Outdoor unit cycle as text: Standby/Off, Cooling, Heating (input 30002; raw value in *Operation Cycle (ODU)*) | — |
 | `sensor.lg_thermav_r290_thermal_power_calculated` | Thermal power, calculated from flow rate × ΔT | W |
 | `sensor.lg_thermav_r290_thermal_power_heating_circuit_calculated` | Same, while not heating DHW (0 otherwise) | W |
 | `sensor.lg_thermav_r290_thermal_power_dhw_calculated` | Same, while heating DHW (0 otherwise) | W |
@@ -329,7 +330,7 @@ Marks: ⚠ the unit behaves differently from the manual (measured) · ⚙ only w
 | Register | Manual: Beschreibung | Manual: Werte | Integration (`sensor.…`) |
 |---|---|---|---|
 | 30001 | Fehlerkennung | Fehlerkennung | `error_code` |
-| 30002 | ODU-Betriebszyklus | 0: Standby (AUS) / 1: Kühlung / 2: Heizung | `operation_cycle_odu` (raw value) |
+| 30002 | ODU-Betriebszyklus | 0: Standby (AUS) / 1: Kühlung / 2: Heizung | `operation_cycle_odu` (raw) and `operation_state_odu` (label) |
 | 30003 | Wassereinlasstemp. | [0.1 °C ×10] | `inlet_temperature` |
 | 30004 | Wasserauslasstemp. | [0.1 °C ×10] | `outlet_temperature` |
 | 30005 | Auslasstemp. Ersatzheizgerät | [0.1 °C ×10] | `backup_heater_outlet_temperature` |

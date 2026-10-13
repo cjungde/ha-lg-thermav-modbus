@@ -43,6 +43,7 @@ from .const import (
     CONTROL_METHOD_FROM_VALUE,
     DOMAIN,
     ENERGY_STATE_DISPLAY,
+    ODU_OPERATION_CYCLE_LABELS,
     OPERATION_MODE_FROM_VALUE,
 )
 from .coordinator import LGThermaVCoordinator
@@ -271,6 +272,15 @@ _LABEL_SENSORS: tuple[LGLabelSensorDescription, ...] = (
         labels=CONTROL_METHOD_FROM_VALUE,
         name="Control Method",
         icon="mdi:tune",
+    ),
+    # Input 30002, the outdoor unit's cycle; the raw value stays available as
+    # "Operation Cycle (ODU)", so its history and automations are untouched.
+    LGLabelSensorDescription(
+        key="operation_state_odu",
+        data_key="input_operation_cycle_odu",
+        labels=ODU_OPERATION_CYCLE_LABELS,
+        name="Operation State (ODU)",
+        icon="mdi:hvac",
     ),
     # Holding 9, the energy state command register.
     LGLabelSensorDescription(

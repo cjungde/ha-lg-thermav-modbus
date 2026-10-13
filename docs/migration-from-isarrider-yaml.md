@@ -75,7 +75,7 @@ The power limit (holding 24 + coil 6) is **not** in the integration yet; see [§
 | Reg. | YAML (`sensor.…`) | Integration (`sensor.…`) | Notes |
 |---|---|---|---|
 | 0 | `hp_error_code` | `lg_thermav_r290_error_code` | |
-| 1 | `hp_odu_operation_cycle` | `lg_thermav_r290_operation_cycle_odu` | Raw number in both. Labels: see [§11](#11-only-in-the-yaml-not-in-the-integration). |
+| 1 | `hp_odu_operation_cycle` | `lg_thermav_r290_operation_cycle_odu` (raw) and `lg_thermav_r290_operation_state_odu` (label) | The YAML's comment (0 Off, 1 Standby, 2 Running, 3 Defrost) is wrong: the manual gives 0 Standby/Off, 1 Cooling, 2 Heating. |
 | 2 | `hp_inlet_temp` | `lg_thermav_r290_inlet_temperature` | |
 | 3 | `hp_outlet_temp` | `lg_thermav_r290_outlet_temperature` | |
 | 4 | `hp_backup_heater_outlet_temp` | `lg_thermav_r290_backup_heater_outlet_temperature` | |
@@ -281,7 +281,6 @@ Which of the two follows SG-Ready on a 12 kW has not been checked yet; compare b
 | YAML | Status |
 |---|---|
 | Power limit: `sensor.hp_power_limitation` (holding 24), `input_number.hp_power_limitation_slider`, `switch.hp_active_power_limit` (coil 6), automations `hp_power_limit_write` / `hp_power_limit_sync` | Not in the integration yet. The 12 kW manual documents them (coil 00007 *Wirkleistungsbegrenzung*: 0 not used / 1 limit the power per 40025), but they do not answer on the scanned 9 kW, and nobody has confirmed on a 12 kW that writing them has an effect. A draft implementation, behind an off-by-default *unverified* option, waits for that check. |
-| Labels for the ODU operation cycle (input 1) | The YAML comment gives 0 Off, 1 Standby, 2 Running, 3 Defrost; LG's table for 30002 gives 0 Standby/Off, 1 Cooling, 2 Heating. Until a unit's history shows which is right, the integration exposes the raw number only. A draft label sensor exists. |
 | *HP DHW COP (Calculated)* (commented out) | Its thermal counter does not answer on the 12 kW. |
 
 ---
@@ -292,6 +291,7 @@ Which of the two follows SG-Ready on a 12 kW has not been checked yet; compare b
 - **Current COP**: `sensor.lg_thermav_r290_cop_reported` (*Energy registers* option), input 48 ÷ input 36, no value while the electrical power is below 100 W.
 - **System COP**: `sensor.lg_thermav_r290_cop_system_reported` (*Energy registers* option), input 48 ÷ input 34 (total system), same idle rule. Lower than the current COP whenever something besides the heat pump, such as a backup heater, draws power.
 - **Calculated COP**: `sensor.lg_thermav_r290_cop_calculated` (*Energy registers* option), thermal power from flow rate × ΔT ÷ input 36. A cross-check of the current COP, which uses the unit's own thermal power (input 48).
+- **ODU operation state**: `sensor.lg_thermav_r290_operation_state_odu`, input 30002 as text (Standby/Off, Cooling, Heating, per the manual).
 - **Text sensors for the selects**: `sensor.lg_thermav_r290_operation_mode`, `sensor.lg_thermav_r290_control_method`.
 - **Energy states as binary sensors**: `binary_sensor.lg_thermav_r290_energy_state_not_used`, `…_forced_off`, `…_normal_operation`, `…_on_recommendation`, `…_on_command`, `…_on_command_step_2`, `…_on_recommendation_step_1`, `…_energy_saving_mode`, `…_super_energy_saving_mode` (one per value of holding 9).
 - **Experimental registers** (option): raw sensors for undocumented addresses, see the README.

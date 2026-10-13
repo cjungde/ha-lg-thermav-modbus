@@ -34,6 +34,10 @@ OPERATION_MODE_OPTIONS = ["Cooling", "Heating", "Auto"]
 OPERATION_MODE_TO_VALUE = {"Cooling": 0, "Heating": 4, "Auto": 3}
 OPERATION_MODE_FROM_VALUE = {0: "Cooling", 4: "Heating", 3: "Auto"}
 
+# ODU operation cycle (input 30002). The manual: "0: Standby (AUS) /
+# 1: Kühlung / 2: Heizung". A value outside the table shows as the number.
+ODU_OPERATION_CYCLE_LABELS = {0: "Standby/Off", 1: "Cooling", 2: "Heating"}
+
 # Control method register values
 CONTROL_METHOD_OPTIONS = [
     "Outlet Water Temp Control",
