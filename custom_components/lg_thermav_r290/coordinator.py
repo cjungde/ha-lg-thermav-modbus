@@ -263,6 +263,37 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "discrete_mixing_pump": di[16],
         }
 
+    def diagnostics(self) -> dict[str, Any]:
+        """The state of the optional reads, for the diagnostics download."""
+        return {
+            "identity_registers": (
+                None
+                if self._identity is None
+                else {"39998": self._identity[0], "39999": self._identity[1]}
+            ),
+            "energy_registers": {
+                "enabled": self._energy,
+                **self._energy_backoff.state(),
+            },
+            "compressor_modulation_limit": {
+                "enabled": self._modulation_limit,
+                **self._modulation_backoff.state(),
+            },
+            "power_limit": {
+                "enabled": self._power_limit,
+                **self._power_limit_backoff.state(),
+            },
+            "experimental_registers": {
+                "enabled": self._experimental,
+                "blocks_given_up": sorted(
+                    f"{kind} {start}"
+                    for kind, start in self._experimental_gate.given_up
+                ),
+            },
+            "writable_holding_registers": sorted(self._writable_holding),
+            "writable_coils": sorted(self._writable_coils),
+        }
+
     async def _async_read_experimental(
         self, inp_hi: list[int]
     ) -> dict[str, int | None]:
