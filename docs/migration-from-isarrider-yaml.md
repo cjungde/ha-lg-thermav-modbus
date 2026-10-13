@@ -85,7 +85,7 @@ The power limit (holding 24 + coil 6) is **not** in the integration yet; see [§
 | 8 | `hp_flow_rate` | `lg_thermav_r290_flow_rate` | Both `L/min`, device class `volume_flow_rate`. |
 | 9 | `hp_flow_temp_circle_2` | `lg_thermav_r290_flow_temperature_circuit_2` | |
 | 10 | `hp_room_air_temp_circuit2_input` | `lg_thermav_r290_room_air_temperature_circuit_2` | |
-| 11 | `hp_energy_state_input` | `lg_thermav_r290_energy_control_signal` | Raw number. **The labelled "Energy State" reads a different register**, see [§10](#10-differences-that-can-bite). |
+| 11 | `hp_energy_state_input` | `lg_thermav_r290_energy_control_signal` (raw) and `lg_thermav_r290_energy_state_reported` (label) | The labelled *Energy State* without "(Reported)" reads holding 9, see [§10](#10-differences-that-can-bite). |
 | 12 | `hp_outside_temp` | `lg_thermav_r290_outdoor_temperature` | |
 | 13 | `hp_water_pressure` | `lg_thermav_r290_water_pressure` | ×0.1 bar in both. |
 | 16 | `hp_temp_liquid_gas` | `lg_thermav_r290_liquid_gas_temperature` | **Scale differs: YAML ×0.001, integration ×0.1.** See [§10](#10-differences-that-can-bite). |
@@ -201,7 +201,7 @@ The register values behind the options are identical: operation mode Cooling 0, 
 
 | YAML template | Integration | Difference |
 |---|---|---|
-| `sensor.hp_energy_state` (*HP Energy State*) | `sensor.lg_thermav_r290_energy_state` | **Reads a different register.** The YAML labels input 11, the integration labels holding 9. Labels are English instead of German. See [§10](#10-differences-that-can-bite). |
+| `sensor.hp_energy_state` (*HP Energy State*) | `sensor.lg_thermav_r290_energy_state_reported` | Same register (input 11). Labels are English instead of German. Not to be confused with `sensor.lg_thermav_r290_energy_state`, which labels holding 9; see [§10](#10-differences-that-can-bite). |
 | `sensor.hp_heating_cop_calculated` (*HP Heating COP (Calculated)*) | `sensor.lg_thermav_r290_heating_cop_cumulative` (*Energy registers* option) | Same formula, input 50 ÷ input 40. No value instead of `0` while no electrical energy is counted. No unit (the YAML uses `COP`). |
 | *HP DHW COP (Calculated)* (commented out) | none | Its thermal counter (input 54) does not answer on the 12 kW. |
 
@@ -247,11 +247,13 @@ A side effect worth knowing: the YAML notes that a slider change can take up to 
 - **Compressor speed unit** is `rpm` instead of `U/min`. The value is the same.
 - **Temperatures** are rounded to 0.1 °C; the YAML shows 2 decimals. The register resolution is 0.1 °C either way.
 
-### Energy State reads a different register
+### Two Energy State sensors
 
-The YAML's *HP Energy State* labels **input 11** (`hp_energy_state_input`). The integration's *Energy State* (and the nine `energy_state_*` binary sensors) label **holding 9** (`hp_energy_state_input_raw` in the YAML). Input 11 is still available raw as `sensor.lg_thermav_r290_energy_control_signal`.
+The YAML's *HP Energy State* labels **input 11** (`hp_energy_state_input`), the state the unit reports as active. Its counterpart here is `sensor.lg_thermav_r290_energy_state_reported`, with the same values in English.
 
-Which of the two follows the SG-Ready signal on a 12 kW has not been checked. If your automations rely on *HP Energy State*, compare `energy_control_signal` and `energy_state` over a few SG-Ready changes before switching them over.
+The integration's *Energy State* (`sensor.lg_thermav_r290_energy_state`) and the nine `energy_state_*` binary sensors label **holding 9** (`hp_energy_state_input_raw` in the YAML), the command register. If the SG-Ready state reaches the unit through its contacts rather than a Modbus write, holding 9 may never change. Automations built on *HP Energy State* should use `energy_state_reported`.
+
+Which of the two follows SG-Ready on a 12 kW has not been checked yet; compare both over a few SG-Ready changes.
 
 ### Controls
 
@@ -300,7 +302,7 @@ Which of the two follows the SG-Ready signal on a 12 kW has not been checked. If
 The integration's entities have new ids, so their history starts empty. Two ways to keep the old history in view:
 
 - **Side by side in a history graph.** The old YAML entities' recorded history stays in the database until the recorder purges it (long-term statistics stay longer). Put old and new entity in one history card for the overlap.
-- **Rename to the old id.** After removing the YAML package and restarting, the old YAML entities stay in the entity registry as *unavailable* (they had a `unique_id`), and their ids stay taken. Delete the old entity first (*Settings → Entities*, select it, *Delete*), then give the integration entity the old id in its entity settings (for example `sensor.lg_thermav_r290_outdoor_temperature` → `sensor.hp_outside_temp`). From then on its states are recorded under the old id, so the graph continues the old history. Do it early: whatever was recorded under the new id before the rename stays with that id, and Home Assistant may log that it could not move it because the old id is already in use. **Only do this where the value means the same thing in the same unit.** Do not do it for input 16 (scale differs), input 17 (gone), Demand vs Supply (% → no unit), the energy counters if you rely on their long-term statistics (`total` → `total_increasing`), or *Energy State* (different register). Check *Developer tools → Statistics* afterwards for unit warnings.
+- **Rename to the old id.** After removing the YAML package and restarting, the old YAML entities stay in the entity registry as *unavailable* (they had a `unique_id`), and their ids stay taken. Delete the old entity first (*Settings → Entities*, select it, *Delete*), then give the integration entity the old id in its entity settings (for example `sensor.lg_thermav_r290_outdoor_temperature` → `sensor.hp_outside_temp`). From then on its states are recorded under the old id, so the graph continues the old history. Do it early: whatever was recorded under the new id before the rename stays with that id, and Home Assistant may log that it could not move it because the old id is already in use. **Only do this where the value means the same thing in the same unit.** Do not do it for input 16 (scale differs), input 17 (gone), Demand vs Supply (% → no unit), the energy counters if you rely on their long-term statistics (`total` → `total_increasing`), or *Energy State* (rename `energy_state_reported` instead, which reads the same register as *HP Energy State*; its values are English, so the old German states do not continue). Check *Developer tools → Statistics* afterwards for unit warnings.
 
 Renaming makes the entity ids in this guide and the README no longer apply to your system; dashboards and automations then keep working unchanged.
 
@@ -372,7 +374,7 @@ Replace `modbus.write_register` / `modbus.write_coil` calls and helper writes wi
 |---|---|
 | `sensor.hp_operation_mode` = `4` | `select.lg_thermav_r290_operation_mode` = `Heating` (there is no numeric operation-mode sensor here) |
 | `input_select.hp_set_operation_mode` = `Heizen` | `select.lg_thermav_r290_operation_mode` = `Heating` |
-| `sensor.hp_energy_state` = `Normalbetrieb` | `sensor.lg_thermav_r290_energy_state` = `Normal Operation` (different register, see [§10](#10-differences-that-can-bite)) |
+| `sensor.hp_energy_state` = `Normalbetrieb` | `sensor.lg_thermav_r290_energy_state_reported` = `Normal Operation` |
 | `sensor.hp_heating_cop_calculated` = `0` before any energy is counted | `unknown` |
 
 ---
