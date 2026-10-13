@@ -70,3 +70,22 @@ def test_reads_inputs_48_and_36() -> None:
 def test_removed_with_the_energy_sensors() -> None:
     assert cop.COP_CURRENT_KEY.startswith(energy.ENERGY_UNIQUE_ID_PREFIX)
     assert cop.COP_CURRENT_KEY not in {r.data_key for r in energy.ENERGY_REGISTERS}
+
+
+def test_system_cop_reads_inputs_48_and_34() -> None:
+    by_address = {r.address: r for r in energy.ENERGY_REGISTERS}
+    assert by_address[48].data_key == cop.THERMAL_POWER_KEY
+    assert by_address[34].data_key == cop.ELECTRICAL_POWER_SYSTEM_KEY
+
+
+def test_system_cop_has_its_own_id_and_is_removed_with_the_energy_sensors() -> None:
+    assert cop.COP_SYSTEM_KEY != cop.COP_CURRENT_KEY
+    assert cop.COP_SYSTEM_KEY.startswith(energy.ENERGY_UNIQUE_ID_PREFIX)
+    assert cop.COP_SYSTEM_KEY not in {r.data_key for r in energy.ENERGY_REGISTERS}
+
+
+def test_system_cop_is_lower_when_the_system_draws_more() -> None:
+    """Same thermal power over a larger system draw gives a lower COP."""
+    thermal = 9_000
+    heat_pump, system = 2_000, 3_000  # e.g. a 1 kW backup heater running
+    assert cop.current_cop(thermal, system) < cop.current_cop(thermal, heat_pump)

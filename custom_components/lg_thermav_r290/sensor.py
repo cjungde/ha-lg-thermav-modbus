@@ -34,7 +34,14 @@ from .const import (
     OPERATION_MODE_FROM_VALUE,
 )
 from .coordinator import LGThermaVCoordinator
-from .cop import COP_CURRENT_KEY, ELECTRICAL_POWER_KEY, THERMAL_POWER_KEY, current_cop
+from .cop import (
+    COP_CURRENT_KEY,
+    COP_SYSTEM_KEY,
+    ELECTRICAL_POWER_KEY,
+    ELECTRICAL_POWER_SYSTEM_KEY,
+    THERMAL_POWER_KEY,
+    current_cop,
+)
 from .energy import (
     ELECTRICAL_ENERGY_HEATING_KEY,
     ENERGY_REGISTERS,
@@ -351,10 +358,12 @@ async def async_setup_entry(
         )
     else:
         _remove_sensors(hass, entry, "exp_")
-    # Current COP needs the power registers of the energy option; its unique id
-    # carries the energy prefix, so switching the option off removes it too.
+    # Current and system COP need the power registers of the energy option; their
+    # unique ids carry the energy prefix, so switching the option off removes
+    # them too.
     if entry.options.get(CONF_ENERGY_REGISTERS, False):
         entities.append(LGCurrentCopSensor(coordinator, entry))
+        entities.append(LGSystemCopSensor(coordinator, entry))
     async_add_entities(entities)
 
 
@@ -609,10 +618,12 @@ class LGCurrentCopSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
     _attr_icon = "mdi:heat-pump"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 2
+    _cop_key = COP_CURRENT_KEY
+    _electrical_key = ELECTRICAL_POWER_KEY
 
     def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_{COP_CURRENT_KEY}"
+        self._attr_unique_id = f"{entry.entry_id}_{self._cop_key}"
         self._attr_device_info = _device_info(entry)
 
     @property
@@ -620,4 +631,19 @@ class LGCurrentCopSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
         data = self.coordinator.data
         if data is None:
             return None
-        return current_cop(data.get(THERMAL_POWER_KEY), data.get(ELECTRICAL_POWER_KEY))
+        return current_cop(data.get(THERMAL_POWER_KEY), data.get(self._electrical_key))
+
+
+class LGSystemCopSensor(LGCurrentCopSensor):
+    """System COP of the moment: input 48 (thermal) / input 34 (total system).
+
+    Same calculation and idle threshold as COP Current, but over the total
+    system's electrical power, which also counts consumers the heat pump
+    figure (input 36) leaves out, such as a backup heater. Where 34 and 36
+    are equal, both COPs are equal.
+    """
+
+    _attr_name = "COP System"
+    _attr_icon = "mdi:home-lightning-bolt-outline"
+    _cop_key = COP_SYSTEM_KEY
+    _electrical_key = ELECTRICAL_POWER_SYSTEM_KEY

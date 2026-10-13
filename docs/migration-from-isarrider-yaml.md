@@ -287,6 +287,7 @@ Which of the two follows the SG-Ready signal on a 12 kW has not been checked. If
 
 - **Computed thermal power**: `sensor.lg_thermav_r290_thermal_power_total`, `…_thermal_power_heating_circuit`, `…_thermal_power_dhw`, from flow rate and ΔT each poll (`Q = flow/60 × ΔT × 4186 W`). Independent of the energy registers.
 - **Current COP**: `sensor.lg_thermav_r290_cop_current` (*Energy registers* option), input 48 ÷ input 36, no value while the electrical power is below 100 W.
+- **System COP**: `sensor.lg_thermav_r290_cop_system` (*Energy registers* option), input 48 ÷ input 34 (total system), same idle rule. Lower than the current COP whenever something besides the heat pump, such as a backup heater, draws power.
 - **Text sensors for the selects**: `sensor.lg_thermav_r290_operation_mode`, `sensor.lg_thermav_r290_control_method`.
 - **Energy states as binary sensors**: `binary_sensor.lg_thermav_r290_energy_state_not_used`, `…_forced_off`, `…_normal_operation`, `…_on_recommendation`, `…_on_command`, `…_on_command_step_2`, `…_on_recommendation_step_1`, `…_energy_saving_mode`, `…_super_energy_saving_mode` (one per value of holding 9).
 - **Experimental registers** (option): raw sensors for undocumented addresses, see the README.
