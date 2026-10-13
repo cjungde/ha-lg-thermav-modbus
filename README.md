@@ -158,6 +158,8 @@ The option also adds `sensor.lg_thermav_r290_cop_current`: the unit's thermal po
 
 `sensor.lg_thermav_r290_cop_system` is the same, but over the total system's electrical power (input 34) instead of the heat pump's (input 36). Where the two are equal, so are the COPs; when something the heat pump figure leaves out draws power, such as a backup heater, the system COP is the lower, more honest one.
 
+`sensor.lg_thermav_r290_cop_calculated` is a cross-check of `cop_current`: same electrical side (input 36), but the thermal side is the integration's own figure from flow rate × ΔT (the same calculation as `thermal_power_total`) instead of the unit's thermal power register (input 48). If the two COPs agree, the unit's thermal figure can be trusted; if they differ consistently, one of the two thermal values is off. Same idle rule (no value below 100 W).
+
 ### Binary sensors
 
 | Entity | Description |
