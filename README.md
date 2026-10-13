@@ -343,8 +343,8 @@ Marks: ⚠ the unit behaves differently from the manual (measured) · ⚙ only w
 | 30012 | Energiezustand-Eingang | 0 : Energiezustand 0; 1 : Energiezustand 1… | `energy_control_signal` (raw) and `energy_state_reported` (label, same 0–8 table as 40010) |
 | 30013 | Außenlufttemp. | [0.1 °C ×10] | `outdoor_temperature` |
 | 30014 | Wasserdruck | [0.1 bar ×10] | `water_pressure` |
-| 39998 | Gerätegruppe | 0x8X (0x80, 0x83, 0x88, 0x89) | ⛔ `device_group` |
-| 39999 | Geräteinfo | Split: 0 / Monoblock: 3 / Hochtemp. : 4 / Mittlere Temp. : 5 / System-Boiler: 6 | ⛔ `product_information` — the scanned 9 kW reads 8208 (0x2010), not in this list |
+| 39998 | Gerätegruppe | 0x8X (0x80, 0x83, 0x88, 0x89) | `device_group` — read once per start, not per poll |
+| 39999 | Geräteinfo | Split: 0 / Monoblock: 3 / Hochtemp. : 4 / Mittlere Temp. : 5 / System-Boiler: 6 | `product_information` — the raw number, read once per start; the scanned 9 kW reads 8208 (0x2010), not in this list |
 
 **Not in the manual**, read by the integration (meaning and scale from community projects and measurement, see [docs/register-scan.md](docs/register-scan.md)):
 

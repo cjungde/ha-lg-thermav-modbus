@@ -216,13 +216,14 @@ _SENSORS: tuple[LGSensorDescription, ...] = (
         icon="mdi:transmission-tower",
         state_class=SensorStateClass.MEASUREMENT,
     ),
+    # Input 39998 / 39999: read once per start (or reload), not per poll, so
+    # being enabled costs nothing on the bus. Shown as the raw numbers.
     LGSensorDescription(
         key="device_group",
         data_key="input_device_group",
         name="Device Group",
         icon="mdi:information",
         state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=False,
     ),
     LGSensorDescription(
         key="product_information",
@@ -230,7 +231,6 @@ _SENSORS: tuple[LGSensorDescription, ...] = (
         name="Product Information",
         icon="mdi:information",
         state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=False,
     ),
     # Holding 40004 / 40007, "Raumlufttemp. Kreislauf 1/2" in the manual's
     # holding table: the room temperature target (the measured value is input

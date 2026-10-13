@@ -107,8 +107,8 @@ The power limit (holding 24 + coil 6) is **not** in the integration yet; see [§
 | 48–49 | `hp_energy_instantaneous_total_th` | `lg_thermav_r290_thermal_power_reported` | *Energy registers* option. W, uint32. |
 | 50–51 | `hp_energy_accumulative_heat_th` | `lg_thermav_r290_thermal_energy_space_heating` | *Energy registers* option. Wh (shown as kWh). |
 | 52–55 | commented out (`hp_ENERGY_ACCUMULATIVE_COOL_TH`, `…_DHW_TH`) | not read | Do not answer on the 12 kW. Reading them in the same block would drop the whole energy read. |
-| 9997 | `hp_product_group` | `lg_thermav_r290_device_group` | **Disabled by default**: enable it in the entity settings. |
-| 9998 | `hp_product_info` | `lg_thermav_r290_product_information` | **Disabled by default**: enable it in the entity settings. |
+| 9997 | `hp_product_group` | `lg_thermav_r290_device_group` | Read once per start instead of hourly. Enabled by default from 1.4.0; on an installation set up earlier, enable it in the entity settings. |
+| 9998 | `hp_product_info` | `lg_thermav_r290_product_information` | Read once per start instead of hourly. Enabled by default from 1.4.0; on an installation set up earlier, enable it in the entity settings. |
 
 ---
 
@@ -388,7 +388,7 @@ Replace `modbus.write_register` / `modbus.write_coil` calls and helper writes wi
 3. Remove (or comment out) the YAML package: the `modbus:` hub, `input_number:`, `input_select:`, `template:` and `automation:` parts. Restart Home Assistant.
 4. *Settings → Devices & Services → Add Integration → LG ThermaV R290*: connection type RTU, the same `/dev/serial/by-id/…` port, 9600, N, 1, slave 1.
 5. *Configure*: **Energy registers** on, **Compressor modulation limit** on. Experimental registers only if you want to record the undocumented addresses.
-6. Enable the disabled-by-default sensors you used: device group, product information, room air temperature circuit 1/2 (holding).
+6. Enable the disabled-by-default sensors you used: target room air temperature circuit 1/2 (the old *room air temperature circuit 1/2 (holding)*).
 7. Compare the values from step 1 with the new entities. Compressor modulation shows *unknown* if no limit is set.
 8. Update the Energy dashboard. For the electrical consumption, prefer an external meter over the unit's own counters, which deviate from a smart meter (see [§10](#10-differences-that-can-bite)); the unit's thermal counter can be added if you use it.
 9. Rewrite automations and dashboards using the tables in §3–§9 and the examples in §14. Check [§10](#10-differences-that-can-bite) for every automation that uses input 16, input 17, Energy State, coil 3, coil 5, or setpoints outside the new ranges.
