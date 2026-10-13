@@ -20,9 +20,10 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from . import power_limit
+from .const import CONF_POWER_LIMIT, DOMAIN
 from .coordinator import LGThermaVCoordinator
-from .entity import LGEntity
+from .entity import LGEntity, remove_entities
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -51,6 +52,18 @@ _SWITCHES: tuple[LGSwitchDescription, ...] = (
     _coil("emergency_stop", 4, "Emergency Stop", "mdi:stop-circle"),
 )
 
+# Coil 6 (00007, "Wirkleistungsbegrenzung": 0 not used / 1 limit the power
+# per 40025). Only created with the power limit option; the coordinator reads
+# it on its own and accepts a write to it only then (see power_limit.py).
+POWER_LIMIT_SWITCH = LGSwitchDescription(
+    key=power_limit.KEY_POWER_LIMIT,
+    data_key=power_limit.DATA_KEY_POWER_LIMIT,
+    coil_address=power_limit.POWER_LIMIT_COIL,
+    name="Power Limit",
+    device_class=SwitchDeviceClass.SWITCH,
+    icon="mdi:flash-alert",
+)
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -58,9 +71,14 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: LGThermaVCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
+    entities: list[SwitchEntity] = [
         LGSwitch(coordinator, entry, description) for description in _SWITCHES
-    )
+    ]
+    if entry.options.get(CONF_POWER_LIMIT, False):
+        entities.append(LGOptionalSwitch(coordinator, entry, POWER_LIMIT_SWITCH))
+    else:
+        remove_entities(hass, entry, "switch", (POWER_LIMIT_SWITCH.key,))
+    async_add_entities(entities)
 
 
 class LGSwitch(LGEntity, SwitchEntity):
@@ -93,3 +111,18 @@ class LGSwitch(LGEntity, SwitchEntity):
             self.entity_description.coil_address, False
         )
         await self.coordinator.async_request_refresh()
+
+
+class LGOptionalSwitch(LGSwitch):
+    """A switch on a coil that not every unit serves.
+
+    Unavailable, rather than off, until the unit has answered on its coil in
+    the current data, e.g. while the read is paused after misses.
+    """
+
+    @property
+    def available(self) -> bool:
+        return (
+            super().available
+            and self._data(self.entity_description.data_key) is not None
+        )

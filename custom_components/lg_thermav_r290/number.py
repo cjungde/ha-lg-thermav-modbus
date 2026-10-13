@@ -16,12 +16,12 @@ from homeassistant.components.number import (
     NumberMode,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE, UnitOfTemperature
+from homeassistant.const import PERCENTAGE, UnitOfPower, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import limits
-from .const import CONF_MODULATION_LIMIT, DOMAIN
+from . import limits, power_limit
+from .const import CONF_MODULATION_LIMIT, CONF_POWER_LIMIT, DOMAIN
 from .coordinator import LGThermaVCoordinator
 from .entity import LGEntity, remove_entities
 
@@ -145,6 +145,10 @@ async def async_setup_entry(
         entities.append(LGMaxCompressorModulationNumber(coordinator, entry))
     else:
         remove_entities(hass, entry, "number", (limits.KEY_MAX_COMPRESSOR_MODULATION,))
+    if entry.options.get(CONF_POWER_LIMIT, False):
+        entities.append(LGMaxElectricalPowerNumber(coordinator, entry))
+    else:
+        remove_entities(hass, entry, "number", (power_limit.KEY_MAX_ELECTRICAL_POWER,))
     async_add_entities(entities)
 
 
@@ -223,5 +227,58 @@ class LGMaxCompressorModulationNumber(LGEntity, NumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         await self.coordinator.async_write_register(
             limits.MODULATION_LIMIT_REGISTER, limits.encode(value)
+        )
+        await self.coordinator.async_request_refresh()
+
+
+class LGMaxElectricalPowerNumber(LGEntity, NumberEntity):
+    """Power limit value, holding register 24 (see power_limit.py).
+
+    Only created with the power limit option. The limit applies only while
+    the *Power Limit* switch (coil 6) is on. The register holds tenths of a
+    kW; 0 is below the manual's range and shown as unknown, with the raw value
+    as an attribute. Writes go through the coordinator, which accepts register
+    24 only while the option is on, and are clamped to 0.1-25.0 kW first. The
+    coordinator is refreshed after every write, so the slider shows what the
+    unit actually stored.
+    """
+
+    _attr_name = "Max Electrical Power"
+    _attr_icon = "mdi:flash"
+    _attr_device_class = NumberDeviceClass.POWER
+    _attr_native_min_value = power_limit.POWER_LIMIT_MIN_KW
+    _attr_native_max_value = power_limit.POWER_LIMIT_MAX_KW
+    _attr_native_step = 0.1
+    _attr_native_unit_of_measurement = UnitOfPower.KILO_WATT
+    _attr_mode = NumberMode.BOX
+
+    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator, entry, power_limit.KEY_MAX_ELECTRICAL_POWER)
+
+    @property
+    def available(self) -> bool:
+        return (
+            super().available
+            and self._data(power_limit.DATA_KEY_MAX_ELECTRICAL_POWER) is not None
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        return power_limit.decode_kw(
+            self._data(power_limit.DATA_KEY_MAX_ELECTRICAL_POWER)
+        )
+
+    @property
+    def extra_state_attributes(self) -> dict[str, int | bool | None]:
+        active = self._data(power_limit.DATA_KEY_POWER_LIMIT)
+        return {
+            "modbus_register": 40001 + power_limit.POWER_LIMIT_REGISTER,
+            "register_value": self._data(power_limit.DATA_KEY_MAX_ELECTRICAL_POWER),
+            "limit_active": None if active is None else bool(active),
+        }
+
+    async def async_set_native_value(self, value: float) -> None:
+        await self.coordinator.async_write_register(
+            power_limit.POWER_LIMIT_REGISTER, power_limit.encode_kw(value)
         )
         await self.coordinator.async_request_refresh()

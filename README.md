@@ -14,9 +14,9 @@ Replaces a hand-crafted YAML Modbus configuration with native HA entities: senso
 - **Energy registers (optional)** — electrical power, cumulative electrical energy per mode, demand vs. supply and the unit's own thermal power from input registers 34–51; off by default, see [Energy registers](#energy-registers-optional)
 - **Computed thermal power sensors** — total / heating circuit / DHW, calculated from flow rate and ΔT each poll cycle (Q = flow/60 × ΔT × 4186 W)
 - **Binary sensors** — compressor, pumps, DHW heating, defrost, backup heater stages, fault, silent mode, cooling, emergency modes, energy state slots 0–8
-- **Switches** — heating/cooling, DHW, silent mode, emergency stop
-- **Buttons** — start DHW disinfection (momentary trigger coil)
-- **Number inputs** — flow temperature setpoints (circuit 1, circuit 2), DHW target temperature, heating curve shift values (circuit 1, circuit 2); optional max compressor modulation (40–100 %)
+- **Switches** — heating/cooling, DHW, silent mode, emergency stop; optional power limit
+- **Buttons** — start DHW disinfection (momentary trigger coil); optional start emergency operation
+- **Number inputs** — flow temperature setpoints (circuit 1, circuit 2), DHW target temperature, heating curve shift values (circuit 1, circuit 2); optional max compressor modulation (40–100 %) and max electrical power (0.1–25.0 kW)
 - **Select inputs** — operation mode (Heating / Cooling / Auto), control method (outlet temp / inlet temp / room air)
 - Supports **Modbus TCP**, **Modbus TCP-RTU**, and **Modbus RTU** (serial)
 - Configurable poll interval (default 10 s), reconfigurable without restart
@@ -44,7 +44,7 @@ Nothing in the manual or in the community projects I could find explains them. T
 
 Switch it on under *Settings → Devices & Services → LG ThermaV R290 → Configure → Experimental registers*. This adds 18 diagnostic sensors named `Experimental Input 30015`, `Experimental Holding 40011`, … They carry the raw, unscaled 16-bit value and have long-term statistics, so they can be compared with compressor speed, temperatures and defrost cycles. Switching the option off removes them again.
 
-**They are read-only.** The integration only ever writes a fixed list of known addresses (holding 0, 1, 2, 4, 5, 7, 8 and coils 0–4, plus holding 23 while the compressor modulation limit option is on, and coil 5 while the emergency operation button option is on); every other write is refused before it reaches the bus, so none of these registers can be written by the integration, whichever entity or service asks. A register that stops answering leaves its sensor empty and does not affect the other values.
+**They are read-only.** The integration only ever writes a fixed list of known addresses (holding 0, 1, 2, 4, 5, 7, 8 and coils 0–4, plus holding 23 while the compressor modulation limit option is on, holding 24 and coil 6 while the power limit option is on, and coil 5 while the emergency operation button option is on); every other write is refused before it reaches the bus, so none of these registers can be written by the integration, whichever entity or service asks. A register that stops answering leaves its sensor empty and does not affect the other values.
 
 The full result of the scan, what the manual lists and what it does not, is in [docs/register-scan.md](docs/register-scan.md).
 
@@ -103,6 +103,9 @@ The config flow asks for connection type first, then connection-specific paramet
 | Poll interval | 10 s | Adjustable in Options (5–3600 s). Entries set up before the default changed keep their stored value. |
 | Energy registers | off | Options; input 34–51, not served by every unit |
 | Compressor modulation limit | off | Options; holding 23, not served by every unit |
+| Power limit | off | Options; coil 6 + holding 24, not served by every unit; effect not confirmed yet |
+| Emergency operation button | off | Options; coil 5 |
+| Experimental registers | off | Options; 18 undocumented registers, read only |
 
 ---
 
@@ -233,6 +236,7 @@ The option also adds `sensor.lg_thermav_r290_cop_reported`: the unit's thermal p
 | `switch.lg_thermav_r290_dhw` | Coil 1 |
 | `switch.lg_thermav_r290_silent_mode` | Coil 2 |
 | `switch.lg_thermav_r290_emergency_stop` | Coil 4 |
+| `switch.lg_thermav_r290_power_limit` | Coil 6 (00007) — **option, off by default**, see [Power limit](#power-limit-optional) |
 
 ### Buttons
 
@@ -268,6 +272,7 @@ binary sensors to see the status.
 | `number.lg_thermav_r290_setpoint_shift_circuit_1` | −5…+5 K | 4 (signed) |
 | `number.lg_thermav_r290_setpoint_shift_circuit_2` | −5…+5 K | 7 (signed) |
 | `number.lg_thermav_r290_max_compressor_modulation` | 40–100 % | 23 (optional, see below) |
+| `number.lg_thermav_r290_max_electrical_power` | 0.1–25.0 kW | 24 (×0.1, optional, see below) |
 
 #### Max compressor modulation (optional)
 
@@ -277,6 +282,20 @@ Switch on **Compressor modulation limit** in the integration's options. Holding 
 - Every write is clamped to 40–100 % and read back, so the slider shows what the unit stored.
 - While the unit reports 0 (no limit), the slider shows *unknown*; the attributes `register_value` and `limit_active` show the raw state.
 - A unit that does not answer leaves the slider unavailable, with the same back-off as the energy registers. Switching the option off removes the entity.
+
+#### Power limit (optional)
+
+Switch on **Power limit** in the integration's options. The manual documents the pair: coil 00007 *Wirkleistungsbegrenzung* (0: not used / 1: limit the power per 40025) and holding 40025 *Leistungsbegrenzungswert* (0.1–25.0 kW).
+
+| Entity | What it does | Register |
+|---|---|---|
+| `switch.lg_thermav_r290_power_limit` | Turns the limit on or off | Coil 6 (00007) |
+| `number.lg_thermav_r290_max_electrical_power` | The limit, 0.1–25.0 kW in steps of 0.1 | Holding 24 (40025), tenths of a kW |
+
+- **Not confirmed yet** whether a unit actually keeps its power below the limit. The 9 kW unit in [docs/register-scan.md](docs/register-scan.md) does not answer on either address. Check against a separate meter: the unit's own power figures run high (see *Energy registers*).
+- Both are writable **only while the option is on**; with it off the integration refuses every write to coil 6 and holding 24.
+- Every limit is clamped to 0.1–25.0 kW and read back, so the number shows what the unit stored. While the register holds 0 it shows *unknown*; the attributes `register_value` and `limit_active` show the raw state.
+- Both addresses are read in their own requests each poll, as one feature: a unit that does not answer leaves both entities unavailable, with the same back-off as the energy registers. Switching the option off removes both entities.
 
 ### Select inputs
 
@@ -305,7 +324,7 @@ Marks: ⚠ the unit behaves differently from the manual (measured) · ⚙ only w
 | 00004 | Auslösung Desinfektionsbetrieb | 0: Status halten / 1: Betriebsstart | `button.start_disinfection` — a trigger, the unit clears it; status in 10007 |
 | 00005 | Notaus | 0: Normaler Betrieb / 1: Notaus | `switch.emergency_stop` |
 | 00006 | Auslöser Notaus-Betrieb | 0: Status halten / 1: Betriebsstart | ⚙ `button.start_emergency_operation` — *Emergency operation button* option; writable only then |
-| 00007 | Wirkleistungsbegrenzung | 0: Nicht verwendet / 1: Begrenzen Sie die Leistung gemäß der Vorschrift 40025 | ✗ — no answer on the scanned 9 kW; untested on a 12 kW |
+| 00007 | Wirkleistungsbegrenzung | 0: Nicht verwendet / 1: Begrenzen Sie die Leistung gemäß der Vorschrift 40025 | ⚙ `switch.power_limit` — *Power limit* option; writable only then; no answer on the scanned 9 kW |
 
 ### Discrete inputs (FC02)
 
@@ -380,7 +399,7 @@ Marks: ⚠ the unit behaves differently from the manual (measured) · ⚙ only w
 | 40008 | Schaltwert (Ziel) im Auto-Modus Kreislauf 2 | 1K | `number.setpoint_shift_circuit_2` (−5…+5 K) |
 | 40009 | WW-Ziel Temp. | [0.1 °C ×10] | `number.dhw_target_temperature` (35–65 °C) |
 | 40010 | Energiezustand-Eingang | see below | `sensor.energy_state` (label) + `binary_sensor.energy_state_*` (one per value) — read only |
-| 40025 | Leistungsbegrenzungswert | 0.1 kW ~ 25.0 kW | ✗ — no answer on the scanned 9 kW; untested on a 12 kW (applied via coil 00007) |
+| 40025 | Leistungsbegrenzungswert | 0.1 kW ~ 25.0 kW | ⚙ `number.max_electrical_power` (0.1–25.0 kW) — *Power limit* option; writable only then; applied while coil 00007 is on; no answer on the scanned 9 kW |
 
 40010 *Energiezustand-Eingang*, with the SG-Ready terminal states the manual gives as equivalent:
 
@@ -406,7 +425,7 @@ Marks: ⚠ the unit behaves differently from the manual (measured) · ⚙ only w
 | 40024 | ⚙ `number.max_compressor_modulation` (*Compressor modulation limit*) | 40–100 %, 0 = no limit; writable only with the option; no answer on the scanned 9 kW |
 | 40063 / 40064 | ⚙ `sensor.experimental_holding_40063` / `_40064` | raw |
 
-The integration only ever writes coils 00001–00005 and holding 40001, 40002, 40003, 40005, 40006, 40008, 40009, plus 40024 and 00006 while their options are on. Every other write is refused before it reaches the bus.
+The integration only ever writes coils 00001–00005 and holding 40001, 40002, 40003, 40005, 40006, 40008, 40009, plus 40024, 40025, 00006 and 00007 while their options are on. Every other write is refused before it reaches the bus.
 
 
 ---

@@ -53,12 +53,14 @@
           "scan_interval": "Abfrageintervall (Sekunden)",
           "energy_registers": "Energieregister",
           "compressor_modulation_limit": "Begrenzung der Verdichtermodulation",
+          "power_limit": "Leistungsbegrenzung",
           "emergency_operation_button": "Taste für Notbetrieb",
           "experimental_registers": "Experimentelle Register"
         },
         "data_description": {
           "energy_registers": "Legt schreibgeschützte Sensoren für elektrische Leistung, kumulierte Energie, Bedarf vs. Versorgung und thermische Leistung aus den Input-Registern 34-51 an (32-Bit-Werte). Nicht jedes Gerät liefert sie: Antwortet das Gerät nicht, bleiben die Sensoren ohne Wert und es wird nur alle paar Abfragen erneut versucht.",
           "compressor_modulation_limit": "Legt einen Schieberegler (40-100 %) für die maximale Verdichtermodulation an, Holding-Register 23. Nicht jedes Gerät liefert es; solange es nicht antwortet, bleibt der Regler nicht verfügbar. Geschrieben werden kann das Register nur, solange diese Option aktiv ist.",
+          "power_limit": "Legt einen Schalter (Coil 6, „Wirkleistungsbegrenzung“) an, der die Leistungsbegrenzung des Geräts einschaltet, und ein Feld (0,1-25,0 kW, Holding-Register 24) für den Grenzwert. Im Handbuch dokumentiert, aber nicht jedes Gerät liefert sie; solange sie nicht antworten, bleiben beide nicht verfügbar. Ob das Gerät seine Leistung tatsächlich unter dem Grenzwert hält, ist noch nicht bestätigt: mit einem separaten Zähler prüfen. Geschrieben werden können beide nur, solange diese Option aktiv ist.",
           "emergency_operation_button": "Legt eine Taste an, die den Notbetrieb des Geräts startet (Coil 5, „Auslöser Notaus-Betrieb“). Im Notbetrieb heizt das Gerät in der Regel mit dem Heizstab und verbraucht deutlich mehr Strom als die Wärmepumpe. Coil 5 kann nur geschrieben werden, solange diese Option aktiv ist.",
           "experimental_registers": "Legt schreibgeschützte Sensoren für 18 Register an, die das Gerät beantwortet, die aber nicht im Handbuch stehen. Es wird nie darauf geschrieben. Gedacht zum Sammeln von Daten über längere Zeit."
         }

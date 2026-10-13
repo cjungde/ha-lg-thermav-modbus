@@ -74,7 +74,8 @@ Values are scaled in the coordinator; entities do not scale again. The one excep
 
 The optional groups use the same prefixes: `energy.py` (`input_<key>` per
 32-bit register, e.g. `input_electrical_power_heat_pump`), `limits.py`
-(`holding_max_compressor_modulation`), and `experimental.py`, which has no
+(`holding_max_compressor_modulation`), `power_limit.py` (`coil_power_limit`,
+`holding_max_electrical_power`), and `experimental.py`, which has no
 meaningful name to use and keys by register number instead (`input_30015`,
 `holding_40011`).
 
