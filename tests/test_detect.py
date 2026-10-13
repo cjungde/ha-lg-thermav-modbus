@@ -134,3 +134,40 @@ def test_placeholders() -> None:
     unknown = {ENERGY: "–", MODULATION: "–", POWER: "–"}
     assert detect.placeholders(None) == unknown
     assert detect.placeholders({}) == unknown
+
+
+def test_status_shows_what_could_be_switched_on() -> None:
+    detected = {ENERGY: True, MODULATION: True, POWER: False}
+    options = {ENERGY: True, const.CONF_EXPERIMENTAL: True}
+    status = detect.status_placeholders(detected, options)
+    assert status[f"{ENERGY}_on"] == "✓"
+    assert status[ENERGY] == "✓"  # on and answers: nothing to add
+    assert status[f"{MODULATION}_on"] == "–"
+    assert status[MODULATION] == "✓ ➕"  # answers, but off
+    assert status[POWER] == "✗"
+    assert status[f"{const.CONF_EXPERIMENTAL}_on"] == "✓"
+    assert status[const.CONF_EXPERIMENTAL] == "–"  # never checked
+    assert status[const.CONF_EMERGENCY_OPERATION] == "–"
+    assert set(status) == {k for g in detect.GROUPS for k in (g, f"{g}_on")}
+
+
+def test_status_before_any_check() -> None:
+    status = detect.status_placeholders(None, {})
+    assert all(value == "–" for value in status.values())
+
+
+def test_every_placeholder_is_in_the_texts() -> None:
+    """Each description uses exactly the placeholders the flow fills in."""
+    import json
+    import re
+
+    status = set(detect.status_placeholders(None, {})) | {"checked"}
+    setup = set(detect.placeholders(None))
+    for name in ("strings.json", "translations/en.json", "translations/de.json"):
+        texts = json.loads((COMPONENT / name).read_text())
+        steps = texts["options"]["step"]
+        for step in ("init", "options"):
+            found = set(re.findall(r"\{(\w+)\}", steps[step]["description"]))
+            assert found == status, (name, step)
+        features = texts["config"]["step"]["features"]["description"]
+        assert set(re.findall(r"\{(\w+)\}", features)) == setup, name

@@ -109,7 +109,7 @@ The config flow asks for connection type first, then connection-specific paramet
 
 #### Which options the unit supports
 
-After the connection test, the setup asks the unit once which optional register groups it answers on, and shows the result (✓ answers, ✗ no answer) on a last step with the options:
+After the connection test, the setup asks the unit once which optional register groups it answers on, and shows the result (✓ answers, ✗ no answer) as a table on a last step with the options:
 
 | Option | Checked | Ticked when the unit answers |
 |---|---|---|
@@ -128,9 +128,13 @@ Answering only proves the register exists, not that writing it has an effect. A 
 
 *Illustrations of a 12 kW unit that answers on all three groups; Home Assistant's own dialogs look slightly different.*
 
-The last result is shown again under *Configure*. Tick **Check the optional registers again** there to repeat the check, e.g. on an installation set up before 1.5.0 or after a firmware update. The form then comes back with the groups that answered ticked; nothing is switched off.
+**Configure** opens a menu. At the top, a table shows per optional group whether it is on and what the unit answered on the last check; ➕ marks a group the unit answers on but that is off, i.e. what could be switched on. Below it:
 
-<img src="docs/images/setup-options.png" alt="Configure: the last check result, the options, and Check the optional registers again" width="400">
+- **Options**: the poll interval and the optional groups, with the same table above them.
+- **Check the optional registers**: asks the unit again (up to about 30 seconds), then opens the options with the groups that answered ticked, as at setup. Nothing is switched off. Useful on an installation set up before 1.5.0 (the table shows – until then) or after a firmware update.
+
+<img src="docs/images/setup-menu.png" alt="Configure: a table of the optional groups with the columns On and Unit answers, and the menu entries Options and Check the optional registers" width="400"><br>
+<img src="docs/images/setup-options.png" alt="Configure, Options: the same table, the poll interval and the optional groups" width="400">
 
 ---
 

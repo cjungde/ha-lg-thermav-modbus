@@ -24,13 +24,30 @@ from typing import Any
 
 from modbus_connection.exceptions import ModbusError
 
-from .const import CONF_ENERGY_REGISTERS, CONF_MODULATION_LIMIT, CONF_POWER_LIMIT
+from .const import (
+    CONF_EMERGENCY_OPERATION,
+    CONF_ENERGY_REGISTERS,
+    CONF_EXPERIMENTAL,
+    CONF_MODULATION_LIMIT,
+    CONF_POWER_LIMIT,
+)
 from .energy import ENERGY_BLOCK_COUNT, ENERGY_BLOCK_START
 from .limits import MODULATION_LIMIT_REGISTER
 from .power_limit import POWER_LIMIT_COIL, POWER_LIMIT_REGISTER
 
-# Option key under which the last result is kept in the entry's options.
+# Option keys under which the last result, and when it was taken (ISO 8601),
+# are kept in the entry's options.
 CONF_DETECTED = "detected"
+CONF_DETECTED_AT = "detected_at"
+
+# All optional register groups, in the order the forms show them.
+GROUPS = (
+    CONF_ENERGY_REGISTERS,
+    CONF_MODULATION_LIMIT,
+    CONF_POWER_LIMIT,
+    CONF_EMERGENCY_OPERATION,
+    CONF_EXPERIMENTAL,
+)
 
 # The groups that are checked, in the order they are asked.
 CHECKED = (CONF_ENERGY_REGISTERS, CONF_MODULATION_LIMIT, CONF_POWER_LIMIT)
@@ -42,6 +59,11 @@ SUGGESTED_WHEN_ANSWERING = frozenset({CONF_ENERGY_REGISTERS, CONF_MODULATION_LIM
 ANSWERS = "✓"
 NO_ANSWER = "✗"
 NOT_CHECKED = "–"
+# Status table: whether an option is on, and the mark for "the unit answers
+# but the option is off", i.e. what could be switched on.
+ON = "✓"
+OFF = "–"
+CAN_BE_SWITCHED_ON = "➕"
 
 
 async def _answers(read) -> bool:
@@ -93,4 +115,25 @@ def placeholders(detected: dict[str, bool] | None) -> dict[str, str]:
             result[key] = NOT_CHECKED
         else:
             result[key] = ANSWERS if detected[key] else NO_ANSWER
+    return result
+
+
+def status_placeholders(
+    detected: dict[str, bool] | None, options: dict[str, Any]
+) -> dict[str, str]:
+    """Placeholders for the status table in Configure.
+
+    Per group ``<key>_on`` (✓ on, – off) and ``<key>`` (✓ answers, ✗ no
+    answer, – not checked), with ➕ after ✓ where the option is off: those
+    are the groups that could be switched on.
+    """
+    answers = placeholders(detected)
+    result = {}
+    for key in GROUPS:
+        on = bool(options.get(key, False))
+        result[f"{key}_on"] = ON if on else OFF
+        mark = answers.get(key, NOT_CHECKED)
+        if mark == ANSWERS and not on:
+            mark = f"{ANSWERS} {CAN_BE_SWITCHED_ON}"
+        result[key] = mark
     return result
