@@ -2,7 +2,7 @@
 
 This maps every part of [isarrider/homeassistant_lg_therma_v_modbus](https://github.com/isarrider/homeassistant_lg_therma_v_modbus) (`modbus_lg_heatpump.yaml`, state of 2026-10-03) to its counterpart in this integration: Modbus entities, helpers, template sensors and automations. It also lists every difference in behaviour that matters when switching.
 
-That YAML setup was written for a **12 kW** R290 on **Modbus RTU** (USB serial adapter, 9600 8N1, slave 1). The 12 kW serves registers that the 9 kW unit in [register-scan.md](register-scan.md) does not, and the integration covers them behind options (see [Options to switch on](#2-options-to-switch-on)).
+That YAML setup was written for a **12 kW** R290 on **Modbus RTU** (USB serial adapter, 9600 8N1, slave 1), firmware **kernel 3.0.9 / ramdisk 3.07.6a (2025-01-21)**. Which optional registers a unit serves may depend on firmware, so compare yours if something below does not answer. The 12 kW serves registers that the 9 kW unit in [register-scan.md](register-scan.md) does not, and the integration covers them behind options (see [Options to switch on](#2-options-to-switch-on)).
 
 For basti242's YAML setup, which this one grew out of, see [migration-from-yaml.md](migration-from-yaml.md).
 
