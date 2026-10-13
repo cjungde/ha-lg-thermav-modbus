@@ -1,7 +1,20 @@
-"""Sensor platform for LG ThermaV R290."""
+"""Sensor platform for LG ThermaV R290.
+
+Keys follow docs/naming.md: the entity key is the name as an entity id slug,
+the data key is ``<register type>_<what the register holds>``.
+
+Four kinds of sensors:
+
+- register values, read as they are (scaled in the coordinator)
+- labels, mapping a register's code to text
+- calculated values: thermal power from flow × ΔT and the COPs
+- optional groups: the energy registers (with the COPs that need them) and
+  the experimental registers
+"""
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -16,15 +29,14 @@ from homeassistant.const import (
     EntityCategory,
     UnitOfEnergy,
     UnitOfPower,
+    UnitOfPressure,
     UnitOfTemperature,
     UnitOfVolumeFlowRate,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import cop
 from .const import (
     CONF_ENERGY_REGISTERS,
     CONF_EXPERIMENTAL,
@@ -34,244 +46,355 @@ from .const import (
     OPERATION_MODE_FROM_VALUE,
 )
 from .coordinator import LGThermaVCoordinator
-from .cop import (
-    COP_CALCULATED_KEY,
-    COP_CURRENT_KEY,
-    COP_SYSTEM_KEY,
-    ELECTRICAL_POWER_KEY,
-    ELECTRICAL_POWER_SYSTEM_KEY,
-    THERMAL_POWER_KEY,
-    current_cop,
-    thermal_power_w,
-)
 from .energy import (
-    ELECTRICAL_ENERGY_HEATING_KEY,
+    DATA_KEY_ELECTRICAL_ENERGY_SPACE_HEATING,
+    DATA_KEY_ELECTRICAL_POWER_HEAT_PUMP,
+    DATA_KEY_ELECTRICAL_POWER_TOTAL_SYSTEM,
+    DATA_KEY_THERMAL_ENERGY_SPACE_HEATING,
+    DATA_KEY_THERMAL_POWER_REPORTED,
     ENERGY_REGISTERS,
-    ENERGY_UNIQUE_ID_PREFIX,
-    HEATING_COP_KEY,
     KIND_ENERGY,
     KIND_POWER,
-    THERMAL_ENERGY_HEATING_KEY,
     EnergyRegister,
-    heating_cop,
 )
+from .entity import LGEntity, remove_entities
 from .experimental import EXPERIMENTAL_REGISTERS, ExperimentalRegister
+
+# Data keys the calculated sensors read.
+DATA_KEY_INLET_TEMPERATURE = "input_inlet_temperature"
+DATA_KEY_OUTLET_TEMPERATURE = "input_outlet_temperature"
+DATA_KEY_FLOW_RATE = "input_flow_rate"
+DATA_KEY_DHW_HEATING = "discrete_dhw_heating"
+
+# Entity keys created by each option, for removing them when it is switched off.
+ENERGY_OPTION_KEYS = (*(r.key for r in ENERGY_REGISTERS), *cop.COP_KEYS)
+EXPERIMENTAL_OPTION_KEYS = tuple(r.key for r in EXPERIMENTAL_REGISTERS)
+
+
+# --- Register values --------------------------------------------------------
 
 
 @dataclass(frozen=True, kw_only=True)
 class LGSensorDescription(SensorEntityDescription):
-    data_key: str = ""
+    data_key: str
+
+
+def _temperature(
+    key: str, data_key: str, name: str, *, enabled: bool = True
+) -> LGSensorDescription:
+    return LGSensorDescription(
+        key=key,
+        data_key=data_key,
+        name=name,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=enabled,
+    )
+
+
+def _pressure(key: str, data_key: str, name: str) -> LGSensorDescription:
+    return LGSensorDescription(
+        key=key,
+        data_key=data_key,
+        name=name,
+        native_unit_of_measurement=UnitOfPressure.BAR,
+        device_class=SensorDeviceClass.PRESSURE,
+        state_class=SensorStateClass.MEASUREMENT,
+    )
 
 
 _SENSORS: tuple[LGSensorDescription, ...] = (
-    # --- Input registers: temperatures ---
-    LGSensorDescription(
-        key="inlet_temp",
-        data_key="inlet_temp",
-        name="Inlet Temperature",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
+    # Input registers: water side
+    _temperature("inlet_temperature", "input_inlet_temperature", "Inlet Temperature"),
+    _temperature(
+        "outlet_temperature", "input_outlet_temperature", "Outlet Temperature"
     ),
-    LGSensorDescription(
-        key="outlet_temp",
-        data_key="outlet_temp",
-        name="Outlet Temperature",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
+    _temperature(
+        "backup_heater_outlet_temperature",
+        "input_backup_heater_outlet_temperature",
+        "Backup Heater Outlet Temperature",
     ),
-    LGSensorDescription(
-        key="backup_heater_outlet_temp",
-        data_key="backup_heater_outlet_temp",
-        name="Backup Heater Outlet Temperature",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
+    _temperature("dhw_temperature", "input_dhw_temperature", "DHW Temperature"),
+    _temperature(
+        "solar_collector_temperature",
+        "input_solar_collector_temperature",
+        "Solar Collector Temperature",
     ),
-    LGSensorDescription(
-        key="dhw_water_temp",
-        data_key="dhw_water_temp",
-        name="DHW Temperature",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
+    _temperature(
+        "room_air_temperature_circuit_1",
+        "input_room_air_temperature_circuit_1",
+        "Room Air Temperature Circuit 1",
     ),
-    LGSensorDescription(
-        key="solar_collector_temp",
-        data_key="solar_collector_temp",
-        name="Solar Collector Temperature",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
+    _temperature(
+        "room_air_temperature_circuit_2",
+        "input_room_air_temperature_circuit_2",
+        "Room Air Temperature Circuit 2",
     ),
-    LGSensorDescription(
-        key="room_air_temp_circuit1",
-        data_key="room_air_temp_circuit1",
-        name="Room Air Temperature Circuit 1",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
+    _temperature(
+        "flow_temperature_circuit_2",
+        "input_flow_temperature_circuit_2",
+        "Flow Temperature Circuit 2",
     ),
-    LGSensorDescription(
-        key="flow_temp_circle_2",
-        data_key="flow_temp_circle_2",
-        name="Flow Temperature Circuit 2",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
+    _temperature(
+        "outdoor_temperature", "input_outdoor_temperature", "Outdoor Temperature"
     ),
-    LGSensorDescription(
-        key="outside_temp",
-        data_key="outside_temp",
-        name="Outdoor Temperature",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    LGSensorDescription(
-        key="temp_liquid_gas",
-        data_key="temp_liquid_gas",
-        name="Liquid Gas Temperature",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    LGSensorDescription(
-        key="temp_suction",
-        data_key="temp_suction",
-        name="Suction Temperature",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    LGSensorDescription(
-        key="temp_heatgas",
-        data_key="temp_heatgas",
-        name="Hot Gas Temperature",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    LGSensorDescription(
-        key="temp_before_vaporiser",
-        data_key="temp_before_vaporiser",
-        name="Temperature Before Evaporator",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    LGSensorDescription(
-        key="temp_after_vaporiser",
-        data_key="temp_after_vaporiser",
-        name="Temperature After Evaporator",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # --- Input registers: other ---
     LGSensorDescription(
         key="flow_rate",
-        data_key="flow_rate",
+        data_key="input_flow_rate",
         name="Flow Rate",
         # A device class makes the unit convertible in the UI (m³/h, gal/min)
         # and gives the sensor the matching icon. It requires Home Assistant's
-        # own unit string, "L/min"; the value from the coordinator is still
-        # litres per minute, which the thermal power sensors below rely on.
+        # own unit string, "L/min"; the value is still litres per minute, which
+        # the calculated thermal power relies on.
         native_unit_of_measurement=UnitOfVolumeFlowRate.LITERS_PER_MINUTE,
         device_class=SensorDeviceClass.VOLUME_FLOW_RATE,
         state_class=SensorStateClass.MEASUREMENT,
     ),
-    LGSensorDescription(
-        key="room_air_temp_circuit2_in",
-        data_key="room_air_temp_circuit2_in",
-        name="Room Air Temperature Circuit 2",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
+    _pressure("water_pressure", "input_water_pressure", "Water Pressure"),
+    # Input registers: refrigerant side
+    _temperature(
+        "liquid_gas_temperature",
+        "input_liquid_gas_temperature",
+        "Liquid Gas Temperature",
+    ),
+    _temperature(
+        "suction_temperature", "input_suction_temperature", "Suction Temperature"
+    ),
+    _temperature(
+        "hot_gas_temperature", "input_hot_gas_temperature", "Hot Gas Temperature"
+    ),
+    _temperature(
+        "temperature_before_evaporator",
+        "input_temperature_before_evaporator",
+        "Temperature Before Evaporator",
+    ),
+    _temperature(
+        "temperature_after_evaporator",
+        "input_temperature_after_evaporator",
+        "Temperature After Evaporator",
+    ),
+    _pressure(
+        "high_pressure_condenser",
+        "input_high_pressure_condenser",
+        "High Pressure (Condenser)",
+    ),
+    _pressure(
+        "low_pressure_evaporator",
+        "input_low_pressure_evaporator",
+        "Low Pressure (Evaporator)",
     ),
     LGSensorDescription(
-        key="water_pressure",
-        data_key="water_pressure",
-        name="Water Pressure",
-        native_unit_of_measurement="bar",
-        device_class=SensorDeviceClass.PRESSURE,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    LGSensorDescription(
-        key="high_pressure",
-        data_key="high_pressure",
-        name="High Pressure (Condenser)",
-        native_unit_of_measurement="bar",
-        device_class=SensorDeviceClass.PRESSURE,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    LGSensorDescription(
-        key="low_pressure",
-        data_key="low_pressure",
-        name="Low Pressure (Evaporator)",
-        native_unit_of_measurement="bar",
-        device_class=SensorDeviceClass.PRESSURE,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    LGSensorDescription(
-        key="compressor_rpm",
-        data_key="compressor_rpm",
+        key="compressor_speed",
+        data_key="input_compressor_speed",
         name="Compressor Speed",
         native_unit_of_measurement="rpm",
         state_class=SensorStateClass.MEASUREMENT,
     ),
+    # Input registers: status and identity
     LGSensorDescription(
         key="error_code",
-        data_key="error_code",
+        data_key="input_error_code",
         name="Error Code",
         icon="mdi:alert-circle",
     ),
     LGSensorDescription(
-        key="odu_operation_cycle",
-        data_key="odu_operation_cycle",
+        key="operation_cycle_odu",
+        data_key="input_operation_cycle_odu",
         name="Operation Cycle (ODU)",
     ),
     LGSensorDescription(
+        key="energy_control_signal",
+        data_key="input_energy_control_signal",
+        name="Energy Control Signal",
+        icon="mdi:transmission-tower",
+    ),
+    LGSensorDescription(
         key="device_group",
-        data_key="device_group",
+        data_key="input_device_group",
         name="Device Group",
         icon="mdi:information",
         entity_registry_enabled_default=False,
     ),
     LGSensorDescription(
-        key="product_info",
-        data_key="product_info",
+        key="product_information",
+        data_key="input_product_information",
         name="Product Information",
         icon="mdi:information",
         entity_registry_enabled_default=False,
     ),
-    LGSensorDescription(
-        key="energy_state_input",
-        data_key="energy_state_input",
-        name="Energy Control Signal",
-        icon="mdi:transmission-tower",
+    # Holding-register read-back of the room temperatures (may match the input
+    # registers; disabled by default)
+    _temperature(
+        "room_air_temperature_circuit_1_holding",
+        "holding_room_air_temperature_circuit_1",
+        "Room Air Temperature Circuit 1 (Holding)",
+        enabled=False,
     ),
-    # Holding-register read-back of room temps (may match input register; disabled by default)
-    LGSensorDescription(
-        key="room_air_temp_circuit1_hold",
-        data_key="room_air_temp_circuit1_hold",
-        name="Room Air Temperature Circuit 1 (Holding)",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=False,
-    ),
-    LGSensorDescription(
-        key="room_air_temp_circuit2_hold",
-        data_key="room_air_temp_circuit2_hold",
-        name="Room Air Temperature Circuit 2 (Holding)",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=False,
+    _temperature(
+        "room_air_temperature_circuit_2_holding",
+        "holding_room_air_temperature_circuit_2",
+        "Room Air Temperature Circuit 2 (Holding)",
+        enabled=False,
     ),
 )
+
+
+# --- Labels -----------------------------------------------------------------
+
+
+@dataclass(frozen=True, kw_only=True)
+class LGLabelSensorDescription(SensorEntityDescription):
+    data_key: str
+    labels: dict[int, str]
+
+
+_LABEL_SENSORS: tuple[LGLabelSensorDescription, ...] = (
+    LGLabelSensorDescription(
+        key="operation_mode",
+        data_key="holding_operation_mode",
+        labels=OPERATION_MODE_FROM_VALUE,
+        name="Operation Mode",
+        icon="mdi:heat-pump",
+    ),
+    LGLabelSensorDescription(
+        key="control_method",
+        data_key="holding_control_method",
+        labels=CONTROL_METHOD_FROM_VALUE,
+        name="Control Method",
+        icon="mdi:tune",
+    ),
+    # Holding 9, the energy state command register.
+    LGLabelSensorDescription(
+        key="energy_state",
+        data_key="holding_energy_state",
+        labels=ENERGY_STATE_DISPLAY,
+        name="Energy State",
+        icon="mdi:lightning-bolt",
+    ),
+    # The same 0-8 labels for input 11, the state the unit reports as active.
+    # When the SG-Ready state arrives through the unit's contacts rather than a
+    # Modbus write, only input 11 may change, so both get a label.
+    LGLabelSensorDescription(
+        key="energy_state_reported",
+        data_key="input_energy_control_signal",
+        labels=ENERGY_STATE_DISPLAY,
+        name="Energy State (Reported)",
+        icon="mdi:lightning-bolt-outline",
+    ),
+)
+
+
+# --- Calculated values ------------------------------------------------------
+
+
+@dataclass(frozen=True, kw_only=True)
+class LGCalculatedSensorDescription(SensorEntityDescription):
+    value_fn: Callable[[dict[str, Any]], Any]
+
+
+def _thermal_power(data: dict[str, Any], dhw: bool | None) -> int | None:
+    """Flow × ΔT; with dhw set, only while DHW heating is (True) / is not (False) on."""
+    power = cop.thermal_power_w(
+        data.get(DATA_KEY_FLOW_RATE),
+        data.get(DATA_KEY_INLET_TEMPERATURE),
+        data.get(DATA_KEY_OUTLET_TEMPERATURE),
+    )
+    if power is None or dhw is None:
+        return power
+    dhw_heating = data.get(DATA_KEY_DHW_HEATING)
+    if dhw_heating is None:
+        return None
+    return power if bool(dhw_heating) == dhw else 0
+
+
+def _thermal_power_description(
+    key: str, name: str, dhw: bool | None
+) -> LGCalculatedSensorDescription:
+    return LGCalculatedSensorDescription(
+        key=key,
+        name=name,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:heat-wave",
+        value_fn=lambda data: _thermal_power(data, dhw),
+    )
+
+
+# Q = flow/60 × ΔT × 4186 W, always created. The heating circuit / DHW split
+# follows discrete input 10006 (DHW heating): while it is on, the full flow
+# counts as DHW and the heating circuit reports 0, and vice versa.
+_THERMAL_POWER_SENSORS: tuple[LGCalculatedSensorDescription, ...] = (
+    _thermal_power_description(
+        "thermal_power_calculated", "Thermal Power (Calculated)", None
+    ),
+    _thermal_power_description(
+        "thermal_power_heating_circuit_calculated",
+        "Thermal Power Heating Circuit (Calculated)",
+        False,
+    ),
+    _thermal_power_description(
+        "thermal_power_dhw_calculated", "Thermal Power DHW (Calculated)", True
+    ),
+)
+
+
+def _cop_description(
+    key: str, name: str, icon: str, value_fn: Callable[[dict[str, Any]], Any]
+) -> LGCalculatedSensorDescription:
+    return LGCalculatedSensorDescription(
+        key=key,
+        name=name,
+        icon=icon,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
+        value_fn=value_fn,
+    )
+
+
+# Created with the energy registers option, which provides the power and
+# energy values they divide (see cop.py).
+_COP_SENSORS: tuple[LGCalculatedSensorDescription, ...] = (
+    _cop_description(
+        cop.KEY_COP_REPORTED,
+        "COP (Reported)",
+        "mdi:heat-pump",
+        lambda data: cop.instantaneous_cop(
+            data.get(DATA_KEY_THERMAL_POWER_REPORTED),
+            data.get(DATA_KEY_ELECTRICAL_POWER_HEAT_PUMP),
+        ),
+    ),
+    _cop_description(
+        cop.KEY_COP_SYSTEM_REPORTED,
+        "COP System (Reported)",
+        "mdi:home-lightning-bolt-outline",
+        lambda data: cop.instantaneous_cop(
+            data.get(DATA_KEY_THERMAL_POWER_REPORTED),
+            data.get(DATA_KEY_ELECTRICAL_POWER_TOTAL_SYSTEM),
+        ),
+    ),
+    _cop_description(
+        cop.KEY_COP_CALCULATED,
+        "COP (Calculated)",
+        "mdi:calculator-variant-outline",
+        lambda data: cop.instantaneous_cop(
+            _thermal_power(data, None), data.get(DATA_KEY_ELECTRICAL_POWER_HEAT_PUMP)
+        ),
+    ),
+    _cop_description(
+        cop.KEY_COP_HEATING_CUMULATIVE,
+        "COP Heating (Cumulative)",
+        "mdi:heat-pump-outline",
+        lambda data: cop.cumulative_cop(
+            data.get(DATA_KEY_THERMAL_ENERGY_SPACE_HEATING),
+            data.get(DATA_KEY_ELECTRICAL_ENERGY_SPACE_HEATING),
+        ),
+    ),
+)
+
+
+# --- Setup ------------------------------------------------------------------
 
 
 async def async_setup_entry(
@@ -281,135 +404,31 @@ async def async_setup_entry(
 ) -> None:
     coordinator: LGThermaVCoordinator = hass.data[DOMAIN][entry.entry_id]
     entities: list[SensorEntity] = [
-        LGSensor(coordinator, entry, desc) for desc in _SENSORS
+        *(LGSensor(coordinator, entry, d) for d in _SENSORS),
+        *(LGLabelSensor(coordinator, entry, d) for d in _LABEL_SENSORS),
+        *(LGCalculatedSensor(coordinator, entry, d) for d in _THERMAL_POWER_SENSORS),
     ]
-    # Special mapped sensors
-    entities.append(
-        LGMappedSensor(
-            coordinator,
-            entry,
-            "operation_mode_label",
-            "Operation Mode",
-            OPERATION_MODE_FROM_VALUE,
-            "operation_mode",
-            "mdi:heat-pump",
-        )
-    )
-    entities.append(
-        LGMappedSensor(
-            coordinator,
-            entry,
-            "control_method_label",
-            "Control Method",
-            CONTROL_METHOD_FROM_VALUE,
-            "control_method",
-            "mdi:tune",
-        )
-    )
-    entities.append(
-        LGMappedSensor(
-            coordinator,
-            entry,
-            "energy_state_label",
-            "Energy State",
-            ENERGY_STATE_DISPLAY,
-            "energy_state_raw",
-            "mdi:lightning-bolt",
-        )
-    )
-    # The same 0-8 labels for input 11, the state the unit reports as active.
-    # "Energy State" above labels holding 9, the command register; when the
-    # SG-Ready state arrives through the unit's contacts rather than a Modbus
-    # write, only input 11 may change, so both get a label.
-    entities.append(
-        LGMappedSensor(
-            coordinator,
-            entry,
-            "energy_state_reported_label",
-            "Energy State (Reported)",
-            ENERGY_STATE_DISPLAY,
-            "energy_state_input",
-            "mdi:lightning-bolt-outline",
-        )
-    )
-    # Computed thermal power sensors (Q = flow/60 * ΔT * cp_water)
-    entities.append(
-        LGThermalPowerSensor(
-            coordinator,
-            entry,
-            "thermal_power_total",
-            "Thermal Power (Calculated)",
-            dhw_filter=None,
-        )
-    )
-    entities.append(
-        LGThermalPowerSensor(
-            coordinator,
-            entry,
-            "thermal_power_dhw",
-            "Thermal Power DHW (Calculated)",
-            dhw_filter=True,
-        )
-    )
-    entities.append(
-        LGThermalPowerSensor(
-            coordinator,
-            entry,
-            "thermal_power_heating_circuit",
-            "Thermal Power Heating Circuit (Calculated)",
-            dhw_filter=False,
-        )
-    )
     if entry.options.get(CONF_ENERGY_REGISTERS, False):
-        entities.extend(
-            LGEnergyRegisterSensor(coordinator, entry, register)
-            for register in ENERGY_REGISTERS
-        )
-        entities.append(LGHeatingCopSensor(coordinator, entry))
+        entities.extend(LGEnergySensor(coordinator, entry, r) for r in ENERGY_REGISTERS)
+        entities.extend(LGCalculatedSensor(coordinator, entry, d) for d in _COP_SENSORS)
     else:
-        _remove_sensors(hass, entry, ENERGY_UNIQUE_ID_PREFIX)
+        remove_entities(hass, entry, "sensor", ENERGY_OPTION_KEYS)
     if entry.options.get(CONF_EXPERIMENTAL, False):
         entities.extend(
-            LGExperimentalSensor(coordinator, entry, register)
-            for register in EXPERIMENTAL_REGISTERS
+            LGExperimentalSensor(coordinator, entry, r) for r in EXPERIMENTAL_REGISTERS
         )
     else:
-        _remove_sensors(hass, entry, "exp_")
-    # Current and system COP need the power registers of the energy option; their
-    # unique ids carry the energy prefix, so switching the option off removes
-    # them too.
-    if entry.options.get(CONF_ENERGY_REGISTERS, False):
-        entities.append(LGCurrentCopSensor(coordinator, entry))
-        entities.append(LGSystemCopSensor(coordinator, entry))
-        entities.append(LGCalculatedCopSensor(coordinator, entry))
+        remove_entities(hass, entry, "sensor", EXPERIMENTAL_OPTION_KEYS)
     async_add_entities(entities)
 
 
-def _remove_sensors(hass: HomeAssistant, entry: ConfigEntry, prefix: str) -> None:
-    """Drop an optional group of sensors when its option is switched off.
-
-    Left in the registry they would sit there unavailable for good.
-    """
-    registry = er.async_get(hass)
-    full_prefix = f"{entry.entry_id}_{prefix}"
-    for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
-        if entity.domain == "sensor" and entity.unique_id.startswith(full_prefix):
-            registry.async_remove(entity.entity_id)
+# --- Entities ---------------------------------------------------------------
 
 
-def _device_info(entry: ConfigEntry) -> DeviceInfo:
-    return DeviceInfo(
-        identifiers={(DOMAIN, entry.entry_id)},
-        name="LG ThermaV R290",
-        manufacturer="LG",
-        model="ThermaV R290",
-    )
+class LGSensor(LGEntity, SensorEntity):
+    """A register value, read from the coordinator data as it is."""
 
-
-class LGSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
-    """A sensor reading a value directly from coordinator data."""
-
-    _attr_has_entity_name = True
+    entity_description: LGSensorDescription
 
     def __init__(
         self,
@@ -417,23 +436,59 @@ class LGSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
         entry: ConfigEntry,
         description: LGSensorDescription,
     ) -> None:
-        super().__init__(coordinator)
+        super().__init__(coordinator, entry, description.key)
         self.entity_description = description
-        self._data_key = description.data_key
-        self._attr_unique_id = f"{entry.entry_id}_{description.key}"
-        self._attr_device_info = _device_info(entry)
+
+    @property
+    def native_value(self) -> Any:
+        return self._data(self.entity_description.data_key)
+
+
+class LGLabelSensor(LGEntity, SensorEntity):
+    """A register code shown as text; a code without a label shows as the number."""
+
+    entity_description: LGLabelSensorDescription
+
+    def __init__(
+        self,
+        coordinator: LGThermaVCoordinator,
+        entry: ConfigEntry,
+        description: LGLabelSensorDescription,
+    ) -> None:
+        super().__init__(coordinator, entry, description.key)
+        self.entity_description = description
+
+    @property
+    def native_value(self) -> str | None:
+        raw = self._data(self.entity_description.data_key)
+        if raw is None:
+            return None
+        return self.entity_description.labels.get(raw, str(raw))
+
+
+class LGCalculatedSensor(LGEntity, SensorEntity):
+    """A value calculated from the coordinator data (thermal power, COP)."""
+
+    entity_description: LGCalculatedSensorDescription
+
+    def __init__(
+        self,
+        coordinator: LGThermaVCoordinator,
+        entry: ConfigEntry,
+        description: LGCalculatedSensorDescription,
+    ) -> None:
+        super().__init__(coordinator, entry, description.key)
+        self.entity_description = description
 
     @property
     def native_value(self) -> Any:
         if self.coordinator.data is None:
             return None
-        return self.coordinator.data.get(self._data_key)
+        return self.entity_description.value_fn(self.coordinator.data)
 
 
-class LGEnergyRegisterSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
+class LGEnergySensor(LGEntity, SensorEntity):
     """A power, energy or plain value from the 32-bit energy block."""
-
-    _attr_has_entity_name = True
 
     def __init__(
         self,
@@ -441,14 +496,10 @@ class LGEnergyRegisterSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEnti
         entry: ConfigEntry,
         register: EnergyRegister,
     ) -> None:
-        super().__init__(coordinator)
+        super().__init__(coordinator, entry, register.key)
         self._data_key = register.data_key
         self._attr_name = register.name
-        self._attr_unique_id = f"{entry.entry_id}_{register.data_key}"
-        self._attr_device_info = _device_info(entry)
-        self._attr_extra_state_attributes = {
-            "modbus_register": register.modbus_number,
-        }
+        self._attr_extra_state_attributes = {"modbus_register": register.modbus_number}
         if register.kind == KIND_POWER:
             self._attr_device_class = SensorDeviceClass.POWER
             self._attr_native_unit_of_measurement = UnitOfPower.WATT
@@ -464,42 +515,10 @@ class LGEnergyRegisterSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEnti
 
     @property
     def native_value(self) -> int | None:
-        if self.coordinator.data is None:
-            return None
-        return self.coordinator.data.get(self._data_key)
+        return self._data(self._data_key)
 
 
-class LGHeatingCopSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
-    """Cumulative heating COP: input 50 (thermal) / input 40 (electrical).
-
-    Only created with the energy registers option, which provides both
-    counters. A long-term average since the counters were last reset, not
-    the COP of the moment; see energy.heating_cop.
-    """
-
-    _attr_has_entity_name = True
-    _attr_name = "COP Heating (Cumulative)"
-    _attr_icon = "mdi:heat-pump-outline"
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_suggested_display_precision = 2
-
-    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
-        super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_{HEATING_COP_KEY}"
-        self._attr_device_info = _device_info(entry)
-
-    @property
-    def native_value(self) -> float | None:
-        data = self.coordinator.data
-        if data is None:
-            return None
-        return heating_cop(
-            data.get(THERMAL_ENERGY_HEATING_KEY),
-            data.get(ELECTRICAL_ENERGY_HEATING_KEY),
-        )
-
-
-class LGExperimentalSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
+class LGExperimentalSensor(LGEntity, SensorEntity):
     """The raw 16-bit value of a register the manual does not document.
 
     Unscaled and unsigned, exactly as the device returns it, because what the
@@ -508,7 +527,6 @@ class LGExperimentalSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity
     compared with the machine's behaviour over weeks.
     """
 
-    _attr_has_entity_name = True
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_icon = "mdi:flask-outline"
@@ -519,11 +537,9 @@ class LGExperimentalSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity
         entry: ConfigEntry,
         register: ExperimentalRegister,
     ) -> None:
-        super().__init__(coordinator)
-        self._data_key = register.key
+        super().__init__(coordinator, entry, register.key)
+        self._data_key = register.data_key
         self._attr_name = register.name
-        self._attr_unique_id = f"{entry.entry_id}_{register.key}"
-        self._attr_device_info = _device_info(entry)
         self._attr_extra_state_attributes = {
             "modbus_register": register.modbus_number,
             "register_type": register.kind,
@@ -531,163 +547,4 @@ class LGExperimentalSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity
 
     @property
     def native_value(self) -> int | None:
-        if self.coordinator.data is None:
-            return None
-        return self.coordinator.data.get(self._data_key)
-
-
-class LGMappedSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
-    """A sensor that maps a raw integer register value to a human-readable string."""
-
-    _attr_has_entity_name = True
-
-    def __init__(
-        self,
-        coordinator: LGThermaVCoordinator,
-        entry: ConfigEntry,
-        key: str,
-        name: str,
-        mapping: dict[int, str],
-        data_key: str,
-        icon: str,
-    ) -> None:
-        super().__init__(coordinator)
-        self._mapping = mapping
-        self._data_key = data_key
-        self._attr_name = name
-        self._attr_unique_id = f"{entry.entry_id}_{key}"
-        self._attr_device_info = _device_info(entry)
-        self._attr_icon = icon
-
-    @property
-    def native_value(self) -> str | None:
-        if self.coordinator.data is None:
-            return None
-        raw = self.coordinator.data.get(self._data_key)
-        if raw is None:
-            return None
-        return self._mapping.get(raw, str(raw))
-
-
-class LGThermalPowerSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
-    """Computes thermal power output: Q = (flow_rate / 60) × ΔT × 4186 W.
-
-    dhw_filter=True  → only when DHW heating is active (Warmwasser)
-    dhw_filter=False → only when DHW heating is inactive (Heizkreis)
-    dhw_filter=None  → always (Gesamt)
-    """
-
-    _attr_has_entity_name = True
-    _attr_native_unit_of_measurement = "W"
-    _attr_device_class = SensorDeviceClass.POWER
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_icon = "mdi:heat-wave"
-
-    def __init__(
-        self,
-        coordinator: LGThermaVCoordinator,
-        entry: ConfigEntry,
-        key: str,
-        name: str,
-        dhw_filter: bool | None,
-    ) -> None:
-        super().__init__(coordinator)
-        self._dhw_filter = dhw_filter
-        self._attr_name = name
-        self._attr_unique_id = f"{entry.entry_id}_{key}"
-        self._attr_device_info = _device_info(entry)
-
-    @property
-    def native_value(self) -> int | None:
-        d = self.coordinator.data
-        if d is None:
-            return None
-        inlet = d.get("inlet_temp")
-        outlet = d.get("outlet_temp")
-        flow = d.get("flow_rate")
-        if inlet is None or outlet is None or flow is None:
-            return None
-        # Apply DHW filter if set
-        if self._dhw_filter is not None:
-            dhw_on = d.get("di_dhw_heating")
-            if dhw_on is None:
-                return None
-            if bool(dhw_on) != self._dhw_filter:
-                return 0
-        return thermal_power_w(flow, inlet, outlet)
-
-
-class LGCurrentCopSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
-    """COP of the moment: input 48 (thermal power) / input 36 (electrical).
-
-    Only created with the energy registers option, which provides both. No
-    value while the unit idles below cop.MIN_ELECTRICAL_POWER_W; see
-    cop.current_cop.
-    """
-
-    _attr_has_entity_name = True
-    _attr_name = "COP (Reported)"
-    _attr_icon = "mdi:heat-pump"
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_suggested_display_precision = 2
-    _cop_key = COP_CURRENT_KEY
-    _electrical_key = ELECTRICAL_POWER_KEY
-
-    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
-        super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_{self._cop_key}"
-        self._attr_device_info = _device_info(entry)
-
-    @property
-    def native_value(self) -> float | None:
-        data = self.coordinator.data
-        if data is None:
-            return None
-        return current_cop(data.get(THERMAL_POWER_KEY), data.get(self._electrical_key))
-
-
-class LGSystemCopSensor(LGCurrentCopSensor):
-    """System COP of the moment: input 48 (thermal) / input 34 (total system).
-
-    Same calculation and idle threshold as COP (Reported), but over the total
-    system's electrical power, which also counts consumers the heat pump
-    figure (input 36) leaves out, such as a backup heater. Where 34 and 36
-    are equal, both COPs are equal.
-    """
-
-    _attr_name = "COP System (Reported)"
-    _attr_icon = "mdi:home-lightning-bolt-outline"
-    _cop_key = COP_SYSTEM_KEY
-    _electrical_key = ELECTRICAL_POWER_SYSTEM_KEY
-
-
-class LGCalculatedCopSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
-    """COP from the integration's own thermal power: flow × ΔT ÷ input 36.
-
-    A cross-check of COP (Reported): the electrical side is the same (the heat
-    pump's power, input 36), but the thermal side is computed from flow rate
-    and inlet/outlet temperature (cop.thermal_power_w) instead of taken from
-    the unit's thermal power register (input 48). Same idle rule: no value
-    below cop.MIN_ELECTRICAL_POWER_W.
-    """
-
-    _attr_has_entity_name = True
-    _attr_name = "COP (Calculated)"
-    _attr_icon = "mdi:calculator-variant-outline"
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_suggested_display_precision = 2
-
-    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
-        super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_{COP_CALCULATED_KEY}"
-        self._attr_device_info = _device_info(entry)
-
-    @property
-    def native_value(self) -> float | None:
-        data = self.coordinator.data
-        if data is None:
-            return None
-        thermal = thermal_power_w(
-            data.get("flow_rate"), data.get("inlet_temp"), data.get("outlet_temp")
-        )
-        return current_cop(thermal, data.get(ELECTRICAL_POWER_KEY))
+        return self._data(self._data_key)

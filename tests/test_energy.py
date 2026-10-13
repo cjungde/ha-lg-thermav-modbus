@@ -66,10 +66,21 @@ def test_keys_and_names_are_unique() -> None:
     assert len({r.name for r in registers}) == len(registers)
 
 
-def test_data_keys_use_the_unique_id_prefix() -> None:
-    """The prefix is what removes the sensors again when the option is off."""
+def test_keys_follow_the_naming_rules() -> None:
+    """docs/naming.md: key = name slug, data key = input_<key>."""
     for register in energy.ENERGY_REGISTERS:
-        assert register.data_key.startswith(energy.ENERGY_UNIQUE_ID_PREFIX)
+        slug = "".join(c if c.isalnum() else "_" for c in register.name.lower())
+        assert register.key == "_".join(part for part in slug.split("_") if part)
+        assert register.data_key == f"input_{register.key}"
+
+
+def test_data_key_constants_point_at_the_right_registers() -> None:
+    by_address = {r.address: r.data_key for r in energy.ENERGY_REGISTERS}
+    assert by_address[34] == energy.DATA_KEY_ELECTRICAL_POWER_TOTAL_SYSTEM
+    assert by_address[36] == energy.DATA_KEY_ELECTRICAL_POWER_HEAT_PUMP
+    assert by_address[40] == energy.DATA_KEY_ELECTRICAL_ENERGY_SPACE_HEATING
+    assert by_address[48] == energy.DATA_KEY_THERMAL_POWER_REPORTED
+    assert by_address[50] == energy.DATA_KEY_THERMAL_ENERGY_SPACE_HEATING
 
 
 def test_demand_vs_supply_has_no_unit() -> None:
@@ -80,8 +91,8 @@ def test_demand_vs_supply_has_no_unit() -> None:
 
 def test_numbers_follow_the_manuals_notation() -> None:
     by_key = {r.key: r for r in energy.ENERGY_REGISTERS}
-    assert by_key["power_total_system"].modbus_number == 30035
-    assert by_key["thermal_energy_heating"].modbus_number == 30051
+    assert by_key["electrical_power_total_system"].modbus_number == 30035
+    assert by_key["thermal_energy_space_heating"].modbus_number == 30051
 
 
 def test_decode_joins_high_word_first() -> None:
@@ -100,10 +111,10 @@ def test_decode_block_picks_each_value_from_its_own_pair() -> None:
     # thermal_energy_heating at 50-51 -> offset 16, 17
     registers[16], registers[17] = 0, 42
     values = energy.decode_block(registers)
-    assert values["energy_reg_power_heat_pump"] == 2300
-    assert values["energy_reg_energy_total"] == 123_456_789
-    assert values["energy_reg_thermal_energy_heating"] == 42
-    assert values["energy_reg_power_total_system"] == 0
+    assert values["input_electrical_power_heat_pump"] == 2300
+    assert values["input_electrical_energy_total"] == 123_456_789
+    assert values["input_thermal_energy_space_heating"] == 42
+    assert values["input_electrical_power_total_system"] == 0
     assert len(values) == len(energy.ENERGY_REGISTERS)
 
 
@@ -154,27 +165,3 @@ def test_a_healthy_unit_is_never_paused() -> None:
     for _ in range(100):
         assert backoff.should_try()
         assert not backoff.record(True)
-
-
-def test_heating_cop_divides_thermal_by_electrical() -> None:
-    assert energy.heating_cop(12_000, 3_000) == 4.0
-    assert energy.heating_cop(10_000, 3_000) == 3.33
-
-
-def test_heating_cop_is_none_without_electrical_energy() -> None:
-    """Not 0: a 0 would read as a terrible COP and skew statistics."""
-    assert energy.heating_cop(5_000, 0) is None
-    assert energy.heating_cop(None, 3_000) is None
-    assert energy.heating_cop(5_000, None) is None
-
-
-def test_heating_cop_reads_inputs_50_and_40() -> None:
-    """The keys it divides are the data keys of input 50 and input 40."""
-    by_address = {r.address: r for r in energy.ENERGY_REGISTERS}
-    assert by_address[50].data_key == energy.THERMAL_ENERGY_HEATING_KEY
-    assert by_address[40].data_key == energy.ELECTRICAL_ENERGY_HEATING_KEY
-
-
-def test_heating_cop_is_removed_with_the_energy_sensors() -> None:
-    assert energy.HEATING_COP_KEY.startswith(energy.ENERGY_UNIQUE_ID_PREFIX)
-    assert energy.HEATING_COP_KEY not in {r.data_key for r in energy.ENERGY_REGISTERS}

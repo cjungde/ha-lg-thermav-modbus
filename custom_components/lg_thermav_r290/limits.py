@@ -23,26 +23,22 @@ MODULATION_LIMIT_MIN = 40  # %
 MODULATION_LIMIT_MAX = 100  # %
 MODULATION_LIMIT_NOT_USED = 0  # raw value meaning "no limit set"
 
-# Coordinator data keys.
-DATA_KEY_LIMIT = "compressor_modulation_limit"  # % in force, None if not used
-DATA_KEY_RAW = "compressor_modulation_limit_raw"  # register value as read
-
-# Unique id suffix of the number entity, used to drop it from the entity
-# registry when the option is switched off.
-UNIQUE_ID_SUFFIX = "compressor_modulation_limit"
+# Entity key (docs/naming.md) and coordinator data key (the raw register).
+KEY_MAX_COMPRESSOR_MODULATION = "max_compressor_modulation"
+DATA_KEY_MAX_COMPRESSOR_MODULATION = "holding_max_compressor_modulation"
 
 
-def decode(raw: int) -> dict[str, int | None]:
-    """Coordinator data for one read of holding 23.
+def decode(raw: int | None) -> int | None:
+    """The limit in force in %, or None while none is set (or nothing was read).
 
-    0 is "limit not used", which has no place on a 40-100 slider; it is kept
-    apart (limit None) instead of being shown as a percentage it is not.
-    Any other value is reported as read, so a unit that holds something
-    unexpected shows it rather than having it hidden by clamping.
+    0 is "limit not used", which has no place on a 40-100 slider; it is shown
+    as no value rather than as a percentage it is not. Any other value is
+    reported as read, so a unit that holds something unexpected shows it
+    rather than having it hidden by clamping.
     """
-    if raw == MODULATION_LIMIT_NOT_USED:
-        return {DATA_KEY_LIMIT: None, DATA_KEY_RAW: raw}
-    return {DATA_KEY_LIMIT: raw, DATA_KEY_RAW: raw}
+    if raw is None or raw == MODULATION_LIMIT_NOT_USED:
+        return None
+    return raw
 
 
 def encode(percent: float) -> int:

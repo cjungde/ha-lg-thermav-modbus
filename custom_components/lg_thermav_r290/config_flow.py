@@ -40,6 +40,7 @@ from .const import (
     DEFAULT_STOPBITS,
     DOMAIN,
 )
+from .migration import UNIQUE_ID_MINOR_VERSION
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -140,6 +141,8 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle the UI config flow for LG ThermaV R290."""
 
     VERSION = 1
+    # 2: unique ids follow docs/naming.md (migrated in __init__.py).
+    MINOR_VERSION = UNIQUE_ID_MINOR_VERSION
     _connection_type: str = CONNECTION_TCP
     _reconfigure_entry: config_entries.ConfigEntry | None = None
 

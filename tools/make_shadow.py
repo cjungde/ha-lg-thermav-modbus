@@ -104,14 +104,10 @@ SUBSTITUTIONS: tuple[tuple[str, str, str], ...] = (
     # would match it and start writing a second, five-minute-stale copy of every
     # reading into the time series database. Renaming the device out of the
     # prefix is a surer fix than adding an exclusion, because it also protects
-    # against any future pattern written against the production name.
+    # against any future pattern written against the production name. All
+    # entities take their device info from entity.py, so one change covers them.
     (
-        "sensor.py",
-        'name="LG ThermaV R290",',
-        f'name="{SHADOW_DEVICE_NAME}",',
-    ),
-    (
-        "binary_sensor.py",
+        "entity.py",
         'name="LG ThermaV R290",',
         f'name="{SHADOW_DEVICE_NAME}",',
     ),

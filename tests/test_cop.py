@@ -1,4 +1,4 @@
-"""Current COP from the unit's power registers (input 48 / input 36).
+"""COP and thermal power calculations (cop.py).
 
 cop.py and energy.py import nothing from Home Assistant, so no install is
 needed.
@@ -38,57 +38,47 @@ cop = _load("cop")
 energy = _load("energy")
 
 
-def test_divides_thermal_by_electrical_power() -> None:
-    assert cop.current_cop(8_000, 2_000) == 4.0
-    assert cop.current_cop(5_000, 1_500) == 3.33
+def test_instantaneous_cop_divides_thermal_by_electrical_power() -> None:
+    assert cop.instantaneous_cop(8_000, 2_000) == 4.0
+    assert cop.instantaneous_cop(5_000, 1_500) == 3.33
 
 
 def test_no_value_while_idling() -> None:
     """Below the threshold there is no meaningful COP: None, not 0."""
-    assert cop.current_cop(0, 0) is None
-    assert cop.current_cop(300, 40) is None
-    assert cop.current_cop(0, cop.MIN_ELECTRICAL_POWER_W - 1) is None
+    assert cop.instantaneous_cop(0, 0) is None
+    assert cop.instantaneous_cop(300, 40) is None
+    assert cop.instantaneous_cop(0, cop.MIN_ELECTRICAL_POWER_W - 1) is None
 
 
 def test_reported_from_the_threshold_on() -> None:
-    assert cop.current_cop(0, cop.MIN_ELECTRICAL_POWER_W) == 0.0
-    assert cop.current_cop(350, cop.MIN_ELECTRICAL_POWER_W) == 3.5
+    assert cop.instantaneous_cop(0, cop.MIN_ELECTRICAL_POWER_W) == 0.0
+    assert cop.instantaneous_cop(350, cop.MIN_ELECTRICAL_POWER_W) == 3.5
 
 
-def test_no_value_without_both_registers() -> None:
-    assert cop.current_cop(None, 2_000) is None
-    assert cop.current_cop(8_000, None) is None
-
-
-def test_reads_inputs_48_and_36() -> None:
-    """The keys it divides are the data keys of input 48 and input 36."""
-    by_address = {r.address: r for r in energy.ENERGY_REGISTERS}
-    assert by_address[48].data_key == cop.THERMAL_POWER_KEY
-    assert by_address[36].data_key == cop.ELECTRICAL_POWER_KEY
-
-
-def test_removed_with_the_energy_sensors() -> None:
-    assert cop.COP_CURRENT_KEY.startswith(energy.ENERGY_UNIQUE_ID_PREFIX)
-    assert cop.COP_CURRENT_KEY not in {r.data_key for r in energy.ENERGY_REGISTERS}
-
-
-def test_system_cop_reads_inputs_48_and_34() -> None:
-    by_address = {r.address: r for r in energy.ENERGY_REGISTERS}
-    assert by_address[48].data_key == cop.THERMAL_POWER_KEY
-    assert by_address[34].data_key == cop.ELECTRICAL_POWER_SYSTEM_KEY
-
-
-def test_system_cop_has_its_own_id_and_is_removed_with_the_energy_sensors() -> None:
-    assert cop.COP_SYSTEM_KEY != cop.COP_CURRENT_KEY
-    assert cop.COP_SYSTEM_KEY.startswith(energy.ENERGY_UNIQUE_ID_PREFIX)
-    assert cop.COP_SYSTEM_KEY not in {r.data_key for r in energy.ENERGY_REGISTERS}
+def test_no_value_without_both_values() -> None:
+    assert cop.instantaneous_cop(None, 2_000) is None
+    assert cop.instantaneous_cop(8_000, None) is None
 
 
 def test_system_cop_is_lower_when_the_system_draws_more() -> None:
     """Same thermal power over a larger system draw gives a lower COP."""
     thermal = 9_000
     heat_pump, system = 2_000, 3_000  # e.g. a 1 kW backup heater running
-    assert cop.current_cop(thermal, system) < cop.current_cop(thermal, heat_pump)
+    assert cop.instantaneous_cop(thermal, system) < cop.instantaneous_cop(
+        thermal, heat_pump
+    )
+
+
+def test_cumulative_cop_divides_thermal_by_electrical_energy() -> None:
+    assert cop.cumulative_cop(12_000, 3_000) == 4.0
+    assert cop.cumulative_cop(10_000, 3_000) == 3.33
+
+
+def test_cumulative_cop_is_none_without_electrical_energy() -> None:
+    """Not 0: a 0 would read as a terrible COP and skew statistics."""
+    assert cop.cumulative_cop(5_000, 0) is None
+    assert cop.cumulative_cop(None, 3_000) is None
+    assert cop.cumulative_cop(5_000, None) is None
 
 
 def test_thermal_power_from_flow_and_delta_t() -> None:
@@ -109,13 +99,20 @@ def test_thermal_power_needs_all_inputs() -> None:
 
 
 def test_calculated_cop_combines_both() -> None:
-    """flow × ΔT over the heat pump's power, same idle rule as COP Current."""
+    """flow × ΔT over the heat pump's power, same idle rule as COP (Reported)."""
     thermal = cop.thermal_power_w(20.0, 30.0, 35.0)
-    assert cop.current_cop(thermal, 1_744) == 4.0
-    assert cop.current_cop(thermal, cop.MIN_ELECTRICAL_POWER_W - 1) is None
+    assert cop.instantaneous_cop(thermal, 1_744) == 4.0
+    assert cop.instantaneous_cop(thermal, cop.MIN_ELECTRICAL_POWER_W - 1) is None
 
 
-def test_calculated_cop_has_its_own_id_and_is_removed_with_the_energy_sensors() -> None:
-    keys = {cop.COP_CURRENT_KEY, cop.COP_SYSTEM_KEY, cop.COP_CALCULATED_KEY}
-    assert len(keys) == 3
-    assert cop.COP_CALCULATED_KEY.startswith(energy.ENERGY_UNIQUE_ID_PREFIX)
+def test_cop_keys_are_the_name_slugs() -> None:
+    """docs/naming.md: key = name as an entity id slug."""
+    assert cop.KEY_COP_REPORTED == "cop_reported"
+    assert cop.KEY_COP_SYSTEM_REPORTED == "cop_system_reported"
+    assert cop.KEY_COP_CALCULATED == "cop_calculated"
+    assert cop.KEY_COP_HEATING_CUMULATIVE == "cop_heating_cumulative"
+    assert len(set(cop.COP_KEYS)) == 4
+
+
+def test_cop_keys_do_not_collide_with_the_energy_sensors() -> None:
+    assert not set(cop.COP_KEYS) & {r.key for r in energy.ENERGY_REGISTERS}

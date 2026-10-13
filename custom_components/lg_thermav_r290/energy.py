@@ -38,7 +38,7 @@ KIND_VALUE = "value"  # plain number, no unit
 class EnergyRegister:
     """One 32-bit value in the energy block."""
 
-    key: str
+    key: str  # entity key: the name as an entity id slug (docs/naming.md)
     address: int  # first of the two registers (high word)
     name: str
     kind: str
@@ -46,7 +46,7 @@ class EnergyRegister:
     @property
     def data_key(self) -> str:
         """Key of the decoded value in the coordinator data."""
-        return f"energy_reg_{self.key}"
+        return f"input_{self.key}"
 
     @property
     def modbus_number(self) -> int:
@@ -56,32 +56,52 @@ class EnergyRegister:
 
 ENERGY_REGISTERS: tuple[EnergyRegister, ...] = (
     EnergyRegister(
-        "power_total_system", 34, "Electrical Power Total System", KIND_POWER
-    ),
-    EnergyRegister("power_heat_pump", 36, "Electrical Power Heat Pump", KIND_POWER),
-    EnergyRegister("energy_total", 38, "Electrical Energy Total", KIND_ENERGY),
-    EnergyRegister(
-        "energy_heating", 40, "Electrical Energy Space Heating", KIND_ENERGY
+        "electrical_power_total_system",
+        34,
+        "Electrical Power Total System",
+        KIND_POWER,
     ),
     EnergyRegister(
-        "energy_cooling", 42, "Electrical Energy Space Cooling", KIND_ENERGY
+        "electrical_power_heat_pump", 36, "Electrical Power Heat Pump", KIND_POWER
     ),
-    EnergyRegister("energy_dhw", 44, "Electrical Energy DHW", KIND_ENERGY),
+    EnergyRegister(
+        "electrical_energy_total", 38, "Electrical Energy Total", KIND_ENERGY
+    ),
+    EnergyRegister(
+        "electrical_energy_space_heating",
+        40,
+        "Electrical Energy Space Heating",
+        KIND_ENERGY,
+    ),
+    EnergyRegister(
+        "electrical_energy_space_cooling",
+        42,
+        "Electrical Energy Space Cooling",
+        KIND_ENERGY,
+    ),
+    EnergyRegister("electrical_energy_dhw", 44, "Electrical Energy DHW", KIND_ENERGY),
     # Reads 0-12 on a 12 kW unit: not a percentage. What the number means (a
     # step, or kW of demand) is not established, so it carries no unit.
     EnergyRegister("demand_vs_supply", 46, "Demand vs Supply", KIND_VALUE),
-    EnergyRegister("thermal_power", 48, "Thermal Power (Reported)", KIND_POWER),
     EnergyRegister(
-        "thermal_energy_heating",
+        "thermal_power_reported", 48, "Thermal Power (Reported)", KIND_POWER
+    ),
+    EnergyRegister(
+        "thermal_energy_space_heating",
         50,
         "Thermal Energy Space Heating",
         KIND_ENERGY,
     ),
 )
 
-# Prefix of the unique ids of these sensors (after the config entry id), used to
-# drop them from the entity registry when the option is switched off.
-ENERGY_UNIQUE_ID_PREFIX = "energy_reg_"
+_BY_ADDRESS = {register.address: register for register in ENERGY_REGISTERS}
+
+# Coordinator data keys the COP sensors divide (see cop.py).
+DATA_KEY_ELECTRICAL_POWER_TOTAL_SYSTEM = _BY_ADDRESS[34].data_key
+DATA_KEY_ELECTRICAL_POWER_HEAT_PUMP = _BY_ADDRESS[36].data_key
+DATA_KEY_ELECTRICAL_ENERGY_SPACE_HEATING = _BY_ADDRESS[40].data_key
+DATA_KEY_THERMAL_POWER_REPORTED = _BY_ADDRESS[48].data_key
+DATA_KEY_THERMAL_ENERGY_SPACE_HEATING = _BY_ADDRESS[50].data_key
 
 
 def decode_uint32(high: int, low: int) -> int:
@@ -102,28 +122,6 @@ def decode_block(registers: list[int]) -> dict[str, int]:
             registers[offset], registers[offset + 1]
         )
     return values
-
-
-# Heating COP from the two cumulative space-heating counters (input 50 / 40).
-# Its unique id carries the energy prefix, so it is removed with the energy
-# sensors when the option is switched off.
-HEATING_COP_KEY = "energy_reg_heating_cop"
-THERMAL_ENERGY_HEATING_KEY = "energy_reg_thermal_energy_heating"
-ELECTRICAL_ENERGY_HEATING_KEY = "energy_reg_energy_heating"
-
-
-def heating_cop(thermal_wh: int | None, electrical_wh: int | None) -> float | None:
-    """Cumulative heating COP: thermal energy over electrical energy.
-
-    Both counters run since the unit's counters were last reset, so this is a
-    long-term average (closer to a seasonal performance factor), not the COP
-    of the moment. None while either counter is missing or no electrical
-    energy has been counted yet, rather than a 0 that would read as a
-    terrible COP and pull down long-term statistics.
-    """
-    if thermal_wh is None or electrical_wh is None or electrical_wh <= 0:
-        return None
-    return round(thermal_wh / electrical_wh, 2)
 
 
 class RetryBackoff:
