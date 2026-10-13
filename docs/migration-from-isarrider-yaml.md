@@ -143,8 +143,8 @@ The integration only ever writes a fixed list of addresses: holding 0, 1, 2, 4, 
 | 1 | `hp_dhw` | `switch.lg_thermav_r290_dhw` | |
 | 2 | `hp_silent_mode` | `switch.lg_thermav_r290_silent_mode` | |
 | 3 | `hp_dhw_desinfection_mode` | `button.lg_thermav_r290_start_disinfection` | **A button, not a switch.** See [§10](#10-differences-that-can-bite). |
-| 4 | `hp_emergency_stop_switch_off` (YAML comment: emergency operation, space heating) | `switch.lg_thermav_r290_emergency_stop` | Same coil, different name. |
-| 5 | `hp_emergency_stop_switch_on` (YAML comment: emergency operation, DHW) | read internally, **not writable** | See [§10](#10-differences-that-can-bite). |
+| 4 | `hp_emergency_stop_switch_off` (YAML comment: emergency operation, space heating) | `switch.lg_thermav_r290_emergency_stop` | Same coil. The manual calls 00005 *Notaus* (emergency stop: 0 normal / 1 emergency stop); the YAML comment is wrong. |
+| 5 | `hp_emergency_stop_switch_on` (YAML comment: emergency operation, DHW) | `button.lg_thermav_r290_start_emergency_operation`, only with the *Emergency operation button* option | **A button, not a switch.** See [§10](#10-differences-that-can-bite). |
 | 6 | `hp_active_power_limit` | not in the integration yet | See [§11](#11-only-in-the-yaml-not-in-the-integration). |
 
 The YAML verifies each switch by reading its coil back. The integration does the same: after every write it refreshes, so a switch shows what the unit stored.
@@ -259,8 +259,8 @@ Which of the two follows SG-Ready on a 12 kW has not been checked yet; compare b
 ### Controls
 
 - **Coil 3 is a button.** The manual specifies it as a trigger (`0: hold status / 1: start operation`). The unit clears it by itself after the write, so the YAML switch always reads back `off`, even when the write worked. Use `button.lg_thermav_r290_start_disinfection` and watch `binary_sensor.lg_thermav_r290_dhw_disinfection` to see whether the cycle started. The trigger only works if disinfection is enabled on the unit (installer menu → DHW → disinfection active).
-- **Coil 5 cannot be written.** The YAML switch `hp_emergency_stop_switch_on` writes it. The manual calls it a trigger for emergency operation, so the integration reads it but no entity can write it.
-- **Coil 4 has a different name.** YAML: `hp_emergency_stop_switch_off`, commented as emergency operation for space heating. Here: `switch.lg_thermav_r290_emergency_stop`. Same coil, same writes.
+- **Coil 5 is a button behind an option.** The YAML switch `hp_emergency_stop_switch_on` writes it. The manual calls 00006 *Auslöser Notaus-Betrieb*, a trigger (0 hold status / 1 start), so it is a button here: `button.lg_thermav_r290_start_emergency_operation`, created only with the *Emergency operation button* option (off by default), because emergency operation typically heats with the backup heater. Coil 5 can only be written while the option is on.
+- **Coil 4 has a different name.** YAML: `hp_emergency_stop_switch_off`, commented as emergency operation for space heating. Here: `switch.lg_thermav_r290_emergency_stop`. Same coil, same writes. The manual calls 00005 *Notaus* (emergency stop), so the integration's name is the right one.
 - **Setpoint ranges.** HK1 allows 20–60 °C, as in the YAML. DHW allows 35–65 °C here (YAML 40–60). The unit applies its own limits on top: a value it does not accept is stored clamped, and the entity shows what was stored.
 - **Max compressor modulation shows *unknown* when no limit is set.** The register holds 0 for "no limit". The YAML slider then keeps its last position (its sync automation cannot set 0 on a 40–100 slider); the integration shows *unknown*, with `register_value: 0` and `limit_active: false` as attributes. Every write is clamped to 40–100, so the slider can never send 0.
 

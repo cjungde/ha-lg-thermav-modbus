@@ -18,9 +18,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import CONF_EMERGENCY_OPERATION, DOMAIN
 from .coordinator import LGThermaVCoordinator
-from .entity import LGEntity
+from .entity import LGEntity, remove_entities
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -38,6 +38,19 @@ _BUTTONS: tuple[LGButtonDescription, ...] = (
     ),
 )
 
+# Coil 5 (00006, "Auslöser Notaus-Betrieb": 0 hold status / 1 start).
+# Starts emergency operation, which typically heats with the backup heater
+# and draws far more power than the heat pump. Only created with its option,
+# off by default; the coordinator accepts a write to coil 5 only then.
+# Status: binary_sensors Emergency Heating/Cooling Available (10015) and
+# Emergency DHW Available (10016) show whether emergency operation is possible.
+EMERGENCY_OPERATION_BUTTON = LGButtonDescription(
+    key="start_emergency_operation",
+    coil_address=5,
+    name="Start Emergency Operation",
+    icon="mdi:alert-octagon",
+)
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -45,9 +58,12 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: LGThermaVCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        LGButton(coordinator, entry, description) for description in _BUTTONS
-    )
+    entities = [LGButton(coordinator, entry, d) for d in _BUTTONS]
+    if entry.options.get(CONF_EMERGENCY_OPERATION, False):
+        entities.append(LGButton(coordinator, entry, EMERGENCY_OPERATION_BUTTON))
+    else:
+        remove_entities(hass, entry, "button", (EMERGENCY_OPERATION_BUTTON.key,))
+    async_add_entities(entities)
 
 
 class LGButton(LGEntity, ButtonEntity):

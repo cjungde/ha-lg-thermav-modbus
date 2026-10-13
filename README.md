@@ -44,7 +44,7 @@ Nothing in the manual or in the community projects I could find explains them. T
 
 Switch it on under *Settings → Devices & Services → LG ThermaV R290 → Configure → Experimental registers*. This adds 18 diagnostic sensors named `Experimental Input 30015`, `Experimental Holding 40011`, … They carry the raw, unscaled 16-bit value and have long-term statistics, so they can be compared with compressor speed, temperatures and defrost cycles. Switching the option off removes them again.
 
-**They are read-only.** The integration only ever writes a fixed list of known addresses (holding 0, 1, 2, 4, 5, 7, 8 and coils 0–4, plus holding 23 while the compressor modulation limit option is on); every other write is refused before it reaches the bus, so none of these registers can be written by the integration, whichever entity or service asks. A register that stops answering leaves its sensor empty and does not affect the other values.
+**They are read-only.** The integration only ever writes a fixed list of known addresses (holding 0, 1, 2, 4, 5, 7, 8 and coils 0–4, plus holding 23 while the compressor modulation limit option is on, and coil 5 while the emergency operation button option is on); every other write is refused before it reaches the bus, so none of these registers can be written by the integration, whichever entity or service asks. A register that stops answering leaves its sensor empty and does not affect the other values.
 
 The full result of the scan, what the manual lists and what it does not, is in [docs/register-scan.md](docs/register-scan.md).
 
@@ -233,19 +233,27 @@ The option also adds `sensor.lg_thermav_r290_cop_reported`: the unit's thermal p
 
 ### Buttons
 
-Coil 3 is a momentary trigger, not a state switch. The manual specifies it as
-`0: hold status / 1: start operation` — the unit clears the coil by itself after
-the write, so reading it back is never a confirmation. Use the binary sensor to
-see whether the operation actually started.
+Coils 3 and 5 are momentary triggers, not state switches. The manual specifies
+both as `0: hold status / 1: start operation` — the unit clears the coil by
+itself after the write, so reading it back is never a confirmation. Use the
+binary sensors to see the status.
 
 | Entity | Modbus coil | Status entity |
 |---|---|---|
-| `button.lg_thermav_r290_start_disinfection` | Coil 3 (trigger) | `binary_sensor.lg_thermav_r290_dhw_disinfection` (discrete 6) |
+| `button.lg_thermav_r290_start_disinfection` | Coil 3 (00004, trigger) | `binary_sensor.lg_thermav_r290_dhw_disinfection` (discrete 6) |
+| `button.lg_thermav_r290_start_emergency_operation` | Coil 5 (00006, trigger) — **option, off by default** | `binary_sensor.lg_thermav_r290_emergency_heating_cooling_available` / `…_emergency_dhw_available` (discrete 14 / 15) |
 
 > A trigger coil modelled as a switch would always read back `off`, even when the
 > write succeeded, which is why this is a button. Note that the trigger
 > only has an effect if disinfection is enabled on the unit itself
 > (installer menu → DHW → disinfection active; factory default is off).
+
+> **Start Emergency Operation** only exists while the option *Emergency operation
+> button* is on (*Configure*), and coil 5 can only be written then. The manual calls
+> coil 00006 *Auslöser Notaus-Betrieb*. Emergency operation typically heats with the
+> backup heater and draws far more power than the heat pump itself, so the button
+> is not created by default. Not to be confused with coil 4 (00005, *Notaus*),
+> which is the `switch.lg_thermav_r290_emergency_stop` (0 normal / 1 emergency stop).
 
 ### Number inputs
 

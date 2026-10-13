@@ -117,5 +117,6 @@ def test_nothing_experimental_is_writable() -> None:
 def test_the_write_whitelist_is_the_set_the_entities_use() -> None:
     assert {0, 1, 2, 4, 5, 7, 8} == const.WRITABLE_HOLDING_REGISTERS
     assert {0, 1, 2, 3, 4} == const.WRITABLE_COILS
-    # Coil 5 triggers emergency operation; no entity may reach it.
+    # Coil 5 triggers emergency operation; only its option makes it writable.
     assert 5 not in const.WRITABLE_COILS
+    assert {5} == const.EMERGENCY_OPERATION_WRITABLE_COILS
