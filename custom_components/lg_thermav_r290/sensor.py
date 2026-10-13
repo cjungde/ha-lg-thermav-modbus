@@ -34,6 +34,7 @@ from .const import (
     OPERATION_MODE_FROM_VALUE,
 )
 from .coordinator import LGThermaVCoordinator
+from .cop import COP_CURRENT_KEY, ELECTRICAL_POWER_KEY, THERMAL_POWER_KEY, current_cop
 from .energy import (
     ELECTRICAL_ENERGY_HEATING_KEY,
     ENERGY_REGISTERS,
@@ -350,6 +351,10 @@ async def async_setup_entry(
         )
     else:
         _remove_sensors(hass, entry, "exp_")
+    # Current COP needs the power registers of the energy option; its unique id
+    # carries the energy prefix, so switching the option off removes it too.
+    if entry.options.get(CONF_ENERGY_REGISTERS, False):
+        entities.append(LGCurrentCopSensor(coordinator, entry))
     async_add_entities(entities)
 
 
@@ -589,3 +594,30 @@ class LGThermalPowerSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity
         flow_ls = float(flow) / 60.0  # l/min → l/s
         power_w = flow_ls * delta_t * self._CP_WATER
         return max(0, int(round(power_w)))
+
+
+class LGCurrentCopSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
+    """COP of the moment: input 48 (thermal power) / input 36 (electrical).
+
+    Only created with the energy registers option, which provides both. No
+    value while the unit idles below cop.MIN_ELECTRICAL_POWER_W; see
+    cop.current_cop.
+    """
+
+    _attr_has_entity_name = True
+    _attr_name = "COP Current"
+    _attr_icon = "mdi:heat-pump"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 2
+
+    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_{COP_CURRENT_KEY}"
+        self._attr_device_info = _device_info(entry)
+
+    @property
+    def native_value(self) -> float | None:
+        data = self.coordinator.data
+        if data is None:
+            return None
+        return current_cop(data.get(THERMAL_POWER_KEY), data.get(ELECTRICAL_POWER_KEY))
