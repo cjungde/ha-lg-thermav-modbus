@@ -139,7 +139,7 @@ The integration only ever writes a fixed list of addresses: holding 0, 1, 2, 4, 
 
 | Coil | YAML (`switch.…`) | Integration | Notes |
 |---|---|---|---|
-| 0 | `hp_hauptschalter` | `switch.lg_thermav_r290_heat_pump` | |
+| 0 | `hp_hauptschalter` | `switch.lg_thermav_r290_heating_cooling` | The manual calls 00001 *enable/disable heating/cooling*: it switches space heating/cooling, not the whole heat pump (DHW is coil 1). |
 | 1 | `hp_dhw` | `switch.lg_thermav_r290_dhw` | |
 | 2 | `hp_silent_mode` | `switch.lg_thermav_r290_silent_mode` | |
 | 3 | `hp_dhw_desinfection_mode` | `button.lg_thermav_r290_start_disinfection` | **A button, not a switch.** See [§10](#10-differences-that-can-bite). |

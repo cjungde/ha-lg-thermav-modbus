@@ -8,7 +8,9 @@ automatically (see [Migration from 1.2.0 and earlier](#migration-from-120-and-ea
 ## Entity names
 
 - **English, title case, no abbreviations**: *Outdoor Temperature*, not
-  *outside_temp*; *Heat Pump*, not *Hauptschalter*.
+  *outside_temp*; *Heating/Cooling*, not *Hauptschalter*. Name what the
+  register does per the manual: coil 0 switches space heating/cooling, not the
+  whole heat pump.
 - **The thing first, the qualifier after**: *Thermal Power DHW*, *COP System*,
   *Electrical Energy Space Heating*. All COP sensors start with *COP*, all
   thermal power sensors with *Thermal Power*, all electrical ones with
@@ -64,7 +66,7 @@ register a value comes from, followed by the key of the entity that shows it:
 |---|---|---|
 | `input_` | input register (FC04) | `input_outdoor_temperature` |
 | `holding_` | holding register (FC03) | `holding_dhw_target_temperature` |
-| `coil_` | coil (FC01) | `coil_heat_pump` |
+| `coil_` | coil (FC01) | `coil_heating_cooling` |
 | `discrete_` | discrete input (FC02) | `discrete_compressor` |
 
 Two entities that show the same register share its data key: *Energy Control
@@ -85,7 +87,7 @@ meaningful name to use and keys by register number instead (`input_30015`,
 - Register addresses are 0-based in code, with the manual's 5-digit number in
   a comment (`# 40024`).
 
-## Migration from 1.2.0 and earlier
+## Migration of older installations
 
 Up to 1.2.0 the unique ids had grown one by one: abbreviations
 (`inlet_temp`), German (`hauptschalter`), typos (`dhw_desinfection_start`,
@@ -98,6 +100,19 @@ rewrites the unique ids in the entity registry using the table in
 changed in place, so **entity ids, history, statistics and automations stay
 exactly as they are**; only the unique id behind them changes. An id that is
 already taken is left alone and logged, not failed.
+
+Later renames are added as further steps in `MIGRATION_STEPS`, each raising
+the config entry minor version by one:
+
+| Minor version | Step |
+|---|---|
+| 1 → 2 | the 1.3.0 table (`UNIQUE_KEY_RENAMES`) |
+| 2 → 3 | coil 0 switch `heat_pump` → `heating_cooling` (*Heat Pump* → *Heating/Cooling*) |
+
+An entry runs every step above its minor version, in order, so an
+installation from before 1.3.0 goes `hauptschalter` → `heat_pump` →
+`heating_cooling` in one start. Each step runs once per installation, at
+setup, never per poll.
 
 Entity ids are never changed by the integration: an installation from before
 1.3.0 keeps its entity ids even where the entity's name has changed since

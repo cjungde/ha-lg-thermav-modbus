@@ -21,10 +21,6 @@ from __future__ import annotations
 
 from .experimental import EXPERIMENTAL_REGISTERS
 
-# Config entry minor version that carries the new unique ids. Entries below it
-# are migrated on setup, then bumped to it.
-UNIQUE_ID_MINOR_VERSION = 2
-
 _ENERGY_STATE_NAMES = (
     "not_used",
     "forced_off",
@@ -136,15 +132,52 @@ UNIQUE_KEY_RENAMES: dict[str, dict[str, str]] = {
 }
 
 
-def renamed_unique_id(domain: str, unique_id: str, entry_id: str) -> str | None:
-    """New unique id for an old one, or None if it keeps its id.
+# Coil 0 (00001) is "Aktivieren / Deaktivieren (Heizung / Kühlung)" in the
+# manual: it switches space heating/cooling, not the whole heat pump (DHW has
+# its own coil 1). Its switch is renamed from "Heat Pump" to "Heating/Cooling".
+HEATING_COOLING_RENAMES: dict[str, dict[str, str]] = {
+    "switch": {"heat_pump": "heating_cooling"},
+}
+
+# The steps, in order: (config entry minor version reached, renames). An entry
+# runs every step above its minor version, one after the other, so one set up
+# before 1.3.0 goes hauptschalter -> heat_pump -> heating_cooling.
+MIGRATION_STEPS: tuple[tuple[int, dict[str, dict[str, str]]], ...] = (
+    (2, UNIQUE_KEY_RENAMES),
+    (3, HEATING_COOLING_RENAMES),
+)
+
+# Config entry minor version that carries the current unique ids. Entries below
+# it are migrated on setup, then bumped to it; new entries start at it.
+UNIQUE_ID_MINOR_VERSION = MIGRATION_STEPS[-1][0]
+
+
+def renamed_unique_id(
+    domain: str,
+    unique_id: str,
+    entry_id: str,
+    renames: dict[str, dict[str, str]] = UNIQUE_KEY_RENAMES,
+) -> str | None:
+    """New unique id for an old one in one step, or None if it keeps its id.
 
     Only ids of this config entry (``<entry_id>_<key>``) are touched.
     """
     prefix = f"{entry_id}_"
     if not unique_id.startswith(prefix):
         return None
-    new_key = UNIQUE_KEY_RENAMES.get(domain, {}).get(unique_id[len(prefix) :])
+    new_key = renames.get(domain, {}).get(unique_id[len(prefix) :])
     if new_key is None:
         return None
     return f"{prefix}{new_key}"
+
+
+def migrated_unique_id(
+    domain: str, unique_id: str, entry_id: str, from_minor_version: int
+) -> str:
+    """The unique id after every step an entry at this minor version runs."""
+    for minor_version, renames in MIGRATION_STEPS:
+        if from_minor_version < minor_version:
+            unique_id = (
+                renamed_unique_id(domain, unique_id, entry_id, renames) or unique_id
+            )
+    return unique_id

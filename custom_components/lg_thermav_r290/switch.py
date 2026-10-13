@@ -43,7 +43,9 @@ def _coil(key: str, address: int, name: str, icon: str) -> LGSwitchDescription:
 
 
 _SWITCHES: tuple[LGSwitchDescription, ...] = (
-    _coil("heat_pump", 0, "Heat Pump", "mdi:heat-pump"),
+    # Coil 0 (00001): "Aktivieren / Deaktivieren (Heizung / Kühlung)" -- space
+    # heating/cooling only; DHW is coil 1.
+    _coil("heating_cooling", 0, "Heating/Cooling", "mdi:heat-pump"),
     _coil("dhw", 1, "DHW", "mdi:water-boiler"),
     _coil("silent_mode", 2, "Silent Mode", "mdi:volume-off"),
     _coil("emergency_stop", 4, "Emergency Stop", "mdi:stop-circle"),

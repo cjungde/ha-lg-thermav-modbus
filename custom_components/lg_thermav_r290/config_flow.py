@@ -142,7 +142,8 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle the UI config flow for LG ThermaV R290."""
 
     VERSION = 1
-    # 2: unique ids follow docs/naming.md (migrated in __init__.py).
+    # Minor versions carry the unique id renames (migration.MIGRATION_STEPS):
+    # 2: unique ids follow docs/naming.md; 3: coil 0 switch is heating_cooling.
     MINOR_VERSION = UNIQUE_ID_MINOR_VERSION
     _connection_type: str = CONNECTION_TCP
     _reconfigure_entry: config_entries.ConfigEntry | None = None

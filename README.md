@@ -14,7 +14,7 @@ Replaces a hand-crafted YAML Modbus configuration with native HA entities: senso
 - **Energy registers (optional)** — electrical power, cumulative electrical energy per mode, demand vs. supply and the unit's own thermal power from input registers 34–51; off by default, see [Energy registers](#energy-registers-optional)
 - **Computed thermal power sensors** — total / heating circuit / DHW, calculated from flow rate and ΔT each poll cycle (Q = flow/60 × ΔT × 4186 W)
 - **Binary sensors** — compressor, pumps, DHW heating, defrost, backup heater stages, fault, silent mode, cooling, emergency modes, energy state slots 0–8
-- **Switches** — main power, DHW, silent mode, emergency stop
+- **Switches** — heating/cooling, DHW, silent mode, emergency stop
 - **Buttons** — start DHW disinfection (momentary trigger coil)
 - **Number inputs** — flow temperature setpoints (circuit 1, circuit 2), DHW target temperature, heating curve shift values (circuit 1, circuit 2); optional max compressor modulation (40–100 %)
 - **Select inputs** — operation mode (Heating / Cooling / Auto), control method (outlet temp / inlet temp / room air)
@@ -226,7 +226,7 @@ The option also adds `sensor.lg_thermav_r290_cop_reported`: the unit's thermal p
 
 | Entity | Modbus coil |
 |---|---|
-| `switch.lg_thermav_r290_heat_pump` | Coil 0 |
+| `switch.lg_thermav_r290_heating_cooling` | Coil 0 (00001: enable/disable heating/cooling; DHW is coil 1) |
 | `switch.lg_thermav_r290_dhw` | Coil 1 |
 | `switch.lg_thermav_r290_silent_mode` | Coil 2 |
 | `switch.lg_thermav_r290_emergency_stop` | Coil 4 |
@@ -312,6 +312,7 @@ Switch on **Compressor modulation limit** in the integration's options. Holding 
   | COP Current (`…_cop_current`) | COP (Reported) |
   | COP System (`…_cop_system`) | COP System (Reported) |
   | Heating COP (Cumulative) (`…_heating_cop_cumulative`) | COP Heating (Cumulative) |
+  | Heat Pump switch (`switch.…_heat_pump`, up to 1.3.0) | Heating/Cooling (coil 0 switches space heating/cooling only, per the manual) |
 
   To get the new ids on an existing installation, rename the entity ids in *Settings → Entities* (history moves with the rename).
 - Flow rate uses Home Assistant's unit `L/min` and device class `volume_flow_rate` (before: plain `l/min`, no device class). The values are the same, but after updating, *Developer tools → Statistics* may report that the unit of `sensor.lg_thermav_r290_flow_rate` changed; choose *Update the unit* there, nothing needs converting.
