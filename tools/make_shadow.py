@@ -89,7 +89,7 @@ SUBSTITUTIONS: tuple[tuple[str, str, str], ...] = (
     # every request the shadow skips is one the live entry does not queue behind.
     (
         "const.py",
-        "DEFAULT_SCAN_INTERVAL = 30",
+        "DEFAULT_SCAN_INTERVAL = 10",
         "DEFAULT_SCAN_INTERVAL = 300",
     ),
     (
