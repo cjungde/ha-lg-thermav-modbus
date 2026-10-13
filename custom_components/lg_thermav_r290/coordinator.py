@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 import logging
+import time
 from typing import Any
 
 from homeassistant.components.modbus import async_get_unit
@@ -44,6 +45,7 @@ from .experimental import (
     data_key,
 )
 from .limits import DATA_KEY_MAX_COMPRESSOR_MODULATION, MODULATION_LIMIT_REGISTER
+from .pollstats import CountingUnit, stats
 from .power_limit import (
     DATA_KEY_MAX_ELECTRICAL_POWER,
     DATA_KEY_POWER_LIMIT,
@@ -73,11 +75,14 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         so the reads below and the writes further down cannot interleave —
         neither with each other nor with another integration on the same bus.
         """
-        self.unit = async_get_unit(
-            hass,
-            entry,
-            params_from_entry_data(dict(entry.data)),
-            int(entry.data[CONF_SLAVE_ID]),
+        # Counts the reads of each poll for the poll statistics (pollstats.py).
+        self.unit = CountingUnit(
+            async_get_unit(
+                hass,
+                entry,
+                params_from_entry_data(dict(entry.data)),
+                int(entry.data[CONF_SLAVE_ID]),
+            )
         )
 
         self._experimental = bool(entry.options.get(CONF_EXPERIMENTAL, False))
@@ -122,6 +127,20 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     _identity: tuple[int | None, int | None] | None = None
 
     async def _async_update_data(self) -> dict[str, Any]:
+        """Poll the unit, and time the poll for Poll Duration and Bus Load."""
+        self.unit.reads = 0
+        start = time.monotonic()
+        data = await self._async_poll()
+        data.update(
+            stats(
+                time.monotonic() - start,
+                self.update_interval.total_seconds(),
+                self.unit.reads,
+            )
+        )
+        return data
+
+    async def _async_poll(self) -> dict[str, Any]:
         try:
             # Read all blocks
             # Register 15 is undefined on this device; split the input read to avoid it.
