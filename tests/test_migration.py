@@ -129,3 +129,56 @@ def test_migration_size() -> None:
     """94 renamed ids; 9 kept theirs (flow rate, water pressure, error code,
     device group, both selects, three switches)."""
     assert sum(len(t) for t in migration.UNIQUE_KEY_RENAMES.values()) == 94
+
+
+def test_steps_are_in_order_and_end_at_the_current_version() -> None:
+    versions = [minor for minor, _ in migration.MIGRATION_STEPS]
+    assert versions == sorted(versions)
+    assert len(set(versions)) == len(versions)
+    assert migration.UNIQUE_ID_MINOR_VERSION == versions[-1] == 3
+
+
+def test_coil_0_is_renamed_from_every_earlier_version() -> None:
+    """hauptschalter (before 1.3.0) and heat_pump (1.3.0) both end up here."""
+    for old, from_minor in (("hauptschalter", 1), ("heat_pump", 2)):
+        assert (
+            migration.migrated_unique_id("switch", f"{ENTRY}_{old}", ENTRY, from_minor)
+            == f"{ENTRY}_heating_cooling"
+        )
+
+
+def test_an_entry_on_1_3_runs_only_the_new_step() -> None:
+    """Already-migrated ids stay; only heat_pump moves."""
+    assert (
+        migration.migrated_unique_id("sensor", f"{ENTRY}_inlet_temperature", ENTRY, 2)
+        == f"{ENTRY}_inlet_temperature"
+    )
+    # An id renamed in step 2 is not renamed again by step 2 when starting at 2.
+    assert (
+        migration.migrated_unique_id("switch", f"{ENTRY}_hauptschalter", ENTRY, 2)
+        == f"{ENTRY}_hauptschalter"
+    )
+
+
+def test_a_current_entry_runs_no_step() -> None:
+    assert (
+        migration.migrated_unique_id("switch", f"{ENTRY}_heating_cooling", ENTRY, 3)
+        == f"{ENTRY}_heating_cooling"
+    )
+
+
+def test_heat_pump_only_renamed_on_the_switch_platform() -> None:
+    """electrical_power_heat_pump and friends are sensors; untouched."""
+    assert (
+        migration.migrated_unique_id(
+            "sensor", f"{ENTRY}_electrical_power_heat_pump", ENTRY, 2
+        )
+        == f"{ENTRY}_electrical_power_heat_pump"
+    )
+
+
+def test_no_step_renames_onto_a_key_another_step_starts_from() -> None:
+    """Within each step, old and new keys never overlap per platform."""
+    for _, renames in migration.MIGRATION_STEPS:
+        for table in renames.values():
+            assert not set(table) & set(table.values())

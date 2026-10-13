@@ -181,7 +181,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "holding_dhw_target_temperature": round(hold_low[8] * 0.1, 1),
             "holding_energy_state": hold_low[9],
             # Coils
-            "coil_heat_pump": coils[0],
+            "coil_heating_cooling": coils[0],
             "coil_dhw": coils[1],
             "coil_silent_mode": coils[2],
             "coil_start_disinfection": coils[3],

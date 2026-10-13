@@ -53,7 +53,7 @@ There is no automatic migration: the entities have different ids and belong to o
 
 | Coil | basti242 | This integration |
 |---|---|---|
-| 0 | `switch.hp_hauptschalter` | `switch.lg_thermav_r290_heat_pump` |
+| 0 | `switch.hp_hauptschalter` | `switch.lg_thermav_r290_heating_cooling` |
 | 1 | `switch.hp_dhw` | `switch.lg_thermav_r290_dhw` |
 | 2 | `switch.lg_wp_ruhemodus` | `switch.lg_thermav_r290_silent_mode` |
 | 3 | `switch.hp_dhw_desinfection_mode` | `button.lg_thermav_r290_start_disinfection` (trigger, not a switch) |
