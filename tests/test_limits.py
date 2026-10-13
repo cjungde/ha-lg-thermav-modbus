@@ -59,19 +59,22 @@ def test_encode_rounds_to_whole_percent() -> None:
 
 
 def test_decode_keeps_not_used_apart() -> None:
-    assert limits.decode(0) == {
-        limits.DATA_KEY_LIMIT: None,
-        limits.DATA_KEY_RAW: 0,
-    }
+    """0 means no limit set: shown as no value, not as 0 %."""
+    assert limits.decode(0) is None
+    assert limits.decode(None) is None
 
 
 def test_decode_reports_a_limit_as_read() -> None:
-    assert limits.decode(70) == {
-        limits.DATA_KEY_LIMIT: 70,
-        limits.DATA_KEY_RAW: 70,
-    }
+    assert limits.decode(70) == 70
     # Unexpected values are shown, not hidden by clamping.
-    assert limits.decode(120)[limits.DATA_KEY_LIMIT] == 120
+    assert limits.decode(120) == 120
+
+
+def test_keys_follow_the_naming_rules() -> None:
+    assert limits.KEY_MAX_COMPRESSOR_MODULATION == "max_compressor_modulation"
+    assert (
+        limits.DATA_KEY_MAX_COMPRESSOR_MODULATION == "holding_max_compressor_modulation"
+    )
 
 
 def test_not_writable_unless_the_option_adds_it() -> None:
@@ -79,7 +82,7 @@ def test_not_writable_unless_the_option_adds_it() -> None:
     assert limits.MODULATION_LIMIT_REGISTER not in const.WRITABLE_HOLDING_REGISTERS
     assert {
         limits.MODULATION_LIMIT_REGISTER
-    } == const.OPTIONAL_WRITABLE_HOLDING_REGISTERS
+    } == const.MODULATION_LIMIT_WRITABLE_HOLDING_REGISTERS
 
 
 def test_not_an_experimental_register() -> None:

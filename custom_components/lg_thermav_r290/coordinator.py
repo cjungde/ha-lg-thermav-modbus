@@ -22,7 +22,7 @@ from .const import (
     CONF_SLAVE_ID,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
-    OPTIONAL_WRITABLE_HOLDING_REGISTERS,
+    MODULATION_LIMIT_WRITABLE_HOLDING_REGISTERS,
     WRITABLE_COILS,
     WRITABLE_HOLDING_REGISTERS,
 )
@@ -32,9 +32,8 @@ from .energy import (
     RetryBackoff,
     decode_block,
 )
-from .experimental import EXPERIMENTAL_BLOCKS, INPUT_FROM_MAIN_READ, register_key
-from .limits import MODULATION_LIMIT_REGISTER
-from .limits import decode as decode_modulation_limit
+from .experimental import EXPERIMENTAL_BLOCKS, INPUT_FROM_MAIN_READ, data_key
+from .limits import DATA_KEY_MAX_COMPRESSOR_MODULATION, MODULATION_LIMIT_REGISTER
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -73,7 +72,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Holding 23 joins the write whitelist only while its option is on;
         # with the option off the integration cannot write it at all.
         self._writable_holding = (
-            WRITABLE_HOLDING_REGISTERS | OPTIONAL_WRITABLE_HOLDING_REGISTERS
+            WRITABLE_HOLDING_REGISTERS | MODULATION_LIMIT_WRITABLE_HOLDING_REGISTERS
             if self._modulation_limit
             else WRITABLE_HOLDING_REGISTERS
         )
@@ -133,53 +132,53 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # Input registers (raw × scale)
             # inp_lo[n] = register n  (0-13)
             # inp_hi[n] = register 16+n (16-24)
-            "error_code": inp_lo[0],
-            "odu_operation_cycle": inp_lo[1],
-            "inlet_temp": round(inp_lo[2] * 0.1, 1),
-            "outlet_temp": round(inp_lo[3] * 0.1, 1),
-            "backup_heater_outlet_temp": round(inp_lo[4] * 0.1, 1),
-            "dhw_water_temp": round(inp_lo[5] * 0.1, 1),
-            "solar_collector_temp": round(inp_lo[6] * 0.1, 1),
-            "room_air_temp_circuit1": round(inp_lo[7] * 0.1, 1),
-            "flow_rate": round(inp_lo[8] * 0.1, 1),
-            "flow_temp_circle_2": round(inp_lo[9] * 0.1, 1),
-            "room_air_temp_circuit2_in": round(inp_lo[10] * 0.1, 1),
-            "energy_state_input": inp_lo[11],
-            "outside_temp": round(inp_lo[12] * 0.1, 1),
-            "water_pressure": round(inp_lo[13] * 0.1, 1),
-            "temp_liquid_gas": round(inp_hi[0] * 0.1, 1),
-            "temp_suction": round(inp_hi[2] * 0.1, 1),
-            "temp_heatgas": round(inp_hi[3] * 0.1, 1),
-            "temp_before_vaporiser": round(inp_hi[4] * 0.1, 1),
-            "temp_after_vaporiser": round(inp_hi[5] * 0.1, 1),
+            "input_error_code": inp_lo[0],
+            "input_operation_cycle_odu": inp_lo[1],
+            "input_inlet_temperature": round(inp_lo[2] * 0.1, 1),
+            "input_outlet_temperature": round(inp_lo[3] * 0.1, 1),
+            "input_backup_heater_outlet_temperature": round(inp_lo[4] * 0.1, 1),
+            "input_dhw_temperature": round(inp_lo[5] * 0.1, 1),
+            "input_solar_collector_temperature": round(inp_lo[6] * 0.1, 1),
+            "input_room_air_temperature_circuit_1": round(inp_lo[7] * 0.1, 1),
+            "input_flow_rate": round(inp_lo[8] * 0.1, 1),
+            "input_flow_temperature_circuit_2": round(inp_lo[9] * 0.1, 1),
+            "input_room_air_temperature_circuit_2": round(inp_lo[10] * 0.1, 1),
+            "input_energy_control_signal": inp_lo[11],
+            "input_outdoor_temperature": round(inp_lo[12] * 0.1, 1),
+            "input_water_pressure": round(inp_lo[13] * 0.1, 1),
+            "input_liquid_gas_temperature": round(inp_hi[0] * 0.1, 1),
+            "input_suction_temperature": round(inp_hi[2] * 0.1, 1),
+            "input_hot_gas_temperature": round(inp_hi[3] * 0.1, 1),
+            "input_temperature_before_evaporator": round(inp_hi[4] * 0.1, 1),
+            "input_temperature_after_evaporator": round(inp_hi[5] * 0.1, 1),
             # Registers 22/23 count in hundredths of a bar, unlike register 13
             # (water pressure, tenths). Measured 2026-10-03: with 0.1 the
             # condenser read 63-80 bar at standstill and 220.6 bar at
             # 3600 rpm; with 0.01 that is 6-8 bar (pressure equalised, high
             # and low side within 1 bar) and 22.1 bar under load.
-            "high_pressure": round(inp_hi[6] * 0.01, 2),
-            "low_pressure": round(inp_hi[7] * 0.01, 2),
-            "compressor_rpm": int(round(inp_hi[8] * 60)),
-            "device_group": device_group,
-            "product_info": product_info,
+            "input_high_pressure_condenser": round(inp_hi[6] * 0.01, 2),
+            "input_low_pressure_evaporator": round(inp_hi[7] * 0.01, 2),
+            "input_compressor_speed": int(round(inp_hi[8] * 60)),
+            "input_device_group": device_group,
+            "input_product_information": product_info,
             # Holding registers
-            "operation_mode": hold_low[0],
-            "control_method": hold_low[1],
-            "target_temp_circuit1": round(hold_low[2] * 0.1, 1),
-            "room_air_temp_circuit1_hold": round(hold_low[3] * 0.1, 1),
-            "shift_value_circuit1": _signed16(hold_low[4]),
-            "target_temp_circuit2": round(hold_low[5] * 0.1, 1),
-            "room_air_temp_circuit2_hold": round(hold_low[6] * 0.1, 1),
-            "shift_value_circuit2": _signed16(hold_low[7]),
-            "dhw_target_temp": round(hold_low[8] * 0.1, 1),
-            "energy_state_raw": hold_low[9],
+            "holding_operation_mode": hold_low[0],
+            "holding_control_method": hold_low[1],
+            "holding_target_temperature_circuit_1": round(hold_low[2] * 0.1, 1),
+            "holding_room_air_temperature_circuit_1": round(hold_low[3] * 0.1, 1),
+            "holding_setpoint_shift_circuit_1": _signed16(hold_low[4]),
+            "holding_target_temperature_circuit_2": round(hold_low[5] * 0.1, 1),
+            "holding_room_air_temperature_circuit_2": round(hold_low[6] * 0.1, 1),
+            "holding_setpoint_shift_circuit_2": _signed16(hold_low[7]),
+            "holding_dhw_target_temperature": round(hold_low[8] * 0.1, 1),
+            "holding_energy_state": hold_low[9],
             # Coils
-            "coil_hauptschalter": coils[0],
+            "coil_heat_pump": coils[0],
             "coil_dhw": coils[1],
             "coil_silent_mode": coils[2],
-            "coil_dhw_desinfection": coils[3],
+            "coil_start_disinfection": coils[3],
             "coil_emergency_stop": coils[4],
-            "coil_emergency_trigger": coils[5],
+            "coil_emergency_operation_trigger": coils[5],
             # Discrete inputs
             # Discrete input 10001. The manual documents this as
             # "0 = flow rate OK / 1 = flow rate too low", but on the R290
@@ -194,23 +193,23 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # di[5] (DHW heating) stay correctly aligned. Exposed as a
             # RUNNING sensor rather than a PROBLEM one, which previously
             # raised a false alert on every pump run.
-            "di_water_flow": di[0],  # 1 = flow present
-            "di_water_pump": di[1],
-            "di_ext_water_pump": di[2],
-            "di_compressor": di[3],
-            "di_defrosting": di[4],
-            "di_dhw_heating": di[5],
-            "di_dhw_tank_desinfection": di[6],
-            "di_silent_mode": di[7],
-            "di_cooling": di[8],
-            "di_solar_pump": di[9],
-            "di_backup_heater_step1": di[10],
-            "di_backup_heater_step2": di[11],
-            "di_dhw_boost_heater": di[12],
-            "di_error": di[13],
-            "di_emergency_heating_cooling": di[14],
-            "di_emergency_dhw": di[15],
-            "di_mix_pump": di[16],
+            "discrete_water_flow": di[0],  # 1 = flow present
+            "discrete_water_pump": di[1],
+            "discrete_external_water_pump": di[2],
+            "discrete_compressor": di[3],
+            "discrete_defrost": di[4],
+            "discrete_dhw_heating": di[5],
+            "discrete_dhw_disinfection": di[6],
+            "discrete_silent_mode": di[7],
+            "discrete_cooling_active": di[8],
+            "discrete_solar_pump": di[9],
+            "discrete_backup_heater_step_1": di[10],
+            "discrete_backup_heater_step_2": di[11],
+            "discrete_dhw_boost_heater": di[12],
+            "discrete_fault": di[13],
+            "discrete_emergency_heating_cooling_available": di[14],
+            "discrete_emergency_dhw_available": di[15],
+            "discrete_mixing_pump": di[16],
         }
 
     async def _async_read_experimental(
@@ -227,7 +226,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         values: dict[str, int | None] = {}
         for address in INPUT_FROM_MAIN_READ:
-            values[register_key("input", address)] = inp_hi[address - 16]
+            values[data_key("input", address)] = inp_hi[address - 16]
         for kind, start, count in EXPERIMENTAL_BLOCKS:
             read = (
                 self.unit.read_input_registers
@@ -246,7 +245,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 )
                 registers = [None] * count
             for offset, value in enumerate(registers):
-                values[register_key(kind, start + offset)] = value
+                values[data_key(kind, start + offset)] = value
         return values
 
     async def _async_read_energy(self) -> dict[str, int]:
@@ -281,7 +280,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._energy_backoff.record(True)
         return decode_block(registers)
 
-    async def _async_read_modulation_limit(self) -> dict[str, int | None]:
+    async def _async_read_modulation_limit(self) -> dict[str, int]:
         """Read the compressor modulation limit, when the option asks for it.
 
         Same rules as the energy block: a unit that does not serve holding 23
@@ -308,7 +307,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 _LOGGER.debug("Compressor modulation limit not read: %s", exc)
             return {}
         self._modulation_backoff.record(True)
-        return decode_modulation_limit(registers[0])
+        return {DATA_KEY_MAX_COMPRESSOR_MODULATION: registers[0]}
 
     async def async_write_coil(self, address: int, value: bool) -> None:
         """Write a single coil register (FC05).

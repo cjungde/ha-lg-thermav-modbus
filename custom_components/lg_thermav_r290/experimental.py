@@ -44,8 +44,13 @@ class ExperimentalRegister:
 
     @property
     def key(self) -> str:
-        """Key of the raw value in the coordinator data."""
-        return register_key(self.kind, self.address)
+        """Entity key: the name as an entity id slug (docs/naming.md)."""
+        return f"experimental_{self.kind}_{self.modbus_number}"
+
+    @property
+    def data_key(self) -> str:
+        """Coordinator data key: register type and number, the meaning is unknown."""
+        return data_key(self.kind, self.address)
 
     @property
     def modbus_number(self) -> int:
@@ -59,9 +64,9 @@ class ExperimentalRegister:
         return f"Experimental {label} {self.modbus_number}"
 
 
-def register_key(kind: str, address: int) -> str:
-    """Coordinator data key for an experimental register."""
-    return f"exp_{kind}_{address}"
+def data_key(kind: str, address: int) -> str:
+    """Coordinator data key for an experimental register, e.g. input_30015."""
+    return f"{kind}_{_MODBUS_BASE[kind] + address}"
 
 
 def _registers() -> tuple[ExperimentalRegister, ...]:

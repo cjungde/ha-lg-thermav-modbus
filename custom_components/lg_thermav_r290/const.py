@@ -77,5 +77,5 @@ ENERGY_STATE_DISPLAY = {
 WRITABLE_HOLDING_REGISTERS = frozenset({0, 1, 2, 4, 5, 7, 8})
 # Writable only while the option that creates its entity is on: holding 23 is
 # the compressor modulation limit (see limits.py), which not every unit serves.
-OPTIONAL_WRITABLE_HOLDING_REGISTERS = frozenset({23})
+MODULATION_LIMIT_WRITABLE_HOLDING_REGISTERS = frozenset({23})
 WRITABLE_COILS = frozenset({0, 1, 2, 3, 4})

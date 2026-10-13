@@ -84,16 +84,30 @@ def test_every_register_is_read_exactly_once() -> None:
 def test_keys_and_names_are_unique() -> None:
     registers = experimental.EXPERIMENTAL_REGISTERS
     assert len({r.key for r in registers}) == len(registers)
+    assert len({r.data_key for r in registers}) == len(registers)
     assert len({r.name for r in registers}) == len(registers)
 
 
 def test_numbers_follow_the_manuals_notation() -> None:
     by_key = {r.key: r for r in experimental.EXPERIMENTAL_REGISTERS}
-    assert by_key["exp_input_14"].modbus_number == 30015
-    assert by_key["exp_input_17"].modbus_number == 30018
-    assert by_key["exp_holding_10"].modbus_number == 40011
-    assert by_key["exp_holding_63"].modbus_number == 40064
-    assert by_key["exp_holding_10"].name == "Experimental Holding 40011"
+    assert by_key["experimental_input_30015"].address == 14
+    assert by_key["experimental_input_30018"].address == 17
+    assert by_key["experimental_holding_40011"].address == 10
+    assert by_key["experimental_holding_40064"].address == 63
+    assert by_key["experimental_holding_40011"].name == "Experimental Holding 40011"
+
+
+def test_key_is_the_name_as_an_entity_id_slug() -> None:
+    """docs/naming.md: entity key = name slugified."""
+    for register in experimental.EXPERIMENTAL_REGISTERS:
+        assert register.key == register.name.lower().replace(" ", "_")
+
+
+def test_data_key_is_register_type_and_number() -> None:
+    by_key = {r.key: r for r in experimental.EXPERIMENTAL_REGISTERS}
+    assert by_key["experimental_input_30015"].data_key == "input_30015"
+    assert by_key["experimental_holding_40011"].data_key == "holding_40011"
+    assert experimental.data_key("input", 17) == "input_30018"
 
 
 def test_nothing_experimental_is_writable() -> None:

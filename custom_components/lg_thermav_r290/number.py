@@ -1,4 +1,9 @@
-"""Number platform for LG ThermaV R290 — writable holding registers."""
+"""Number platform for LG ThermaV R290 — writable holding registers.
+
+Keys follow docs/naming.md: the entity key is the name as an entity id slug,
+the data key is ``holding_<what the register holds>``. The coordinator data
+already carries the scaled, signed value; writes scale back to the register.
+"""
 
 from __future__ import annotations
 
@@ -13,131 +18,116 @@ from homeassistant.components.number import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import limits
 from .const import CONF_MODULATION_LIMIT, DOMAIN
 from .coordinator import LGThermaVCoordinator
-from .limits import (
-    DATA_KEY_LIMIT,
-    DATA_KEY_RAW,
-    MODULATION_LIMIT_MAX,
-    MODULATION_LIMIT_MIN,
-    MODULATION_LIMIT_REGISTER,
-    UNIQUE_ID_SUFFIX,
-)
-from .limits import (
-    encode as encode_modulation_limit,
-)
+from .entity import LGEntity, remove_entities
 
 
 @dataclass(frozen=True, kw_only=True)
 class LGNumberDescription(NumberEntityDescription):
-    data_key: str = ""
-    register_address: int = 0
-    # Factor applied to raw register value when reading (raw × read_scale = display)
-    read_scale: float = 1.0
-    # Factor applied to display value when writing (display × write_scale = raw)
+    data_key: str
+    register_address: int
+    # Factor from the displayed value to the register value (display × scale).
     write_scale: float = 1.0
     signed: bool = False
 
 
+def _temperature(
+    key: str,
+    data_key: str,
+    address: int,
+    name: str,
+    minimum: int,
+    maximum: int,
+    icon: str,
+    *,
+    write_scale: float = 10.0,
+    signed: bool = False,
+) -> LGNumberDescription:
+    return LGNumberDescription(
+        key=key,
+        data_key=data_key,
+        register_address=address,
+        name=name,
+        native_min_value=minimum,
+        native_max_value=maximum,
+        native_step=1,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=NumberDeviceClass.TEMPERATURE,
+        mode=NumberMode.SLIDER,
+        write_scale=write_scale,
+        signed=signed,
+        icon=icon,
+    )
+
+
 _NUMBERS: tuple[LGNumberDescription, ...] = (
-    LGNumberDescription(
-        key="target_temp_circuit1",
-        data_key="target_temp_circuit1",
-        register_address=2,
-        name="Target Temperature Circuit 1 (Radiators)",
-        # 20-60 °C, the range the YAML setups offered. The unit applies its
-        # own limits on top: a value outside what it accepts is acknowledged
-        # and then stored clamped (seen on the DHW setpoint), and the refresh
-        # after the write shows what it actually stored.
-        native_min_value=20,
-        native_max_value=60,
-        native_step=1,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=NumberDeviceClass.TEMPERATURE,
-        mode=NumberMode.SLIDER,
-        read_scale=0.1,
-        write_scale=10.0,
-        icon="mdi:radiator",
+    # 20-60 °C, the range the YAML setups offered. The unit applies its own
+    # limits on top: a value outside what it accepts is acknowledged and then
+    # stored clamped (seen on the DHW setpoint), and the refresh after the
+    # write shows what it actually stored.
+    _temperature(
+        "target_temperature_circuit_1_radiators",
+        "holding_target_temperature_circuit_1",
+        2,
+        "Target Temperature Circuit 1 (Radiators)",
+        20,
+        60,
+        "mdi:radiator",
     ),
-    LGNumberDescription(
-        key="target_temp_circuit2",
-        data_key="target_temp_circuit2",
-        register_address=5,
-        name="Target Temperature Circuit 2 (Underfloor)",
-        native_min_value=20,
-        native_max_value=40,
-        native_step=1,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=NumberDeviceClass.TEMPERATURE,
-        mode=NumberMode.SLIDER,
-        read_scale=0.1,
-        write_scale=10.0,
-        icon="mdi:floor-plan",
+    _temperature(
+        "target_temperature_circuit_2_underfloor",
+        "holding_target_temperature_circuit_2",
+        5,
+        "Target Temperature Circuit 2 (Underfloor)",
+        20,
+        40,
+        "mdi:floor-plan",
     ),
-    LGNumberDescription(
-        key="dhw_target_temp",
-        data_key="dhw_target_temp",
-        register_address=8,
-        name="DHW Target Temperature",
-        native_min_value=35,
-        # 65 = Geraetemaximum, im Installateursmenue am 01.09.2026 von 60
-        # angehoben und per Modbus verifiziert (Schreibwert 62 haelt ueber
-        # mehrere Poll-Zyklen).
-        #
-        # VORSICHT BEI DER FEHLERSUCHE: Am selben Tag schienen Schreibvorgaenge
-        # an einer 60-C-Grenze zu scheitern - erst 62, dann auch 60, zuletzt
-        # sogar der DHW-Coil. Tatsaechlich verwarf die WP zu dem Zeitpunkt
-        # SAEMTLICHE Schreibvorgaenge, Register wie Coils, ohne Fehlermeldung:
-        # HA schrieb, der naechste Poll 10 s spaeter lieferte den alten Wert
-        # zurueck. Ein Neustart der Waermepumpe hat das aufgeloest. Wer hier
-        # eine Wertgrenze vermutet, pruefe also zuerst, ob das Geraet
-        # ueberhaupt noch Schreibvorgaenge annimmt - ein Coil-Test ist dafuer
-        # der schnellste Nachweis.
-        native_max_value=65,
-        native_step=1,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=NumberDeviceClass.TEMPERATURE,
-        mode=NumberMode.SLIDER,
-        read_scale=0.1,
-        write_scale=10.0,
-        icon="mdi:water-boiler",
+    # 65 °C is the device maximum, raised from 60 in the installer menu on
+    # 2026-09-01 and verified over Modbus (a written 62 held over several
+    # polls).
+    #
+    # CAREFUL WHEN DEBUGGING: the same day, writes seemed to fail at a 60 °C
+    # limit - first 62, then 60, finally even the DHW coil. In fact the unit
+    # was silently discarding EVERY write at that time, registers and coils
+    # alike: Home Assistant wrote, and the next poll 10 s later returned the
+    # old value. Restarting the heat pump resolved it. If a value limit seems
+    # to be in the way, first check that the unit accepts writes at all; a
+    # coil test is the quickest proof.
+    _temperature(
+        "dhw_target_temperature",
+        "holding_dhw_target_temperature",
+        8,
+        "DHW Target Temperature",
+        35,
+        65,
+        "mdi:water-boiler",
     ),
-    LGNumberDescription(
-        key="shift_value_circuit1",
-        data_key="shift_value_circuit1",
-        register_address=4,
-        name="Setpoint Shift Circuit 1",
-        native_min_value=-5,
-        native_max_value=5,
-        native_step=1,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=NumberDeviceClass.TEMPERATURE,
-        mode=NumberMode.SLIDER,
-        read_scale=1.0,
+    _temperature(
+        "setpoint_shift_circuit_1",
+        "holding_setpoint_shift_circuit_1",
+        4,
+        "Setpoint Shift Circuit 1",
+        -5,
+        5,
+        "mdi:thermometer-auto",
         write_scale=1.0,
         signed=True,
-        icon="mdi:thermometer-auto",
     ),
-    LGNumberDescription(
-        key="shift_value_circuit2",
-        data_key="shift_value_circuit2",
-        register_address=7,
-        name="Setpoint Shift Circuit 2",
-        native_min_value=-5,
-        native_max_value=5,
-        native_step=1,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=NumberDeviceClass.TEMPERATURE,
-        mode=NumberMode.SLIDER,
-        read_scale=1.0,
+    _temperature(
+        "setpoint_shift_circuit_2",
+        "holding_setpoint_shift_circuit_2",
+        7,
+        "Setpoint Shift Circuit 2",
+        -5,
+        5,
+        "mdi:thermometer-auto",
         write_scale=1.0,
         signed=True,
-        icon="mdi:thermometer-auto",
     ),
 )
 
@@ -149,40 +139,19 @@ async def async_setup_entry(
 ) -> None:
     coordinator: LGThermaVCoordinator = hass.data[DOMAIN][entry.entry_id]
     entities: list[NumberEntity] = [
-        LGNumber(coordinator, entry, desc) for desc in _NUMBERS
+        LGNumber(coordinator, entry, description) for description in _NUMBERS
     ]
     if entry.options.get(CONF_MODULATION_LIMIT, False):
-        entities.append(LGModulationLimitNumber(coordinator, entry))
+        entities.append(LGMaxCompressorModulationNumber(coordinator, entry))
     else:
-        _remove_modulation_limit_entity(hass, entry)
+        remove_entities(hass, entry, "number", (limits.KEY_MAX_COMPRESSOR_MODULATION,))
     async_add_entities(entities)
 
 
-def _remove_modulation_limit_entity(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Drop the slider when its option is switched off.
-
-    Left in the registry it would sit there unavailable for good.
-    """
-    registry = er.async_get(hass)
-    unique_id = f"{entry.entry_id}_{UNIQUE_ID_SUFFIX}"
-    entity_id = registry.async_get_entity_id("number", DOMAIN, unique_id)
-    if entity_id is not None:
-        registry.async_remove(entity_id)
-
-
-def _device_info(entry: ConfigEntry) -> DeviceInfo:
-    return DeviceInfo(
-        identifiers={(DOMAIN, entry.entry_id)},
-        name="LG ThermaV R290",
-        manufacturer="LG",
-        model="ThermaV R290",
-    )
-
-
-class LGNumber(CoordinatorEntity[LGThermaVCoordinator], NumberEntity):
+class LGNumber(LGEntity, NumberEntity):
     """A number entity backed by a writable Modbus holding register."""
 
-    _attr_has_entity_name = True
+    entity_description: LGNumberDescription
 
     def __init__(
         self,
@@ -190,31 +159,24 @@ class LGNumber(CoordinatorEntity[LGThermaVCoordinator], NumberEntity):
         entry: ConfigEntry,
         description: LGNumberDescription,
     ) -> None:
-        super().__init__(coordinator)
+        super().__init__(coordinator, entry, description.key)
         self.entity_description = description
-        self._data_key = description.data_key
-        self._register_address = description.register_address
-        self._write_scale = description.write_scale
-        self._signed = description.signed
-        self._attr_unique_id = f"{entry.entry_id}_{description.key}"
-        self._attr_device_info = _device_info(entry)
 
     @property
     def native_value(self) -> float | None:
-        if self.coordinator.data is None:
-            return None
-        return self.coordinator.data.get(self._data_key)
+        return self._data(self.entity_description.data_key)
 
     async def async_set_native_value(self, value: float) -> None:
-        raw = int(round(value * self._write_scale))
-        if self._signed and raw < 0:
-            raw = raw + 65536
+        description = self.entity_description
+        raw = int(round(value * description.write_scale))
+        if description.signed and raw < 0:
+            raw += 65536
         raw = max(0, min(65535, raw))
-        await self.coordinator.async_write_register(self._register_address, raw)
+        await self.coordinator.async_write_register(description.register_address, raw)
         await self.coordinator.async_request_refresh()
 
 
-class LGModulationLimitNumber(CoordinatorEntity[LGThermaVCoordinator], NumberEntity):
+class LGMaxCompressorModulationNumber(LGEntity, NumberEntity):
     """Max compressor modulation, holding register 23 (see limits.py).
 
     Only created when the option is on. The register holds 40-100 for a limit
@@ -225,51 +187,41 @@ class LGModulationLimitNumber(CoordinatorEntity[LGThermaVCoordinator], NumberEnt
     so the slider shows what the unit actually stored, not what was sent.
     """
 
-    _attr_has_entity_name = True
     _attr_name = "Max Compressor Modulation"
     _attr_icon = "mdi:engine-outline"
-    _attr_native_min_value = MODULATION_LIMIT_MIN
-    _attr_native_max_value = MODULATION_LIMIT_MAX
+    _attr_native_min_value = limits.MODULATION_LIMIT_MIN
+    _attr_native_max_value = limits.MODULATION_LIMIT_MAX
     _attr_native_step = 1
     _attr_native_unit_of_measurement = PERCENTAGE
     _attr_mode = NumberMode.SLIDER
 
     def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
-        super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_{UNIQUE_ID_SUFFIX}"
-        self._attr_device_info = _device_info(entry)
+        super().__init__(coordinator, entry, limits.KEY_MAX_COMPRESSOR_MODULATION)
 
     @property
     def available(self) -> bool:
-        # Unavailable until the unit has answered on holding 23 at least once
-        # in the current data, e.g. while the read is paused after misses.
+        # Unavailable until the unit has answered on holding 23 in the current
+        # data, e.g. while the read is paused after misses.
         return (
             super().available
-            and self.coordinator.data is not None
-            and DATA_KEY_RAW in self.coordinator.data
+            and self._data(limits.DATA_KEY_MAX_COMPRESSOR_MODULATION) is not None
         )
 
     @property
     def native_value(self) -> float | None:
-        if self.coordinator.data is None:
-            return None
-        return self.coordinator.data.get(DATA_KEY_LIMIT)
+        return limits.decode(self._data(limits.DATA_KEY_MAX_COMPRESSOR_MODULATION))
 
     @property
     def extra_state_attributes(self) -> dict[str, int | bool | None]:
-        raw = (
-            None
-            if self.coordinator.data is None
-            else self.coordinator.data.get(DATA_KEY_RAW)
-        )
+        raw = self._data(limits.DATA_KEY_MAX_COMPRESSOR_MODULATION)
         return {
-            "modbus_register": 40001 + MODULATION_LIMIT_REGISTER,
+            "modbus_register": 40001 + limits.MODULATION_LIMIT_REGISTER,
             "register_value": raw,
             "limit_active": None if raw is None else raw != 0,
         }
 
     async def async_set_native_value(self, value: float) -> None:
         await self.coordinator.async_write_register(
-            MODULATION_LIMIT_REGISTER, encode_modulation_limit(value)
+            limits.MODULATION_LIMIT_REGISTER, limits.encode(value)
         )
         await self.coordinator.async_request_refresh()

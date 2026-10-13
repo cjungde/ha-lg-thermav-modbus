@@ -292,7 +292,7 @@ Switch on **Compressor modulation limit** in the integration's options. Holding 
 
 ## Notes
 
-- **Naming.** *(Reported)* marks a value the heat pump reports itself (its registers), *(Calculated)* one this integration computes from flow rate × ΔT. Up to 1.2.0 these sensors had other names. Existing installations keep their entity ids and history; only the displayed names change, so the ids may differ from the ones listed here:
+- **Naming.** *(Reported)* marks a value the heat pump reports itself (its registers), *(Calculated)* one this integration computes from flow rate × ΔT. Every unique id is the entity's name as an id; the full scheme is in [docs/naming.md](docs/naming.md). Up to 1.2.0 the unique ids were inconsistent; on the first start of 1.3.0 they are migrated automatically in the entity registry, so **entity ids, history, statistics and automations stay as they are**. Some sensors also had other names; on an existing installation only their displayed name changes, so the entity ids may differ from the ones listed here:
 
   | Old name (entity id up to 1.2.0) | New name |
   |---|---|
@@ -306,8 +306,8 @@ Switch on **Compressor modulation limit** in the integration's options. Holding 
 
   To get the new ids on an existing installation, rename the entity ids in *Settings → Entities* (history moves with the rename).
 - Flow rate uses Home Assistant's unit `L/min` and device class `volume_flow_rate` (before: plain `l/min`, no device class). The values are the same, but after updating, *Developer tools → Statistics* may report that the unit of `sensor.lg_thermav_r290_flow_rate` changed; choose *Update the unit* there, nothing needs converting.
-- Thermal power formula: `Q [W] = (flow_rate [l/min] / 60) × (outlet_temp − inlet_temp) [K] × 4186 [J/(l·K)]`
-- Heating circuit / DHW split is based on the `di_dhw_heating` discrete input; when DHW is active the full flow is attributed to DHW and the heating circuit sensor reports 0, and vice versa.
+- Thermal power formula: `Q [W] = (flow rate [l/min] / 60) × (outlet − inlet temperature) [K] × 4186 [J/(l·K)]`
+- Heating circuit / DHW split is based on the *DHW Heating* discrete input (10006); when DHW is active the full flow is attributed to DHW and the heating circuit sensor reports 0, and vice versa.
 - Shift values (holding regs 4, 7) are stored as two's-complement uint16; values ≥ 32768 are interpreted as negative.
 - Tested on LG ThermaV R290 9 kW via Modbus TCP, slave ID 33, and on a 12 kW unit via Modbus RTU (USB serial adapter), slave ID 1, firmware kernel 3.0.9 / ramdisk 3.07.6a (2025-01-21). The energy registers (input 34–51) and the compressor modulation limit (holding 23) answer on the 12 kW only.
 - `tools/make_shadow.py` builds a read-only copy of the integration under a

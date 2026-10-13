@@ -1,4 +1,8 @@
-"""Select platform for LG ThermaV R290 — operation mode and control method."""
+"""Select platform for LG ThermaV R290 — operation mode and control method.
+
+Keys follow docs/naming.md: the entity key is the name as an entity id slug,
+the data key is ``holding_<key>``.
+"""
 
 from __future__ import annotations
 
@@ -8,9 +12,7 @@ import logging
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
     CONTROL_METHOD_FROM_VALUE,
@@ -22,22 +24,23 @@ from .const import (
     OPERATION_MODE_TO_VALUE,
 )
 from .coordinator import LGThermaVCoordinator
+from .entity import LGEntity
 
 _LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
 class LGSelectDescription(SelectEntityDescription):
-    data_key: str = ""
-    register_address: int = 0
-    to_value: dict[str, int] | None = None
-    from_value: dict[int, str] | None = None
+    data_key: str
+    register_address: int
+    to_value: dict[str, int]
+    from_value: dict[int, str]
 
 
 _SELECTS: tuple[LGSelectDescription, ...] = (
     LGSelectDescription(
         key="operation_mode",
-        data_key="operation_mode",
+        data_key="holding_operation_mode",
         register_address=0,
         name="Operation Mode",
         options=OPERATION_MODE_OPTIONS,
@@ -47,7 +50,7 @@ _SELECTS: tuple[LGSelectDescription, ...] = (
     ),
     LGSelectDescription(
         key="control_method",
-        data_key="control_method",
+        data_key="holding_control_method",
         register_address=1,
         name="Control Method",
         options=CONTROL_METHOD_OPTIONS,
@@ -64,22 +67,15 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: LGThermaVCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(LGSelect(coordinator, entry, desc) for desc in _SELECTS)
-
-
-def _device_info(entry: ConfigEntry) -> DeviceInfo:
-    return DeviceInfo(
-        identifiers={(DOMAIN, entry.entry_id)},
-        name="LG ThermaV R290",
-        manufacturer="LG",
-        model="ThermaV R290",
+    async_add_entities(
+        LGSelect(coordinator, entry, description) for description in _SELECTS
     )
 
 
-class LGSelect(CoordinatorEntity[LGThermaVCoordinator], SelectEntity):
+class LGSelect(LGEntity, SelectEntity):
     """A select entity backed by a writable Modbus holding register."""
 
-    _attr_has_entity_name = True
+    entity_description: LGSelectDescription
 
     def __init__(
         self,
@@ -87,29 +83,23 @@ class LGSelect(CoordinatorEntity[LGThermaVCoordinator], SelectEntity):
         entry: ConfigEntry,
         description: LGSelectDescription,
     ) -> None:
-        super().__init__(coordinator)
+        super().__init__(coordinator, entry, description.key)
         self.entity_description = description
-        self._data_key = description.data_key
-        self._register_address = description.register_address
-        self._to_value = description.to_value
-        self._from_value = description.from_value
         self._attr_options = description.options
-        self._attr_unique_id = f"{entry.entry_id}_{description.key}"
-        self._attr_device_info = _device_info(entry)
 
     @property
     def current_option(self) -> str | None:
-        if self.coordinator.data is None:
-            return None
-        raw = self.coordinator.data.get(self._data_key)
+        raw = self._data(self.entity_description.data_key)
         if raw is None:
             return None
-        return self._from_value.get(raw)
+        return self.entity_description.from_value.get(raw)
 
     async def async_select_option(self, option: str) -> None:
-        value = self._to_value.get(option)
+        value = self.entity_description.to_value.get(option)
         if value is None:
             _LOGGER.warning("Unknown option '%s' for %s", option, self.entity_id)
             return
-        await self.coordinator.async_write_register(self._register_address, value)
+        await self.coordinator.async_write_register(
+            self.entity_description.register_address, value
+        )
         await self.coordinator.async_request_refresh()
