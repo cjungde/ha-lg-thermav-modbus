@@ -240,6 +240,7 @@ A side effect worth knowing: the YAML notes that a slider change can take up to 
 
 ### Values and units
 
+- **The electrical values the unit reports are not reliable.** Compared against a smart meter on the 12 kW unit, the electrical power and energy from input 34–45 did not match. The COP sensors built on them (*COP Current*, *COP System*, *COP (Calculated)*, *Heating COP (Cumulative)*) inherit that error. For the Energy dashboard or a COP you want to rely on, use an external meter for the electrical side.
 - **Input 16 (liquid gas temperature) is 100× larger here.** The YAML scales it by 0.001 (marked "Scale???"), the integration by 0.1, measured against the other refrigerant temperatures. A YAML reading of 0.25 °C is 25.0 °C here. History from the two is not comparable.
 - **Input 17 is not a temperature.** The YAML shows `hp_temp_pipe_out` as a constant 12.00 °C (raw 12000 × 0.001). The integration does not present it as a sensor. With the *Experimental registers* option it appears raw as `Experimental Input 30018`.
 - **Demand vs Supply has no unit.** The YAML shows %, but the register reads 0–12 on the 12 kW, so it is not a percentage.
@@ -389,7 +390,7 @@ Replace `modbus.write_register` / `modbus.write_coil` calls and helper writes wi
 5. *Configure*: **Energy registers** on, **Compressor modulation limit** on. Experimental registers only if you want to record the undocumented addresses.
 6. Enable the disabled-by-default sensors you used: device group, product information, room air temperature circuit 1/2 (holding).
 7. Compare the values from step 1 with the new entities. Compressor modulation shows *unknown* if no limit is set.
-8. Update the Energy dashboard: pick the new electrical energy sensors (and the thermal one if you use it).
+8. Update the Energy dashboard. For the electrical consumption, prefer an external meter over the unit's own counters, which deviate from a smart meter (see [§10](#10-differences-that-can-bite)); the unit's thermal counter can be added if you use it.
 9. Rewrite automations and dashboards using the tables in §3–§9 and the examples in §14. Check [§10](#10-differences-that-can-bite) for every automation that uses input 16, input 17, Energy State, coil 3, coil 5, or setpoints outside the new ranges.
 10. Delete the old YAML entities left in the entity registry (they show as *unavailable*).
 11. Optionally rename integration entities to their old ids where the meaning is identical ([§13](#13-keeping-history)). This only works after step 10.
