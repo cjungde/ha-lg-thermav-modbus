@@ -81,7 +81,7 @@ The power limit (holding 24 + coil 6) is **not** in the integration yet; see [§
 | 4 | `hp_backup_heater_outlet_temp` | `lg_thermav_r290_backup_heater_outlet_temperature` | |
 | 5 | `hp_dhw_water_temp` | `lg_thermav_r290_dhw_temperature` | |
 | 6 | `hp_solar_collector_temp` | `lg_thermav_r290_solar_collector_temperature` | |
-| 7 | `hp_temp_technikraum` | `lg_thermav_r290_room_air_temperature_circuit_1` | Same value. The manual calls input 30008 *room air temperature circuit 1*; without a wired remote the unit reports its own sensor, hence "Technikraum" in the YAML. |
+| 7 | `hp_temp_technikraum` | `lg_thermav_r290_room_air_temperature_circuit_1` | Same value. The manual calls input 30008 *room air temperature circuit 1*; without a wired remote the unit reports its own sensor, hence "Technikraum" in the YAML. Rename the entity in *Settings → Entities* to keep that name, and do not use *Room Air Control* without a remote (README, *Notes*). |
 | 8 | `hp_flow_rate` | `lg_thermav_r290_flow_rate` | Both `L/min`, device class `volume_flow_rate`. |
 | 9 | `hp_flow_temp_circle_2` | `lg_thermav_r290_flow_temperature_circuit_2` | |
 | 10 | `hp_room_air_temp_circuit2_input` | `lg_thermav_r290_room_air_temperature_circuit_2` | |

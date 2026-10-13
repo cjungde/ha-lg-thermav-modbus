@@ -118,6 +118,8 @@ The config flow asks for connection type first, then connection-specific paramet
 | `sensor.lg_thermav_r290_outdoor_temperature` | Outdoor air temperature | °C |
 | `sensor.lg_thermav_r290_backup_heater_outlet_temperature` | Backup heater outlet temp | °C |
 | `sensor.lg_thermav_r290_flow_temperature_circuit_2` | Flow temperature circuit 2 | °C |
+| `sensor.lg_thermav_r290_room_air_temperature_circuit_1` | Room air temperature circuit 1, measured at the wired remote controller. **Without a wired remote, the indoor unit's own sensor**: the temperature of the room the unit is installed in, see [*Notes*](#notes) | °C |
+| `sensor.lg_thermav_r290_room_air_temperature_circuit_2` | Room air temperature circuit 2 | °C |
 | `sensor.lg_thermav_r290_flow_rate` | Water flow rate (device class `volume_flow_rate`) | L/min |
 | `sensor.lg_thermav_r290_water_pressure` | Water pressure | bar |
 | `sensor.lg_thermav_r290_high_pressure_condenser` | High pressure (condenser) | bar |
@@ -283,6 +285,8 @@ Switch on **Compressor modulation limit** in the integration's options. Holding 
 | `select.lg_thermav_r290_operation_mode` | Heating / Cooling / Auto | 0 |
 | `select.lg_thermav_r290_control_method` | Outlet / Inlet Water Temp Control / Room Air Control | 1 |
 
+*Room Air Control* regulates on *Room Air Temperature Circuit 1*. Without a wired remote that is the temperature where the indoor unit is installed, not that of a living room (see [*Notes*](#notes)).
+
 ---
 
 ## Modbus register map
@@ -336,7 +340,7 @@ Marks: ⚠ the unit behaves differently from the manual (measured) · ⚙ only w
 | 30005 | Auslasstemp. Ersatzheizgerät | [0.1 °C ×10] | `backup_heater_outlet_temperature` |
 | 30006 | Wassertemp. Warmwasserbehälter | [0.1 °C ×10] | `dhw_temperature` |
 | 30007 | Sonnenkollektortemp. | [0.1 °C ×10] | `solar_collector_temperature` |
-| 30008 | Raumlufttemp. (Kreislauf 1) | [0.1 °C ×10] | `room_air_temperature_circuit_1` |
+| 30008 | Raumlufttemp. (Kreislauf 1) | [0.1 °C ×10] | `room_air_temperature_circuit_1` — measured at the wired remote controller; without one, the indoor unit's own sensor |
 | 30009 | Aktuelle Durchflussrate | [0.1 LPM ×10] | `flow_rate` |
 | 30010 | Durchflusstemp. (Kreislauf 2) | [0.1 °C ×10] | `flow_temperature_circuit_2` |
 | 30011 | Raumlufttemp. (Kreislauf 2) | [0.1 °C ×10] | `room_air_temperature_circuit_2` |
@@ -425,6 +429,9 @@ The integration only ever writes coils 00001–00005 and holding 40001, 40002, 4
   | Room Air Temperature Circuit 1/2 (Holding) (`…_room_air_temperature_circuit_1_holding` / `_2_holding`, up to 1.3.0) | Target Room Air Temperature Circuit 1/2 (holding 40004/40007 hold the room temperature target, not the measured value) |
 
   To get the new ids on an existing installation, rename the entity ids in *Settings → Entities* (history moves with the rename).
+- **Room Air Temperature Circuit 1 without a wired remote.** The manual's input 30008 is the room temperature measured at the wired remote controller. With no remote connected, the unit reports its own sensor instead, so the value is the temperature of the room the indoor unit is installed in (a plant room, a basement), not of a living room. The integration cannot tell from Modbus whether a remote is connected, so the name follows the manual. On such an installation:
+  - rename the entity in *Settings → Entities* to what it measures, e.g. *Plant Room Temperature* (only your display name; the unique id stays);
+  - do not use *Control Method: Room Air Control*: the unit would regulate on that room's temperature.
 - Flow rate uses Home Assistant's unit `L/min` and device class `volume_flow_rate` (before: plain `l/min`, no device class). The values are the same, but after updating, *Developer tools → Statistics* may report that the unit of `sensor.lg_thermav_r290_flow_rate` changed; choose *Update the unit* there, nothing needs converting.
 - Thermal power formula: `Q [W] = (flow rate [l/min] / 60) × (outlet − inlet temperature) [K] × 4186 [J/(l·K)]`
 - Heating circuit / DHW split is based on the *DHW Heating* discrete input (10006); when DHW is active the full flow is attributed to DHW and the heating circuit sensor reports 0, and vice versa.
