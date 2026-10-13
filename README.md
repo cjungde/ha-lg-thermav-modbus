@@ -244,7 +244,7 @@ see whether the operation actually started.
 
 | Entity | Range | Holding register |
 |---|---|---|
-| `number.lg_thermav_r290_target_temperature_circuit_1_radiators` | 30–50 °C | 2 (×0.1) |
+| `number.lg_thermav_r290_target_temperature_circuit_1_radiators` | 20–60 °C | 2 (×0.1) |
 | `number.lg_thermav_r290_target_temperature_circuit_2_underfloor` | 20–40 °C | 5 (×0.1) |
 | `number.lg_thermav_r290_dhw_target_temperature` | 35–65 °C | 8 (×0.1) |
 | `number.lg_thermav_r290_setpoint_shift_circuit_1` | −5…+5 K | 4 (signed) |

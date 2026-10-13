@@ -120,7 +120,7 @@ In the YAML every holding register is a read sensor, and the writable ones get a
 |---|---|---|---|
 | 0 | `sensor.hp_operation_mode` | `select.lg_thermav_r290_operation_mode` (+ text sensor `sensor.lg_thermav_r290_operation_mode`) | yes |
 | 1 | `sensor.hp_control_method` | `select.lg_thermav_r290_control_method` (+ text sensor `sensor.lg_thermav_r290_control_method`) | yes |
-| 2 | `sensor.hp_target_temp_circuit1` | `number.lg_thermav_r290_target_temperature_circuit_1_radiators` | yes, 30–50 °C |
+| 2 | `sensor.hp_target_temp_circuit1` | `number.lg_thermav_r290_target_temperature_circuit_1_radiators` | yes, 20–60 °C |
 | 3 | `sensor.hp_room_air_temp_circuit1` | `sensor.lg_thermav_r290_room_air_temperature_circuit_1_holding` — **disabled by default** | no (read only in both) |
 | 4 | `sensor.hp_shift_value_in_auto_mode_circuit1` | `number.lg_thermav_r290_setpoint_shift_circuit_1` | yes, −5…+5 |
 | 5 | `sensor.hp_target_temp_circuit2` | `number.lg_thermav_r290_target_temperature_circuit_2_underfloor` | yes, 20–40 °C |
@@ -185,7 +185,7 @@ All nine helpers can be deleted after switching. Their job (a control in the UI 
 |---|---|---|---|
 | `input_number.hp_shift_value_in_auto_mode_circuit1` | −5…5, step 1 | `number.lg_thermav_r290_setpoint_shift_circuit_1` | −5…5, step 1 |
 | `input_number.hp_shift_value_in_auto_mode_circuit2` | −5…5, step 1 | `number.lg_thermav_r290_setpoint_shift_circuit_2` | −5…5, step 1 |
-| `input_number.hp_hk1_target_temperatur` | 20–60 °C, step 1 | `number.lg_thermav_r290_target_temperature_circuit_1_radiators` | **30–50 °C**, step 1 |
+| `input_number.hp_hk1_target_temperatur` | 20–60 °C, step 1 | `number.lg_thermav_r290_target_temperature_circuit_1_radiators` | 20–60 °C, step 1 |
 | `input_number.hp_hk2_target_temperatur` | 20–40 °C, step 1 | `number.lg_thermav_r290_target_temperature_circuit_2_underfloor` | 20–40 °C, step 1 |
 | `input_number.hp_dhw_target_temperatur` | 40–60 °C, step 1 | `number.lg_thermav_r290_dhw_target_temperature` | **35–65 °C**, step 1 |
 | `input_number.hp_compressor_modulation_slider` | 40–100 %, slider | `number.lg_thermav_r290_max_compressor_modulation` | 40–100 %, slider (*Compressor modulation limit* option) |
@@ -258,7 +258,7 @@ Which of the two follows the SG-Ready signal on a 12 kW has not been checked. If
 - **Coil 3 is a button.** The manual specifies it as a trigger (`0: hold status / 1: start operation`). The unit clears it by itself after the write, so the YAML switch always reads back `off`, even when the write worked. Use `button.lg_thermav_r290_start_disinfection` and watch `binary_sensor.lg_thermav_r290_dhw_disinfection` to see whether the cycle started. The trigger only works if disinfection is enabled on the unit (installer menu → DHW → disinfection active).
 - **Coil 5 cannot be written.** The YAML switch `hp_emergency_stop_switch_on` writes it. The manual calls it a trigger for emergency operation, so the integration reads it but no entity can write it.
 - **Coil 4 has a different name.** YAML: `hp_emergency_stop_switch_off`, commented as emergency operation for space heating. Here: `switch.lg_thermav_r290_emergency_stop`. Same coil, same writes.
-- **Setpoint ranges.** HK1 allows 30–50 °C here (YAML 20–60). DHW allows 35–65 °C here (YAML 40–60). An automation that sets HK1 below 30 or above 50 °C will be rejected by the number entity.
+- **Setpoint ranges.** HK1 allows 20–60 °C, as in the YAML. DHW allows 35–65 °C here (YAML 40–60). The unit applies its own limits on top: a value it does not accept is stored clamped, and the entity shows what was stored.
 - **Max compressor modulation shows *unknown* when no limit is set.** The register holds 0 for "no limit". The YAML slider then keeps its last position (its sync automation cannot set 0 on a 40–100 slider); the integration shows *unknown*, with `register_value: 0` and `limit_active: false` as attributes. Every write is clamped to 40–100, so the slider can never send 0.
 
 ### Status bits
