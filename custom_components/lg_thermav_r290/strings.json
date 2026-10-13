@@ -32,25 +32,11 @@
         "data": {
           "connection_type": "Connection type"
         }
-      }
-    },
-    "error": {
-      "cannot_connect": "Connection failed",
-      "invalid_slave_id": "Invalid slave ID",
-      "link_settings_conflict": "The device is already in use with different link settings",
-      "unknown": "Unknown error"
-    },
-    "abort": {
-      "already_configured": "Device is already configured",
-      "reconfigure_successful": "Re-configuration was successful"
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "LG ThermaV R290 — Options",
+      },
+      "features": {
+        "title": "LG ThermaV R290 — Optional registers",
+        "description": "Checked on this unit (✓ answers, ✗ no answer):\n\n- Energy registers: {energy_registers}\n- Compressor modulation limit: {compressor_modulation_limit}\n- Power limit: {power_limit}\n\nGroups that answered and are safe to switch on are ticked. The power limit is not ticked even when it answers: whether the unit really keeps to the limit is not confirmed yet. The emergency operation button and the experimental registers are never ticked. Everything can be changed later under Configure.",
         "data": {
-          "scan_interval": "Polling interval (seconds)",
           "energy_registers": "Energy registers",
           "compressor_modulation_limit": "Compressor modulation limit",
           "power_limit": "Power limit",
@@ -65,6 +51,47 @@
           "experimental_registers": "Adds read-only sensors for 18 registers the device answers on but the manual does not document. Nothing is ever written to them. Meant for collecting data over time."
         }
       }
+    },
+    "error": {
+      "cannot_connect": "Connection failed",
+      "invalid_slave_id": "Invalid slave ID",
+      "link_settings_conflict": "The device is already in use with different link settings",
+      "unknown": "Unknown error"
+    },
+    "abort": {
+      "already_configured": "Device is already configured",
+      "reconfigure_successful": "Re-configuration was successful"
+    },
+    "progress": {
+      "detect": "Checking which optional registers this unit answers on. A unit that does not serve a group stays silent, so this can take up to about 30 seconds."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "LG ThermaV R290 — Options",
+        "description": "Last check on this unit (✓ answers, ✗ no answer, – not checked): energy registers {energy_registers}, compressor modulation limit {compressor_modulation_limit}, power limit {power_limit}.",
+        "data": {
+          "scan_interval": "Polling interval (seconds)",
+          "energy_registers": "Energy registers",
+          "compressor_modulation_limit": "Compressor modulation limit",
+          "power_limit": "Power limit",
+          "emergency_operation_button": "Emergency operation button",
+          "experimental_registers": "Experimental registers",
+          "detect_again": "Check the optional registers again"
+        },
+        "data_description": {
+          "energy_registers": "Adds read-only sensors for electrical power, cumulative energy, demand vs. supply and thermal power from input registers 34-51 (32-bit values). Not every unit serves them: a unit that does not answer simply leaves the sensors without a value, and is asked again only every few polls.",
+          "compressor_modulation_limit": "Adds a slider (40-100 %) for the maximum compressor modulation, holding register 23. Not every unit serves it; while it does not answer the slider stays unavailable. Writing this register is only possible while this option is on.",
+          "power_limit": "Adds a switch (coil 6, \"Wirkleistungsbegrenzung\") that turns the unit's power limit on, and a box (0.1-25.0 kW, holding register 24) for the limit. Documented in the manual, but not every unit serves them; while they do not answer, both stay unavailable. Whether the unit actually keeps its power below the limit is not confirmed yet: check against a separate meter. Both can only be written while this option is on.",
+          "emergency_operation_button": "Adds a button that starts the unit's emergency operation (coil 5, \"Auslöser Notaus-Betrieb\"). Emergency operation typically heats with the backup heater and draws far more power than the heat pump. Coil 5 can only be written while this option is on.",
+          "experimental_registers": "Adds read-only sensors for 18 registers the device answers on but the manual does not document. Nothing is ever written to them. Meant for collecting data over time.",
+          "detect_again": "Asks the unit once more which optional registers it answers on (up to about 30 seconds) and then shows this form again, with the energy registers and the compressor modulation limit ticked if they answer. Nothing is switched off."
+        }
+      }
+    },
+    "progress": {
+      "detect": "Checking which optional registers this unit answers on. A unit that does not serve a group stays silent, so this can take up to about 30 seconds."
     }
   }
 }
