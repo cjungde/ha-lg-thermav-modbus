@@ -369,10 +369,10 @@ Marks: ⚠ the unit behaves differently from the manual (measured) · ⚙ only w
 | 40001 | Betriebsmodus | 0: Kühlung / 4: Heizung / 3: Auto | `select.operation_mode` + `sensor.operation_mode` |
 | 40002 | Steuermethode (Kreis 1/2) | 0: Wasserauslasstemp. Steuerung / 1: Wassereinlasstemp. Steuerung / 2: Raumluftsteuerung | `select.control_method` + `sensor.control_method` |
 | 40003 | Zieltemp. (Heizung / Kühlung) Kreislauf 1 | [0.1 °C ×10] | `number.target_temperature_circuit_1_radiators` (20–60 °C) |
-| 40004 | Raumlufttemp. Kreislauf 1 | [0.1 °C ×10] | ⛔ `sensor.room_air_temperature_circuit_1_holding` — read only; as a holding register this is the room temperature *target* |
+| 40004 | Raumlufttemp. Kreislauf 1 | [0.1 °C ×10] | ⛔ `sensor.target_room_air_temperature_circuit_1` — read only, disabled by default; as a holding register this is the room temperature *target* (the measured value is input 30008) |
 | 40005 | Schaltwert (Ziel) im Auto-Modus Kreislauf 1 | 1K | `number.setpoint_shift_circuit_1` (−5…+5 K) |
 | 40006 | Zieltemp. (Heizung / Kühlung) Kreislauf 2 | [0.1 °C ×10] | `number.target_temperature_circuit_2_underfloor` (20–40 °C) |
-| 40007 | Raumlufttemp. Kreislauf 2 | [0.1 °C ×10] | ⛔ `sensor.room_air_temperature_circuit_2_holding` — read only; the room temperature *target* |
+| 40007 | Raumlufttemp. Kreislauf 2 | [0.1 °C ×10] | ⛔ `sensor.target_room_air_temperature_circuit_2` — read only, disabled by default; the room temperature *target* (the measured value is input 30011) |
 | 40008 | Schaltwert (Ziel) im Auto-Modus Kreislauf 2 | 1K | `number.setpoint_shift_circuit_2` (−5…+5 K) |
 | 40009 | WW-Ziel Temp. | [0.1 °C ×10] | `number.dhw_target_temperature` (35–65 °C) |
 | 40010 | Energiezustand-Eingang | see below | `sensor.energy_state` (label) + `binary_sensor.energy_state_*` (one per value) — read only |
@@ -422,6 +422,7 @@ The integration only ever writes coils 00001–00005 and holding 40001, 40002, 4
   | COP System (`…_cop_system`) | COP System (Reported) |
   | Heating COP (Cumulative) (`…_heating_cop_cumulative`) | COP Heating (Cumulative) |
   | Heat Pump switch (`switch.…_heat_pump`, up to 1.3.0) | Heating/Cooling (coil 0 switches space heating/cooling only, per the manual) |
+  | Room Air Temperature Circuit 1/2 (Holding) (`…_room_air_temperature_circuit_1_holding` / `_2_holding`, up to 1.3.0) | Target Room Air Temperature Circuit 1/2 (holding 40004/40007 hold the room temperature target, not the measured value) |
 
   To get the new ids on an existing installation, rename the entity ids in *Settings → Entities* (history moves with the rename).
 - Flow rate uses Home Assistant's unit `L/min` and device class `volume_flow_rate` (before: plain `l/min`, no device class). The values are the same, but after updating, *Developer tools → Statistics* may report that the unit of `sensor.lg_thermav_r290_flow_rate` changed; choose *Update the unit* there, nothing needs converting.

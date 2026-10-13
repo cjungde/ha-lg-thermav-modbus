@@ -41,10 +41,10 @@ There is no automatic migration: the entities have different ids and belong to o
 | 0 | `sensor.hp_operation_mode_raw` + `select.hp_operation_mode_select` | `select.lg_thermav_r290_operation_mode` (+ text sensor `sensor.…_operation_mode`) |
 | 1 | `sensor.hp_control_method_raw` + `select.hp_control_method_select` | `select.lg_thermav_r290_control_method` (+ `sensor.…_control_method`) |
 | 2 | `sensor.hp_target_temp_circuit1` + `number.hp_hk1_target_temperatur_number` | `number.lg_thermav_r290_target_temperature_circuit_1_radiators` |
-| 3 | `sensor.hp_room_air_temp_circuit1` + `number.hp_room_air_temp_circuit1_number` | `sensor.lg_thermav_r290_room_air_temperature_circuit_1_holding` (read only) |
+| 3 | `sensor.hp_room_air_temp_circuit1` + `number.hp_room_air_temp_circuit1_number` | `sensor.lg_thermav_r290_target_room_air_temperature_circuit_1` (read only) |
 | 4 | `sensor.hp_shift_value_in_auto_mode_circuit1` + `…_number` | `number.lg_thermav_r290_setpoint_shift_circuit_1` |
 | 5 | `sensor.hp_target_temp_circuit2` + `number.hp_hk2_target_temperatur_number` | `number.lg_thermav_r290_target_temperature_circuit_2_underfloor` |
-| 6 | `sensor.hp_room_air_temp_circuit2` + `number.hp_room_air_temp_circuit2_number` | `sensor.lg_thermav_r290_room_air_temperature_circuit_2_holding` (read only) |
+| 6 | `sensor.hp_room_air_temp_circuit2` + `number.hp_room_air_temp_circuit2_number` | `sensor.lg_thermav_r290_target_room_air_temperature_circuit_2` (read only) |
 | 7 | `sensor.hp_shift_value_in_auto_mode_circuit2` + `…_number` | `number.lg_thermav_r290_setpoint_shift_circuit_2` |
 | 8 | `sensor.hp_dhw_target_temp` + `number.hp_dhw_target_temperatur_number` | `number.lg_thermav_r290_dhw_target_temperature` |
 | 9 | `sensor.lg_wp_energiezustand_eingang` + `select.hp_energy_state_select` | `sensor.lg_thermav_r290_energy_state` and `binary_sensor.…_energy_state_*` (read only) |

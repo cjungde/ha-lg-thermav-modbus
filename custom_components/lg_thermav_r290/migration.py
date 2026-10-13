@@ -139,12 +139,27 @@ HEATING_COOLING_RENAMES: dict[str, dict[str, str]] = {
     "switch": {"heat_pump": "heating_cooling"},
 }
 
+# Holding 40004 / 40007 are "Raumlufttemp. Kreislauf 1/2" in the manual's
+# holding table, the room temperature target; the "(Holding)" names read like
+# a measurement. Renamed to "Target Room Air Temperature Circuit 1/2".
+TARGET_ROOM_AIR_RENAMES: dict[str, dict[str, str]] = {
+    "sensor": {
+        "room_air_temperature_circuit_1_holding": (
+            "target_room_air_temperature_circuit_1"
+        ),
+        "room_air_temperature_circuit_2_holding": (
+            "target_room_air_temperature_circuit_2"
+        ),
+    },
+}
+
 # The steps, in order: (config entry minor version reached, renames). An entry
 # runs every step above its minor version, one after the other, so one set up
 # before 1.3.0 goes hauptschalter -> heat_pump -> heating_cooling.
 MIGRATION_STEPS: tuple[tuple[int, dict[str, dict[str, str]]], ...] = (
     (2, UNIQUE_KEY_RENAMES),
     (3, HEATING_COOLING_RENAMES),
+    (4, TARGET_ROOM_AIR_RENAMES),
 )
 
 # Config entry minor version that carries the current unique ids. Entries below

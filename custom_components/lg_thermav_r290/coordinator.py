@@ -173,10 +173,14 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "holding_operation_mode": hold_low[0],
             "holding_control_method": hold_low[1],
             "holding_target_temperature_circuit_1": round(hold_low[2] * 0.1, 1),
-            "holding_room_air_temperature_circuit_1": round(hold_low[3] * 0.1, 1),
+            "holding_target_room_air_temperature_circuit_1": round(
+                hold_low[3] * 0.1, 1
+            ),
             "holding_setpoint_shift_circuit_1": _signed16(hold_low[4]),
             "holding_target_temperature_circuit_2": round(hold_low[5] * 0.1, 1),
-            "holding_room_air_temperature_circuit_2": round(hold_low[6] * 0.1, 1),
+            "holding_target_room_air_temperature_circuit_2": round(
+                hold_low[6] * 0.1, 1
+            ),
             "holding_setpoint_shift_circuit_2": _signed16(hold_low[7]),
             "holding_dhw_target_temperature": round(hold_low[8] * 0.1, 1),
             "holding_energy_state": hold_low[9],

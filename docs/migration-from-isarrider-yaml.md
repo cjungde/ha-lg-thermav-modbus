@@ -121,10 +121,10 @@ In the YAML every holding register is a read sensor, and the writable ones get a
 | 0 | `sensor.hp_operation_mode` | `select.lg_thermav_r290_operation_mode` (+ text sensor `sensor.lg_thermav_r290_operation_mode`) | yes |
 | 1 | `sensor.hp_control_method` | `select.lg_thermav_r290_control_method` (+ text sensor `sensor.lg_thermav_r290_control_method`) | yes |
 | 2 | `sensor.hp_target_temp_circuit1` | `number.lg_thermav_r290_target_temperature_circuit_1_radiators` | yes, 20–60 °C |
-| 3 | `sensor.hp_room_air_temp_circuit1` | `sensor.lg_thermav_r290_room_air_temperature_circuit_1_holding` — **disabled by default** | no (read only in both) |
+| 3 | `sensor.hp_room_air_temp_circuit1` | `sensor.lg_thermav_r290_target_room_air_temperature_circuit_1` — **disabled by default** | no (read only in both) |
 | 4 | `sensor.hp_shift_value_in_auto_mode_circuit1` | `number.lg_thermav_r290_setpoint_shift_circuit_1` | yes, −5…+5 |
 | 5 | `sensor.hp_target_temp_circuit2` | `number.lg_thermav_r290_target_temperature_circuit_2_underfloor` | yes, 20–40 °C |
-| 6 | `sensor.hp_room_air_temp_circuit2` | `sensor.lg_thermav_r290_room_air_temperature_circuit_2_holding` — **disabled by default** | no (read only in both) |
+| 6 | `sensor.hp_room_air_temp_circuit2` | `sensor.lg_thermav_r290_target_room_air_temperature_circuit_2` — **disabled by default** | no (read only in both) |
 | 7 | `sensor.hp_shift_value_in_auto_mode_circuit2` | `number.lg_thermav_r290_setpoint_shift_circuit_2` | yes, −5…+5 |
 | 8 | `sensor.hp_dhw_target_temp` | `number.lg_thermav_r290_dhw_target_temperature` | yes, 35–65 °C |
 | 9 | `sensor.hp_energy_state_input_raw` | `sensor.lg_thermav_r290_energy_state` (label) and `binary_sensor.lg_thermav_r290_energy_state_*` (one per value 0–8) | no (read only in both) |

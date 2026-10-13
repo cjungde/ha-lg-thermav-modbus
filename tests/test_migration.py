@@ -135,7 +135,7 @@ def test_steps_are_in_order_and_end_at_the_current_version() -> None:
     versions = [minor for minor, _ in migration.MIGRATION_STEPS]
     assert versions == sorted(versions)
     assert len(set(versions)) == len(versions)
-    assert migration.UNIQUE_ID_MINOR_VERSION == versions[-1] == 3
+    assert migration.UNIQUE_ID_MINOR_VERSION == versions[-1] == 4
 
 
 def test_coil_0_is_renamed_from_every_earlier_version() -> None:
@@ -182,3 +182,26 @@ def test_no_step_renames_onto_a_key_another_step_starts_from() -> None:
     for _, renames in migration.MIGRATION_STEPS:
         for table in renames.values():
             assert not set(table) & set(table.values())
+
+
+def test_target_room_air_is_renamed_from_every_earlier_version() -> None:
+    """room_air_temp_circuit1_hold (before 1.3.0) -> ..._holding -> target_..."""
+    for old, from_minor in (
+        ("room_air_temp_circuit1_hold", 1),
+        ("room_air_temperature_circuit_1_holding", 2),
+        ("room_air_temperature_circuit_1_holding", 3),
+    ):
+        assert (
+            migration.migrated_unique_id("sensor", f"{ENTRY}_{old}", ENTRY, from_minor)
+            == f"{ENTRY}_target_room_air_temperature_circuit_1"
+        )
+
+
+def test_measured_room_air_temperature_is_not_renamed() -> None:
+    """Input 30008 (the measurement) keeps its id."""
+    assert (
+        migration.migrated_unique_id(
+            "sensor", f"{ENTRY}_room_air_temperature_circuit_1", ENTRY, 3
+        )
+        == f"{ENTRY}_room_air_temperature_circuit_1"
+    )

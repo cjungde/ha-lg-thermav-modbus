@@ -23,7 +23,6 @@ automatically (see [Migration from 1.2.0 and earlier](#migration-from-120-and-ea
   | *(Reported)* | the heat pump's own figure, read from its registers | Thermal Power (Reported), COP (Reported), COP System (Reported), Energy State (Reported) |
   | *(Calculated)* | computed by the integration from flow rate × ΔT | Thermal Power (Calculated), Thermal Power DHW (Calculated), COP (Calculated) |
   | *(Cumulative)* | a ratio of the unit's lifetime counters, not a value of the moment | COP Heating (Cumulative) |
-  | *(Holding)* | a holding register read back, where an input register carries the same quantity | Room Air Temperature Circuit 1 (Holding) |
 
   A quantity with only one source carries no suffix (*Flow Rate*, *Outdoor
   Temperature*).
@@ -108,6 +107,7 @@ the config entry minor version by one:
 |---|---|
 | 1 → 2 | the 1.3.0 table (`UNIQUE_KEY_RENAMES`) |
 | 2 → 3 | coil 0 switch `heat_pump` → `heating_cooling` (*Heat Pump* → *Heating/Cooling*) |
+| 3 → 4 | holding 40004/40007 sensors `room_air_temperature_circuit_1_holding` / `_2_holding` → `target_room_air_temperature_circuit_1` / `_2` (they hold the room temperature target, not the measured value) |
 
 An entry runs every step above its minor version, in order, so an
 installation from before 1.3.0 goes `hauptschalter` → `heat_pump` →

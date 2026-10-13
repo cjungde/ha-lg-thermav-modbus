@@ -232,18 +232,20 @@ _SENSORS: tuple[LGSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
     ),
-    # Holding-register read-back of the room temperatures (may match the input
-    # registers; disabled by default)
+    # Holding 40004 / 40007, "Raumlufttemp. Kreislauf 1/2" in the manual's
+    # holding table: the room temperature target (the measured value is input
+    # 30008 / 30011). Read only; whether writing them has an effect is
+    # untested. Disabled by default.
     _temperature(
-        "room_air_temperature_circuit_1_holding",
-        "holding_room_air_temperature_circuit_1",
-        "Room Air Temperature Circuit 1 (Holding)",
+        "target_room_air_temperature_circuit_1",
+        "holding_target_room_air_temperature_circuit_1",
+        "Target Room Air Temperature Circuit 1",
         enabled=False,
     ),
     _temperature(
-        "room_air_temperature_circuit_2_holding",
-        "holding_room_air_temperature_circuit_2",
-        "Room Air Temperature Circuit 2 (Holding)",
+        "target_room_air_temperature_circuit_2",
+        "holding_target_room_air_temperature_circuit_2",
+        "Target Room Air Temperature Circuit 2",
         enabled=False,
     ),
 )
