@@ -129,7 +129,8 @@ The config flow asks for connection type first, then connection-specific paramet
 | `sensor.lg_thermav_r290_thermal_power_dhw` | DHW thermal power | W |
 | `sensor.lg_thermav_r290_operation_mode` | Operation mode (label) | — |
 | `sensor.lg_thermav_r290_control_method` | Control method (label) | — |
-| `sensor.lg_thermav_r290_energy_state` | Energy state (label) | — |
+| `sensor.lg_thermav_r290_energy_state` | Energy state (label), holding 9: the command register | — |
+| `sensor.lg_thermav_r290_energy_state_reported` | Energy state (label), input 11: the state the unit reports as active | — |
 
 ### Energy registers (optional)
 

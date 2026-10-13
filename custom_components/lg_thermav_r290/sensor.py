@@ -315,6 +315,21 @@ async def async_setup_entry(
             "mdi:lightning-bolt",
         )
     )
+    # The same 0-8 labels for input 11, the state the unit reports as active.
+    # "Energy State" above labels holding 9, the command register; when the
+    # SG-Ready state arrives through the unit's contacts rather than a Modbus
+    # write, only input 11 may change, so both get a label.
+    entities.append(
+        LGMappedSensor(
+            coordinator,
+            entry,
+            "energy_state_reported_label",
+            "Energy State (Reported)",
+            ENERGY_STATE_LABELS,
+            "energy_state_input",
+            "mdi:lightning-bolt-outline",
+        )
+    )
     # Computed thermal power sensors (Q = flow/60 * ΔT * cp_water)
     entities.append(
         LGThermalPowerSensor(
