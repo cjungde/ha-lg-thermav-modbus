@@ -37,7 +37,12 @@ from .energy import (
     RetryBackoff,
     decode_block,
 )
-from .experimental import EXPERIMENTAL_BLOCKS, INPUT_FROM_MAIN_READ, data_key
+from .experimental import (
+    EXPERIMENTAL_BLOCKS,
+    INPUT_FROM_MAIN_READ,
+    BlockGate,
+    data_key,
+)
 from .limits import DATA_KEY_MAX_COMPRESSOR_MODULATION, MODULATION_LIMIT_REGISTER
 from .power_limit import (
     DATA_KEY_MAX_ELECTRICAL_POWER,
@@ -76,6 +81,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
         self._experimental = bool(entry.options.get(CONF_EXPERIMENTAL, False))
+        self._experimental_gate = BlockGate()
         self._energy = bool(entry.options.get(CONF_ENERGY_REGISTERS, False))
         self._energy_backoff = RetryBackoff()
         self._modulation_limit = bool(entry.options.get(CONF_MODULATION_LIMIT, False))
@@ -244,8 +250,9 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Read the undocumented registers, when the option asks for them.
 
         Unlike the documented reads these never fail the update. They exist to
-        be looked at, so one that stops answering — another firmware, a bus
-        hiccup — leaves its value empty and the heat pump data intact.
+        be looked at, so one that does not answer leaves its values empty and
+        the heat pump data intact. A block the unit does not answer is not
+        asked again until the next restart (see BlockGate).
         """
         if not self._experimental:
             return {}
@@ -259,17 +266,34 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 if kind == "input"
                 else self.unit.read_holding_registers
             )
-            try:
-                registers = await read(start, count)
-            except ModbusError as exc:
-                _LOGGER.debug(
-                    "Experimental %s registers %d-%d not read: %s",
-                    kind,
-                    start,
-                    start + count - 1,
-                    exc,
-                )
-                registers = [None] * count
+            registers: list[int | None] = [None] * count
+            if self._experimental_gate.should_read(kind, start):
+                try:
+                    registers = await read(start, count)
+                except ModbusError as exc:
+                    refused = isinstance(exc, ModbusExceptionError)
+                    if self._experimental_gate.record(
+                        kind, start, ok=False, refused=refused
+                    ):
+                        _LOGGER.warning(
+                            "Experimental %s registers %d-%d %s; not asking "
+                            "for them again until the next restart (%s)",
+                            kind,
+                            start,
+                            start + count - 1,
+                            "are refused by this unit" if refused else "do not answer",
+                            exc,
+                        )
+                    else:
+                        _LOGGER.debug(
+                            "Experimental %s registers %d-%d not read: %s",
+                            kind,
+                            start,
+                            start + count - 1,
+                            exc,
+                        )
+                else:
+                    self._experimental_gate.record(kind, start, ok=True)
             for offset, value in enumerate(registers):
                 values[data_key(kind, start + offset)] = value
         return values
