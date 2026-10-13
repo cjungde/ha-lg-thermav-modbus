@@ -52,6 +52,7 @@ async def test_a_unit_that_answers_everywhere(hass, unit) -> None:
         "power_limit": False,
         "emergency_operation_button": False,
         "experimental_registers": False,
+        "poll_statistics": False,
     }
 
     result = await hass.config_entries.flow.async_configure(

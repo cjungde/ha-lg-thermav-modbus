@@ -42,6 +42,7 @@ from . import cop, pollstats
 from .const import (
     CONF_ENERGY_REGISTERS,
     CONF_EXPERIMENTAL,
+    CONF_POLL_STATISTICS,
     CONTROL_METHOD_FROM_VALUE,
     DOMAIN,
     ENERGY_STATE_DISPLAY,
@@ -420,7 +421,8 @@ _COP_SENSORS: tuple[LGCalculatedSensorDescription, ...] = (
 
 
 # How long a poll takes and how much of the poll interval that is (see
-# pollstats.py). Diagnostic, disabled by default: they change on every poll.
+# pollstats.py). Diagnostic, created only with the poll statistics option:
+# they change on every poll, so they are not there unless asked for.
 _POLL_SENSORS: tuple[LGSensorDescription, ...] = (
     LGSensorDescription(
         key=pollstats.KEY_POLL_DURATION,
@@ -432,7 +434,6 @@ _POLL_SENSORS: tuple[LGSensorDescription, ...] = (
         suggested_unit_of_measurement=UnitOfTime.MILLISECONDS,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        entity_registry_enabled_default=False,
     ),
     LGSensorDescription(
         key=pollstats.KEY_BUS_LOAD,
@@ -443,7 +444,6 @@ _POLL_SENSORS: tuple[LGSensorDescription, ...] = (
         suggested_display_precision=1,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        entity_registry_enabled_default=False,
     ),
 )
 
@@ -458,7 +458,6 @@ async def async_setup_entry(
         *(LGSensor(coordinator, entry, d) for d in _SENSORS),
         *(LGLabelSensor(coordinator, entry, d) for d in _LABEL_SENSORS),
         *(LGCalculatedSensor(coordinator, entry, d) for d in _THERMAL_POWER_SENSORS),
-        *(LGPollSensor(coordinator, entry, d) for d in _POLL_SENSORS),
     ]
     if entry.options.get(CONF_ENERGY_REGISTERS, False):
         entities.extend(LGEnergySensor(coordinator, entry, r) for r in ENERGY_REGISTERS)
@@ -471,6 +470,10 @@ async def async_setup_entry(
         )
     else:
         remove_entities(hass, entry, "sensor", EXPERIMENTAL_OPTION_KEYS)
+    if entry.options.get(CONF_POLL_STATISTICS, False):
+        entities.extend(LGPollSensor(coordinator, entry, d) for d in _POLL_SENSORS)
+    else:
+        remove_entities(hass, entry, "sensor", tuple(d.key for d in _POLL_SENSORS))
     async_add_entities(entities)
 
 

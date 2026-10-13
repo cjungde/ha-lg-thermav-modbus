@@ -29,6 +29,7 @@ from .const import (
     CONF_ENERGY_REGISTERS,
     CONF_EXPERIMENTAL,
     CONF_MODULATION_LIMIT,
+    CONF_POLL_STATISTICS,
     CONF_POWER_LIMIT,
 )
 from .energy import ENERGY_BLOCK_COUNT, ENERGY_BLOCK_START
@@ -40,13 +41,14 @@ from .power_limit import POWER_LIMIT_COIL, POWER_LIMIT_REGISTER
 CONF_DETECTED = "detected"
 CONF_DETECTED_AT = "detected_at"
 
-# All optional register groups, in the order the forms show them.
+# All options that switch entities on, in the order the forms show them.
 GROUPS = (
     CONF_ENERGY_REGISTERS,
     CONF_MODULATION_LIMIT,
     CONF_POWER_LIMIT,
     CONF_EMERGENCY_OPERATION,
     CONF_EXPERIMENTAL,
+    CONF_POLL_STATISTICS,
 )
 
 # The groups that are checked, in the order they are asked.
