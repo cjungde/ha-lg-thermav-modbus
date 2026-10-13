@@ -52,10 +52,12 @@
         "data": {
           "scan_interval": "Polling interval (seconds)",
           "energy_registers": "Energy registers",
+          "compressor_modulation_limit": "Compressor modulation limit",
           "experimental_registers": "Experimental registers"
         },
         "data_description": {
           "energy_registers": "Adds read-only sensors for electrical power, cumulative energy, demand vs. supply and thermal power from input registers 34-51 (32-bit values). Not every unit serves them: a unit that does not answer simply leaves the sensors without a value, and is asked again only every few polls.",
+          "compressor_modulation_limit": "Adds a slider (40-100 %) for the maximum compressor modulation, holding register 23. Not every unit serves it; while it does not answer the slider stays unavailable. Writing this register is only possible while this option is on.",
           "experimental_registers": "Adds read-only sensors for 18 registers the device answers on but the manual does not document. Nothing is ever written to them. Meant for collecting data over time."
         }
       }

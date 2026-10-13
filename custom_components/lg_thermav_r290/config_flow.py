@@ -23,6 +23,7 @@ from .const import (
     CONF_CONNECTION_TYPE,
     CONF_ENERGY_REGISTERS,
     CONF_EXPERIMENTAL,
+    CONF_MODULATION_LIMIT,
     CONF_PARITY,
     CONF_SCAN_INTERVAL,
     CONF_SERIAL_PORT,
@@ -269,6 +270,10 @@ class LGThermaVOptionsFlow(config_entries.OptionsFlow):
                 vol.Required(
                     CONF_ENERGY_REGISTERS,
                     default=self._entry.options.get(CONF_ENERGY_REGISTERS, False),
+                ): bool,
+                vol.Required(
+                    CONF_MODULATION_LIMIT,
+                    default=self._entry.options.get(CONF_MODULATION_LIMIT, False),
                 ): bool,
                 vol.Required(
                     CONF_EXPERIMENTAL,

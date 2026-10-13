@@ -17,10 +17,12 @@ from .connection import params_from_entry_data
 from .const import (
     CONF_ENERGY_REGISTERS,
     CONF_EXPERIMENTAL,
+    CONF_MODULATION_LIMIT,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE_ID,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    OPTIONAL_WRITABLE_HOLDING_REGISTERS,
     WRITABLE_COILS,
     WRITABLE_HOLDING_REGISTERS,
 )
@@ -31,6 +33,8 @@ from .energy import (
     decode_block,
 )
 from .experimental import EXPERIMENTAL_BLOCKS, INPUT_FROM_MAIN_READ, register_key
+from .limits import MODULATION_LIMIT_REGISTER
+from .limits import decode as decode_modulation_limit
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -64,6 +68,15 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._experimental = bool(entry.options.get(CONF_EXPERIMENTAL, False))
         self._energy = bool(entry.options.get(CONF_ENERGY_REGISTERS, False))
         self._energy_backoff = RetryBackoff()
+        self._modulation_limit = bool(entry.options.get(CONF_MODULATION_LIMIT, False))
+        self._modulation_backoff = RetryBackoff()
+        # Holding 23 joins the write whitelist only while its option is on;
+        # with the option off the integration cannot write it at all.
+        self._writable_holding = (
+            WRITABLE_HOLDING_REGISTERS | OPTIONAL_WRITABLE_HOLDING_REGISTERS
+            if self._modulation_limit
+            else WRITABLE_HOLDING_REGISTERS
+        )
 
         scan_interval = entry.options.get(
             CONF_SCAN_INTERVAL,
@@ -111,10 +124,12 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         experimental = await self._async_read_experimental(inp_hi)
         energy = await self._async_read_energy()
+        modulation_limit = await self._async_read_modulation_limit()
 
         return {
             **experimental,
             **energy,
+            **modulation_limit,
             # Input registers (raw × scale)
             # inp_lo[n] = register n  (0-13)
             # inp_hi[n] = register 16+n (16-24)
@@ -266,6 +281,35 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._energy_backoff.record(True)
         return decode_block(registers)
 
+    async def _async_read_modulation_limit(self) -> dict[str, int | None]:
+        """Read the compressor modulation limit, when the option asks for it.
+
+        Same rules as the energy block: a unit that does not serve holding 23
+        leaves the entity unavailable without failing the update, and is asked
+        again only every few polls.
+        """
+        if not self._modulation_limit or not self._modulation_backoff.should_try():
+            return {}
+        try:
+            registers = await self.unit.read_holding_registers(
+                MODULATION_LIMIT_REGISTER, 1
+            )
+        except ModbusError as exc:
+            if self._modulation_backoff.record(False):
+                _LOGGER.warning(
+                    "Compressor modulation limit (holding %d) did not answer; "
+                    "pausing the read for a while. This unit may not serve "
+                    "it - switch the option off in the integration's options "
+                    "if so (%s)",
+                    MODULATION_LIMIT_REGISTER,
+                    exc,
+                )
+            else:
+                _LOGGER.debug("Compressor modulation limit not read: %s", exc)
+            return {}
+        self._modulation_backoff.record(True)
+        return decode_modulation_limit(registers[0])
+
     async def async_write_coil(self, address: int, value: bool) -> None:
         """Write a single coil register (FC05).
 
@@ -291,7 +335,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         maximum. Callers that must know the value took should read it back —
         the entities do, by refreshing the coordinator after a write.
         """
-        if address not in WRITABLE_HOLDING_REGISTERS:
+        if address not in self._writable_holding:
             raise HomeAssistantError(f"Register {address} is not writable")
         try:
             await self.unit.write_register(address, value)

@@ -11,14 +11,26 @@ from homeassistant.components.number import (
     NumberMode,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfTemperature
+from homeassistant.const import PERCENTAGE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import CONF_MODULATION_LIMIT, DOMAIN
 from .coordinator import LGThermaVCoordinator
+from .limits import (
+    DATA_KEY_LIMIT,
+    DATA_KEY_RAW,
+    MODULATION_LIMIT_MAX,
+    MODULATION_LIMIT_MIN,
+    MODULATION_LIMIT_REGISTER,
+    UNIQUE_ID_SUFFIX,
+)
+from .limits import (
+    encode as encode_modulation_limit,
+)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -132,7 +144,26 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: LGThermaVCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(LGNumber(coordinator, entry, desc) for desc in _NUMBERS)
+    entities: list[NumberEntity] = [
+        LGNumber(coordinator, entry, desc) for desc in _NUMBERS
+    ]
+    if entry.options.get(CONF_MODULATION_LIMIT, False):
+        entities.append(LGModulationLimitNumber(coordinator, entry))
+    else:
+        _remove_modulation_limit_entity(hass, entry)
+    async_add_entities(entities)
+
+
+def _remove_modulation_limit_entity(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Drop the slider when its option is switched off.
+
+    Left in the registry it would sit there unavailable for good.
+    """
+    registry = er.async_get(hass)
+    unique_id = f"{entry.entry_id}_{UNIQUE_ID_SUFFIX}"
+    entity_id = registry.async_get_entity_id("number", DOMAIN, unique_id)
+    if entity_id is not None:
+        registry.async_remove(entity_id)
 
 
 def _device_info(entry: ConfigEntry) -> DeviceInfo:
@@ -176,4 +207,65 @@ class LGNumber(CoordinatorEntity[LGThermaVCoordinator], NumberEntity):
             raw = raw + 65536
         raw = max(0, min(65535, raw))
         await self.coordinator.async_write_register(self._register_address, raw)
+        await self.coordinator.async_request_refresh()
+
+
+class LGModulationLimitNumber(CoordinatorEntity[LGThermaVCoordinator], NumberEntity):
+    """Max compressor modulation, holding register 23 (see limits.py).
+
+    Only created when the option is on. The register holds 40-100 for a limit
+    in force and 0 for "not used"; 0 has no place on the slider, so it is shown
+    as unknown, with the raw value as an attribute. Writes go through the
+    coordinator, which accepts register 23 only while the option is on, and are
+    clamped to 40-100 first. The coordinator is refreshed after every write,
+    so the slider shows what the unit actually stored, not what was sent.
+    """
+
+    _attr_has_entity_name = True
+    _attr_name = "Max Compressor Modulation"
+    _attr_icon = "mdi:engine-outline"
+    _attr_native_min_value = MODULATION_LIMIT_MIN
+    _attr_native_max_value = MODULATION_LIMIT_MAX
+    _attr_native_step = 1
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_mode = NumberMode.SLIDER
+
+    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_{UNIQUE_ID_SUFFIX}"
+        self._attr_device_info = _device_info(entry)
+
+    @property
+    def available(self) -> bool:
+        # Unavailable until the unit has answered on holding 23 at least once
+        # in the current data, e.g. while the read is paused after misses.
+        return (
+            super().available
+            and self.coordinator.data is not None
+            and DATA_KEY_RAW in self.coordinator.data
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        if self.coordinator.data is None:
+            return None
+        return self.coordinator.data.get(DATA_KEY_LIMIT)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, int | bool | None]:
+        raw = (
+            None
+            if self.coordinator.data is None
+            else self.coordinator.data.get(DATA_KEY_RAW)
+        )
+        return {
+            "modbus_register": 40001 + MODULATION_LIMIT_REGISTER,
+            "register_value": raw,
+            "limit_active": None if raw is None else raw != 0,
+        }
+
+    async def async_set_native_value(self, value: float) -> None:
+        await self.coordinator.async_write_register(
+            MODULATION_LIMIT_REGISTER, encode_modulation_limit(value)
+        )
         await self.coordinator.async_request_refresh()

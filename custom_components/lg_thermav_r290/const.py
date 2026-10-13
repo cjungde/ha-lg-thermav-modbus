@@ -11,6 +11,7 @@ CONF_STOPBITS = "stopbits"
 CONF_SCAN_INTERVAL = "scan_interval"
 CONF_EXPERIMENTAL = "experimental_registers"
 CONF_ENERGY_REGISTERS = "energy_registers"
+CONF_MODULATION_LIMIT = "compressor_modulation_limit"
 
 CONNECTION_TCP = "tcp"
 CONNECTION_TCP_RTU = "tcp_rtu"
@@ -67,4 +68,7 @@ ENERGY_STATE_LABELS = {
 # found by scanning (see experimental.py) must stay read-only, and coil 5 is a
 # trigger for emergency operation that no entity should reach.
 WRITABLE_HOLDING_REGISTERS = frozenset({0, 1, 2, 4, 5, 7, 8})
+# Writable only while the option that creates its entity is on: holding 23 is
+# the compressor modulation limit (see limits.py), which not every unit serves.
+OPTIONAL_WRITABLE_HOLDING_REGISTERS = frozenset({23})
 WRITABLE_COILS = frozenset({0, 1, 2, 3, 4})
