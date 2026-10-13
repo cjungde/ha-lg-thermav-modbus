@@ -138,6 +138,8 @@ Both energy state sensors show the value in front of its name, `0 – Not Used` 
 
 Switch on **Energy registers** in the integration's options. These are 32-bit values in input registers 34–51 that the manual does not list. Not every unit serves them: a read-only scan of a 9 kW unit got no answer from input 25–62, while a 12 kW unit answers on 34–51.
 
+> **Do not rely on the electrical values.** The electrical power and energy the heat pump reports (input 34–45) deviate noticeably from a calibrated meter: compared against a smart meter on the 12 kW unit, the unit usually reported **too high** a power. The energy counters are presumably derived from that power and are then likely too high as well; that part has not been measured separately. Treat all of them as the unit's own estimate. Everything built on them inherits the error, and since the electrical side is in the denominator, the COPs tend to come out **too low**: *COP Current*, *COP System*, *COP (Calculated)* and *Heating COP (Cumulative)*. For billing, the Energy dashboard or a COP you want to rely on, measure the heat pump's electrical consumption with a separate meter (a smart meter, or a dedicated meter in the heat pump's supply) and use that instead.
+
 | Entity | Registers | Unit |
 | --- | --- | --- |
 | `sensor.lg_thermav_r290_electrical_power_total_system` | 34–35 | W |
