@@ -94,6 +94,12 @@ class LGSelect(LGEntity, SelectEntity):
             return None
         return self.entity_description.from_value.get(raw)
 
+    @property
+    def extra_state_attributes(self) -> dict[str, int | None]:
+        # The register value behind the option, as a number, so it reaches a
+        # numeric time series database (see LGLabelSensor in sensor.py).
+        return {"register_value": self._data(self.entity_description.data_key)}
+
     async def async_select_option(self, option: str) -> None:
         value = self.entity_description.to_value.get(option)
         if value is None:

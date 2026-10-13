@@ -197,23 +197,30 @@ _SENSORS: tuple[LGSensorDescription, ...] = (
         data_key="input_error_code",
         name="Error Code",
         icon="mdi:alert-circle",
+        # Codes, not quantities: the hourly mean means little, but a state
+        # class keeps them in long-term statistics (min/max per hour show any
+        # code that occurred) instead of losing them with the recorder purge.
+        state_class=SensorStateClass.MEASUREMENT,
     ),
     LGSensorDescription(
         key="operation_cycle_odu",
         data_key="input_operation_cycle_odu",
         name="Operation Cycle (ODU)",
+        state_class=SensorStateClass.MEASUREMENT,
     ),
     LGSensorDescription(
         key="energy_control_signal",
         data_key="input_energy_control_signal",
         name="Energy Control Signal",
         icon="mdi:transmission-tower",
+        state_class=SensorStateClass.MEASUREMENT,
     ),
     LGSensorDescription(
         key="device_group",
         data_key="input_device_group",
         name="Device Group",
         icon="mdi:information",
+        state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
     ),
     LGSensorDescription(
@@ -221,6 +228,7 @@ _SENSORS: tuple[LGSensorDescription, ...] = (
         data_key="input_product_information",
         name="Product Information",
         icon="mdi:information",
+        state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
     ),
     # Holding-register read-back of the room temperatures (may match the input
@@ -464,6 +472,14 @@ class LGLabelSensor(LGEntity, SensorEntity):
         if raw is None:
             return None
         return self.entity_description.labels.get(raw, str(raw))
+
+    @property
+    def extra_state_attributes(self) -> dict[str, int | None]:
+        # The code behind the text, as a number. A text state cannot go into
+        # long-term statistics or a numeric time series database (Influx/
+        # VictoriaMetrics drop string fields); a numeric attribute is exported
+        # as a field by the influxdb integration and arrives there.
+        return {"register_value": self._data(self.entity_description.data_key)}
 
 
 class LGCalculatedSensor(LGEntity, SensorEntity):
