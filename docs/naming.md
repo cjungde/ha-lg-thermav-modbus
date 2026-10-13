@@ -23,6 +23,7 @@ automatically (see [Migration from 1.2.0 and earlier](#migration-from-120-and-ea
   | *(Reported)* | the heat pump's own figure, read from its registers | Thermal Power (Reported), COP (Reported), COP System (Reported), Energy State (Reported) |
   | *(Calculated)* | computed by the integration from flow rate × ΔT | Thermal Power (Calculated), Thermal Power DHW (Calculated), COP (Calculated) |
   | *(Cumulative)* | a ratio of the unit's lifetime counters, not a value of the moment | COP Heating (Cumulative) |
+| *(External Meter)* | the electrical side comes from a meter the user picked in the options, not from the unit | COP (External Meter), COP Cumulative (External Meter) |
 
   A quantity with only one source carries no suffix (*Flow Rate*, *Outdoor
   Temperature*).

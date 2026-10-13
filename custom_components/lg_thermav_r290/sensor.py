@@ -15,7 +15,9 @@ Four kinds of sensors:
 from __future__ import annotations
 
 from collections.abc import Callable
+import contextlib
 from dataclasses import dataclass
+import time
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -26,7 +28,10 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    ATTR_UNIT_OF_MEASUREMENT,
     PERCENTAGE,
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
     EntityCategory,
     UnitOfEnergy,
     UnitOfPower,
@@ -36,12 +41,18 @@ from homeassistant.const import (
     UnitOfVolumeFlowRate,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import ExtraStoredData, RestoreEntity
+from homeassistant.util import dt as dt_util
+from homeassistant.util.unit_conversion import EnergyConverter, PowerConverter
 
-from . import cop, pollstats
+from . import cop, external_meter, pollstats
 from .const import (
     CONF_ENERGY_REGISTERS,
     CONF_EXPERIMENTAL,
+    CONF_EXTERNAL_ENERGY,
+    CONF_EXTERNAL_POWER,
     CONF_POLL_STATISTICS,
     CONTROL_METHOD_FROM_VALUE,
     DOMAIN,
@@ -470,6 +481,17 @@ async def async_setup_entry(
         )
     else:
         remove_entities(hass, entry, "sensor", EXPERIMENTAL_OPTION_KEYS)
+    power_sensor = entry.options.get(CONF_EXTERNAL_POWER)
+    energy_sensor = entry.options.get(CONF_EXTERNAL_ENERGY)
+    if power_sensor:
+        entities.append(LGExternalMeterCopSensor(coordinator, entry, power_sensor))
+    else:
+        remove_entities(hass, entry, "sensor", external_meter.POWER_KEYS)
+    if energy_sensor:
+        entities.append(LGThermalEnergySensor(coordinator, entry))
+        entities.append(LGCumulativeCopSensor(coordinator, entry, energy_sensor))
+    else:
+        remove_entities(hass, entry, "sensor", external_meter.ENERGY_KEYS)
     if entry.options.get(CONF_POLL_STATISTICS, False):
         entities.extend(LGPollSensor(coordinator, entry, d) for d in _POLL_SENSORS)
     else:
@@ -625,3 +647,189 @@ class LGPollSensor(LGSensor):
     @property
     def extra_state_attributes(self) -> dict[str, int | None]:
         return {"requests": self._data(pollstats.DATA_KEY_POLL_REQUESTS)}
+
+
+# --- External electricity meter (external_meter.py) --------------------------
+
+
+def _monotonic() -> float:
+    """The clock the energy integration runs on (replaced in tests)."""
+    return time.monotonic()
+
+
+def _external_value(hass, entity_id: str, converter, unit: str) -> float | None:
+    """A sensor of the user's meter, converted to W or kWh; None if unusable."""
+    state = hass.states.get(entity_id)
+    if state is None or state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+        return None
+    try:
+        value = float(state.state)
+    except ValueError:
+        return None
+    from_unit = state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+    if from_unit is None:
+        return None
+    try:
+        return converter.convert(value, from_unit, unit)
+    except HomeAssistantError:
+        return None
+
+
+class LGExternalMeterCopSensor(LGEntity, SensorEntity):
+    """COP of the moment: flow × ΔT over the power of the user's own meter.
+
+    Like the other COPs, no value while the meter shows less than
+    cop.MIN_ELECTRICAL_POWER_W (standby). Updated on every poll.
+    """
+
+    _attr_name = "COP (External Meter)"
+    _attr_icon = "mdi:heat-pump-outline"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 2
+
+    def __init__(
+        self, coordinator: LGThermaVCoordinator, entry: ConfigEntry, power_sensor: str
+    ) -> None:
+        super().__init__(coordinator, entry, external_meter.KEY_COP_EXTERNAL_METER)
+        self._power_sensor = power_sensor
+        self._attr_extra_state_attributes = {"power_sensor": power_sensor}
+
+    @property
+    def native_value(self) -> float | None:
+        if self.coordinator.data is None:
+            return None
+        power = _external_value(
+            self.hass, self._power_sensor, PowerConverter, UnitOfPower.WATT
+        )
+        thermal = _thermal_power(self.coordinator.data, None)
+        return cop.instantaneous_cop(thermal, power)
+
+
+class LGThermalEnergySensor(LGEntity, RestoreEntity, SensorEntity):
+    """Thermal power (Calculated) added up over time, in kWh.
+
+    A counter of its own, independent of the unit's thermal counter. Kept
+    across restarts; the time Home Assistant is down is a gap, not counted.
+    """
+
+    _attr_name = "Thermal Energy (Calculated)"
+    _attr_icon = "mdi:heat-wave"
+    _attr_device_class = SensorDeviceClass.ENERGY
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+    _attr_suggested_display_precision = 2
+
+    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(
+            coordinator, entry, external_meter.KEY_THERMAL_ENERGY_CALCULATED
+        )
+        self._integrator = external_meter.EnergyIntegrator()
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        last = await self.async_get_last_state()
+        if last is not None:
+            with contextlib.suppress(ValueError):
+                self._integrator.kwh = float(last.state)
+        self._sample()
+
+    def _sample(self) -> None:
+        data = self.coordinator.data
+        power = _thermal_power(data, None) if data else None
+        self._integrator.add(power, _monotonic())
+
+    def _handle_coordinator_update(self) -> None:
+        self._sample()
+        super()._handle_coordinator_update()
+
+    @property
+    def native_value(self) -> float:
+        return round(self._integrator.kwh, 3)
+
+
+class _CumulativeCopData(ExtraStoredData):
+    def __init__(self, data: dict[str, Any]) -> None:
+        self._data = data
+
+    def as_dict(self) -> dict[str, Any]:
+        return self._data
+
+
+class LGCumulativeCopSensor(LGEntity, RestoreEntity, SensorEntity):
+    """Thermal energy over the meter's energy since the option was set up (JAZ).
+
+    Both sides are counted from the same moment: the thermal energy by adding
+    up flow × ΔT, the electrical energy as the growth of the meter's counter
+    (a reset of the meter counts as growth from zero). Both are kept across
+    restarts. Switching the option off and on again starts a new period.
+    """
+
+    _attr_name = "COP Cumulative (External Meter)"
+    _attr_icon = "mdi:chart-timeline-variant"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 2
+
+    def __init__(
+        self, coordinator: LGThermaVCoordinator, entry: ConfigEntry, energy_sensor: str
+    ) -> None:
+        super().__init__(
+            coordinator, entry, external_meter.KEY_COP_CUMULATIVE_EXTERNAL_METER
+        )
+        self._energy_sensor = energy_sensor
+        self._thermal = external_meter.EnergyIntegrator()
+        self._electrical = external_meter.CounterDelta()
+        self._since: str | None = None
+
+    @property
+    def extra_restore_state_data(self) -> ExtraStoredData:
+        return _CumulativeCopData(
+            {
+                **external_meter.state(self._thermal, self._electrical),
+                "since": self._since,
+                "energy_sensor": self._energy_sensor,
+            }
+        )
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        last = await self.async_get_last_extra_data()
+        stored = last.as_dict() if last is not None else {}
+        # A different meter starts a new period: its counter is another one.
+        if stored.get("energy_sensor") == self._energy_sensor:
+            self._thermal.kwh = float(stored.get("thermal_kwh") or 0.0)
+            self._electrical.kwh = float(stored.get("electrical_kwh") or 0.0)
+            self._electrical.last = stored.get("electrical_last")
+            self._since = stored.get("since")
+        if self._since is None:
+            self._since = dt_util.utcnow().isoformat()
+        self._sample()
+
+    def _sample(self) -> None:
+        data = self.coordinator.data
+        power = _thermal_power(data, None) if data else None
+        self._thermal.add(power, _monotonic())
+        self._electrical.add(
+            _external_value(
+                self.hass,
+                self._energy_sensor,
+                EnergyConverter,
+                UnitOfEnergy.KILO_WATT_HOUR,
+            )
+        )
+
+    def _handle_coordinator_update(self) -> None:
+        self._sample()
+        super()._handle_coordinator_update()
+
+    @property
+    def native_value(self) -> float | None:
+        return external_meter.ratio(self._thermal.kwh, self._electrical.kwh)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {
+            "energy_sensor": self._energy_sensor,
+            "since": self._since,
+            "thermal_energy_kwh": round(self._thermal.kwh, 3),
+            "electrical_energy_kwh": round(self._electrical.kwh, 3),
+        }

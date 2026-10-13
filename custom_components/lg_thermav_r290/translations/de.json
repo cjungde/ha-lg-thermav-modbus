@@ -194,6 +194,18 @@
             "data_description": {
               "poll_statistics": "Legt 2 Diagnose-Sensoren an:\n\n- **Poll Duration** — ms pro Abfrage, mit der Zahl der Lesezugriffe als Attribut\n- **Bus Load** — Abfragedauer in % des Abfrageintervalls"
             }
+          },
+          "external_meter": {
+            "name": "Externer Stromzähler",
+            "description": "Sensoren eines eigenen Stromzählers für die Wärmepumpe auswählen (z. B. aus vzlogger oder einer Messsteckdose), um COPs zu berechnen, die nicht von den elektrischen Werten des Geräts abhängen; diese liegen meist zu hoch. Beide sind optional; ein leeres Feld schaltet seine Sensoren ab.",
+            "data": {
+              "external_power_sensor": "Leistungssensor (W oder kW)",
+              "external_energy_sensor": "Energiesensor (Wh oder kWh, ein Gesamtzähler)"
+            },
+            "data_description": {
+              "external_power_sensor": "Legt an:\n\n- **COP (External Meter)** — thermische Leistung aus Durchfluss × ΔT ÷ Leistung dieses Sensors, der COP des Moments; kein Wert unter 100 W",
+              "external_energy_sensor": "Legt an:\n\n- **Thermal Energy (Calculated)** — Durchfluss × ΔT über die Zeit aufsummiert, kWh\n- **COP Cumulative (External Meter)** — diese thermische Energie ÷ Zuwachs dieses Zählers, beides gezählt ab dem Setzen dieses Sensors: die Jahresarbeitszahl (JAZ) über diesen Zeitraum\n\nBeide bleiben über Neustarts erhalten. Ein anderer Sensor beginnt einen neuen Zeitraum."
+            }
           }
         }
       }
