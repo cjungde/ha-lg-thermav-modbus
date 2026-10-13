@@ -89,3 +89,33 @@ def test_system_cop_is_lower_when_the_system_draws_more() -> None:
     thermal = 9_000
     heat_pump, system = 2_000, 3_000  # e.g. a 1 kW backup heater running
     assert cop.current_cop(thermal, system) < cop.current_cop(thermal, heat_pump)
+
+
+def test_thermal_power_from_flow_and_delta_t() -> None:
+    # 20 l/min, 5 K: 20/60 × 5 × 4186 = 6976.7 W
+    assert cop.thermal_power_w(20.0, 30.0, 35.0) == 6977
+    assert cop.thermal_power_w(0.0, 30.0, 35.0) == 0
+
+
+def test_thermal_power_never_negative() -> None:
+    """Reversed ΔT (defrost, cooling) gives 0, as the sensors always did."""
+    assert cop.thermal_power_w(20.0, 35.0, 30.0) == 0
+
+
+def test_thermal_power_needs_all_inputs() -> None:
+    assert cop.thermal_power_w(None, 30.0, 35.0) is None
+    assert cop.thermal_power_w(20.0, None, 35.0) is None
+    assert cop.thermal_power_w(20.0, 30.0, None) is None
+
+
+def test_calculated_cop_combines_both() -> None:
+    """flow × ΔT over the heat pump's power, same idle rule as COP Current."""
+    thermal = cop.thermal_power_w(20.0, 30.0, 35.0)
+    assert cop.current_cop(thermal, 1_744) == 4.0
+    assert cop.current_cop(thermal, cop.MIN_ELECTRICAL_POWER_W - 1) is None
+
+
+def test_calculated_cop_has_its_own_id_and_is_removed_with_the_energy_sensors() -> None:
+    keys = {cop.COP_CURRENT_KEY, cop.COP_SYSTEM_KEY, cop.COP_CALCULATED_KEY}
+    assert len(keys) == 3
+    assert cop.COP_CALCULATED_KEY.startswith(energy.ENERGY_UNIQUE_ID_PREFIX)

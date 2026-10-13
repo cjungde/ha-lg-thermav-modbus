@@ -35,12 +35,14 @@ from .const import (
 )
 from .coordinator import LGThermaVCoordinator
 from .cop import (
+    COP_CALCULATED_KEY,
     COP_CURRENT_KEY,
     COP_SYSTEM_KEY,
     ELECTRICAL_POWER_KEY,
     ELECTRICAL_POWER_SYSTEM_KEY,
     THERMAL_POWER_KEY,
     current_cop,
+    thermal_power_w,
 )
 from .energy import (
     ELECTRICAL_ENERGY_HEATING_KEY,
@@ -379,6 +381,7 @@ async def async_setup_entry(
     if entry.options.get(CONF_ENERGY_REGISTERS, False):
         entities.append(LGCurrentCopSensor(coordinator, entry))
         entities.append(LGSystemCopSensor(coordinator, entry))
+        entities.append(LGCalculatedCopSensor(coordinator, entry))
     async_add_entities(entities)
 
 
@@ -580,9 +583,6 @@ class LGThermalPowerSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_icon = "mdi:heat-wave"
 
-    # Specific heat capacity of water [J/(kg·K)] × density [kg/l] = 4186 J/l/K
-    _CP_WATER = 4186.0
-
     def __init__(
         self,
         coordinator: LGThermaVCoordinator,
@@ -614,10 +614,7 @@ class LGThermalPowerSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity
                 return None
             if bool(dhw_on) != self._dhw_filter:
                 return 0
-        delta_t = float(outlet) - float(inlet)
-        flow_ls = float(flow) / 60.0  # l/min → l/s
-        power_w = flow_ls * delta_t * self._CP_WATER
-        return max(0, int(round(power_w)))
+        return thermal_power_w(flow, inlet, outlet)
 
 
 class LGCurrentCopSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
@@ -662,3 +659,35 @@ class LGSystemCopSensor(LGCurrentCopSensor):
     _attr_icon = "mdi:home-lightning-bolt-outline"
     _cop_key = COP_SYSTEM_KEY
     _electrical_key = ELECTRICAL_POWER_SYSTEM_KEY
+
+
+class LGCalculatedCopSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
+    """COP from the integration's own thermal power: flow × ΔT ÷ input 36.
+
+    A cross-check of COP Current: the electrical side is the same (the heat
+    pump's power, input 36), but the thermal side is computed from flow rate
+    and inlet/outlet temperature (cop.thermal_power_w) instead of taken from
+    the unit's thermal power register (input 48). Same idle rule: no value
+    below cop.MIN_ELECTRICAL_POWER_W.
+    """
+
+    _attr_has_entity_name = True
+    _attr_name = "COP (Calculated)"
+    _attr_icon = "mdi:calculator-variant-outline"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 2
+
+    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_{COP_CALCULATED_KEY}"
+        self._attr_device_info = _device_info(entry)
+
+    @property
+    def native_value(self) -> float | None:
+        data = self.coordinator.data
+        if data is None:
+            return None
+        thermal = thermal_power_w(
+            data.get("flow_rate"), data.get("inlet_temp"), data.get("outlet_temp")
+        )
+        return current_cop(thermal, data.get(ELECTRICAL_POWER_KEY))
