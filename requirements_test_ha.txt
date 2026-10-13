@@ -1,0 +1,2 @@
+pytest-homeassistant-custom-component
+modbus-connection>=4.10.0
