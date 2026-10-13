@@ -51,9 +51,11 @@
         "title": "LG ThermaV R290 — Optionen",
         "data": {
           "scan_interval": "Abfrageintervall (Sekunden)",
+          "energy_registers": "Energieregister",
           "experimental_registers": "Experimentelle Register"
         },
         "data_description": {
+          "energy_registers": "Legt schreibgeschützte Sensoren für elektrische Leistung, kumulierte Energie, Bedarf vs. Versorgung und thermische Leistung aus den Input-Registern 34-51 an (32-Bit-Werte). Nicht jedes Gerät liefert sie: Antwortet das Gerät nicht, bleiben die Sensoren ohne Wert und es wird nur alle paar Abfragen erneut versucht.",
           "experimental_registers": "Legt schreibgeschützte Sensoren für 18 Register an, die das Gerät beantwortet, die aber nicht im Handbuch stehen. Es wird nie darauf geschrieben. Gedacht zum Sammeln von Daten über längere Zeit."
         }
       }

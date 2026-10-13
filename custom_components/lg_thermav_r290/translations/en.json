@@ -51,9 +51,11 @@
         "title": "LG ThermaV R290 — Options",
         "data": {
           "scan_interval": "Polling interval (seconds)",
+          "energy_registers": "Energy registers",
           "experimental_registers": "Experimental registers"
         },
         "data_description": {
+          "energy_registers": "Adds read-only sensors for electrical power, cumulative energy, demand vs. supply and thermal power from input registers 34-51 (32-bit values). Not every unit serves them: a unit that does not answer simply leaves the sensors without a value, and is asked again only every few polls.",
           "experimental_registers": "Adds read-only sensors for 18 registers the device answers on but the manual does not document. Nothing is ever written to them. Meant for collecting data over time."
         }
       }

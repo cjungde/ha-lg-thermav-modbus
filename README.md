@@ -11,6 +11,7 @@ Replaces a hand-crafted YAML Modbus configuration with native HA entities: senso
 ## Features
 
 - **Sensors** — temperatures (inlet, outlet, DHW, outdoor, refrigerant circuit), flow rate, pressures, compressor speed, error code, operation mode, control method, energy state
+- **Energy registers (optional)** — electrical power, cumulative electrical energy per mode, demand vs. supply and the unit's own thermal power from input registers 34–51; off by default, see [Energy registers](#energy-registers-optional)
 - **Computed thermal power sensors** — total / heating circuit / DHW, calculated from flow rate and ΔT each poll cycle (Q = flow/60 × ΔT × 4186 W)
 - **Binary sensors** — compressor, pumps, DHW heating, defrost, backup heater stages, fault, silent mode, cooling, emergency modes, energy state slots 0–8
 - **Switches** — main power, DHW, silent mode, emergency stop
@@ -99,6 +100,7 @@ The config flow asks for connection type first, then connection-specific paramet
 | Stop bits | 1 | RTU only |
 | Slave ID | 1 | 1–247 |
 | Poll interval | 30 s | Adjustable in Options |
+| Energy registers | off | Options; input 34–51, not served by every unit |
 
 ---
 
@@ -126,6 +128,26 @@ The config flow asks for connection type first, then connection-specific paramet
 | `sensor.lg_thermav_r290_operation_mode` | Operation mode (label) | — |
 | `sensor.lg_thermav_r290_control_method` | Control method (label) | — |
 | `sensor.lg_thermav_r290_energy_state` | Energy state (label) | — |
+
+### Energy registers (optional)
+
+Switch on **Energy registers** in the integration's options. These are 32-bit values in input registers 34–51 that the manual does not list. Not every unit serves them: a read-only scan of a 9 kW unit got no answer from input 25–62, while a 12 kW unit answers on 34–51.
+
+| Entity | Registers | Unit |
+| --- | --- | --- |
+| `sensor.lg_thermav_r290_electrical_power_total_system` | 34–35 | W |
+| `sensor.lg_thermav_r290_electrical_power_heat_pump` | 36–37 | W |
+| `sensor.lg_thermav_r290_electrical_energy_total` | 38–39 | Wh (shown as kWh) |
+| `sensor.lg_thermav_r290_electrical_energy_space_heating` | 40–41 | Wh (shown as kWh) |
+| `sensor.lg_thermav_r290_electrical_energy_space_cooling` | 42–43 | Wh (shown as kWh) |
+| `sensor.lg_thermav_r290_electrical_energy_dhw` | 44–45 | Wh (shown as kWh) |
+| `sensor.lg_thermav_r290_demand_vs_supply` | 46–47 | none (reads 0–12 on a 12 kW unit) |
+| `sensor.lg_thermav_r290_thermal_power_heat_pump_register` | 48–49 | W |
+| `sensor.lg_thermav_r290_thermal_energy_space_heating` | 50–51 | Wh (shown as kWh) |
+
+The block is read in one request, high word first. A unit that does not answer leaves the sensors without a value and does not affect the other entities; after three misses in a row the read is skipped for 20 polls before it is tried again, so a unit that does not serve the block costs a few timeouts, not one per poll. Registers 52–55 (cumulative thermal yield for cooling and DHW) are not read; they do not answer on a 12 kW unit. Switching the option off removes the sensors again.
+
+`thermal_power_heat_pump_register` is the unit's own figure and is separate from the computed `thermal_power_*` sensors below.
 
 ### Binary sensors
 
@@ -234,6 +256,7 @@ see whether the operation actually started.
 | FC | Address range | Content |
 |---|---|---|
 | FC04 (input) | 0–24 | Temperatures, flow, pressures, compressor speed, error code |
+| FC04 (input) | 34–51 | Optional: electrical power/energy, demand vs. supply, thermal yield |
 | FC04 (input) | 9997–9998 | Product info, device group |
 | FC03 (holding) | 0–9 | Operation mode, control method, setpoints, shift values, energy state |
 | FC01 (coils) | 0–4 | Main switch, DHW, silent mode, disinfection trigger, emergency stop |

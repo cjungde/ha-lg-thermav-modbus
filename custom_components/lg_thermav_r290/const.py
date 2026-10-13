@@ -10,6 +10,7 @@ CONF_PARITY = "parity"
 CONF_STOPBITS = "stopbits"
 CONF_SCAN_INTERVAL = "scan_interval"
 CONF_EXPERIMENTAL = "experimental_registers"
+CONF_ENERGY_REGISTERS = "energy_registers"
 
 CONNECTION_TCP = "tcp"
 CONNECTION_TCP_RTU = "tcp_rtu"
