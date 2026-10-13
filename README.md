@@ -155,6 +155,8 @@ The option also adds `sensor.lg_thermav_r290_heating_cop_cumulative`: thermal en
 
 The option also adds `sensor.lg_thermav_r290_cop_current`: the unit's thermal power (input 48) divided by the heat pump's electrical power (input 36), the COP of the moment, in space heating and DHW alike. It has no value while the electrical power is below 100 W, i.e. while the unit idles, so standby periods do not drag down its statistics.
 
+`sensor.lg_thermav_r290_cop_system` is the same, but over the total system's electrical power (input 34) instead of the heat pump's (input 36). Where the two are equal, so are the COPs; when something the heat pump figure leaves out draws power, such as a backup heater, the system COP is the lower, more honest one.
+
 ### Binary sensors
 
 | Entity | Description |
