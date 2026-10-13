@@ -143,7 +143,8 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
     # Minor versions carry the unique id renames (migration.MIGRATION_STEPS):
-    # 2: unique ids follow docs/naming.md; 3: coil 0 switch is heating_cooling.
+    # 2: unique ids follow docs/naming.md; 3: coil 0 switch is heating_cooling;
+    # 4: holding 40004/40007 sensors are target_room_air_temperature_circuit_*.
     MINOR_VERSION = UNIQUE_ID_MINOR_VERSION
     _connection_type: str = CONNECTION_TCP
     _reconfigure_entry: config_entries.ConfigEntry | None = None
