@@ -35,11 +35,15 @@ from .const import (
 )
 from .coordinator import LGThermaVCoordinator
 from .energy import (
+    ELECTRICAL_ENERGY_HEATING_KEY,
     ENERGY_REGISTERS,
     ENERGY_UNIQUE_ID_PREFIX,
+    HEATING_COP_KEY,
     KIND_ENERGY,
     KIND_POWER,
+    THERMAL_ENERGY_HEATING_KEY,
     EnergyRegister,
+    heating_cop,
 )
 from .experimental import EXPERIMENTAL_REGISTERS, ExperimentalRegister
 
@@ -336,6 +340,7 @@ async def async_setup_entry(
             LGEnergyRegisterSensor(coordinator, entry, register)
             for register in ENERGY_REGISTERS
         )
+        entities.append(LGHeatingCopSensor(coordinator, entry))
     else:
         _remove_sensors(hass, entry, ENERGY_UNIQUE_ID_PREFIX)
     if entry.options.get(CONF_EXPERIMENTAL, False):
@@ -430,6 +435,36 @@ class LGEnergyRegisterSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEnti
         if self.coordinator.data is None:
             return None
         return self.coordinator.data.get(self._data_key)
+
+
+class LGHeatingCopSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
+    """Cumulative heating COP: input 50 (thermal) / input 40 (electrical).
+
+    Only created with the energy registers option, which provides both
+    counters. A long-term average since the counters were last reset, not
+    the COP of the moment; see energy.heating_cop.
+    """
+
+    _attr_has_entity_name = True
+    _attr_name = "Heating COP (Cumulative)"
+    _attr_icon = "mdi:heat-pump-outline"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 2
+
+    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_{HEATING_COP_KEY}"
+        self._attr_device_info = _device_info(entry)
+
+    @property
+    def native_value(self) -> float | None:
+        data = self.coordinator.data
+        if data is None:
+            return None
+        return heating_cop(
+            data.get(THERMAL_ENERGY_HEATING_KEY),
+            data.get(ELECTRICAL_ENERGY_HEATING_KEY),
+        )
 
 
 class LGExperimentalSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
