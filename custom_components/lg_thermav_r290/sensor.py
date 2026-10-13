@@ -12,7 +12,12 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EntityCategory, UnitOfTemperature
+from homeassistant.const import (
+    EntityCategory,
+    UnitOfEnergy,
+    UnitOfPower,
+    UnitOfTemperature,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -20,6 +25,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
+    CONF_ENERGY_REGISTERS,
     CONF_EXPERIMENTAL,
     CONTROL_METHOD_FROM_VALUE,
     DOMAIN,
@@ -27,6 +33,13 @@ from .const import (
     OPERATION_MODE_FROM_VALUE,
 )
 from .coordinator import LGThermaVCoordinator
+from .energy import (
+    ENERGY_REGISTERS,
+    ENERGY_UNIQUE_ID_PREFIX,
+    KIND_ENERGY,
+    KIND_POWER,
+    EnergyRegister,
+)
 from .experimental import EXPERIMENTAL_REGISTERS, ExperimentalRegister
 
 
@@ -312,25 +325,32 @@ async def async_setup_entry(
             dhw_filter=False,
         )
     )
+    if entry.options.get(CONF_ENERGY_REGISTERS, False):
+        entities.extend(
+            LGEnergyRegisterSensor(coordinator, entry, register)
+            for register in ENERGY_REGISTERS
+        )
+    else:
+        _remove_sensors(hass, entry, ENERGY_UNIQUE_ID_PREFIX)
     if entry.options.get(CONF_EXPERIMENTAL, False):
         entities.extend(
             LGExperimentalSensor(coordinator, entry, register)
             for register in EXPERIMENTAL_REGISTERS
         )
     else:
-        _remove_experimental_entities(hass, entry)
+        _remove_sensors(hass, entry, "exp_")
     async_add_entities(entities)
 
 
-def _remove_experimental_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Drop the experimental sensors when the option is switched off.
+def _remove_sensors(hass: HomeAssistant, entry: ConfigEntry, prefix: str) -> None:
+    """Drop an optional group of sensors when its option is switched off.
 
     Left in the registry they would sit there unavailable for good.
     """
     registry = er.async_get(hass)
-    prefix = f"{entry.entry_id}_exp_"
+    full_prefix = f"{entry.entry_id}_{prefix}"
     for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
-        if entity.domain == "sensor" and entity.unique_id.startswith(prefix):
+        if entity.domain == "sensor" and entity.unique_id.startswith(full_prefix):
             registry.async_remove(entity.entity_id)
 
 
@@ -362,6 +382,45 @@ class LGSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
 
     @property
     def native_value(self) -> Any:
+        if self.coordinator.data is None:
+            return None
+        return self.coordinator.data.get(self._data_key)
+
+
+class LGEnergyRegisterSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
+    """A power, energy or plain value from the 32-bit energy block."""
+
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        coordinator: LGThermaVCoordinator,
+        entry: ConfigEntry,
+        register: EnergyRegister,
+    ) -> None:
+        super().__init__(coordinator)
+        self._data_key = register.data_key
+        self._attr_name = register.name
+        self._attr_unique_id = f"{entry.entry_id}_{register.data_key}"
+        self._attr_device_info = _device_info(entry)
+        self._attr_extra_state_attributes = {
+            "modbus_register": register.modbus_number,
+        }
+        if register.kind == KIND_POWER:
+            self._attr_device_class = SensorDeviceClass.POWER
+            self._attr_native_unit_of_measurement = UnitOfPower.WATT
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+        elif register.kind == KIND_ENERGY:
+            self._attr_device_class = SensorDeviceClass.ENERGY
+            self._attr_native_unit_of_measurement = UnitOfEnergy.WATT_HOUR
+            self._attr_suggested_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+            self._attr_state_class = SensorStateClass.TOTAL_INCREASING
+        else:
+            # No unit: demand vs. supply reads 0-12, which is not a percentage.
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+
+    @property
+    def native_value(self) -> int | None:
         if self.coordinator.data is None:
             return None
         return self.coordinator.data.get(self._data_key)

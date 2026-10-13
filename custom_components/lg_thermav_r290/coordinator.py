@@ -15,6 +15,7 @@ from modbus_connection.exceptions import ModbusError, ModbusExceptionError
 
 from .connection import params_from_entry_data
 from .const import (
+    CONF_ENERGY_REGISTERS,
     CONF_EXPERIMENTAL,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE_ID,
@@ -22,6 +23,12 @@ from .const import (
     DOMAIN,
     WRITABLE_COILS,
     WRITABLE_HOLDING_REGISTERS,
+)
+from .energy import (
+    ENERGY_BLOCK_COUNT,
+    ENERGY_BLOCK_START,
+    RetryBackoff,
+    decode_block,
 )
 from .experimental import EXPERIMENTAL_BLOCKS, INPUT_FROM_MAIN_READ, register_key
 
@@ -55,6 +62,8 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
         self._experimental = bool(entry.options.get(CONF_EXPERIMENTAL, False))
+        self._energy = bool(entry.options.get(CONF_ENERGY_REGISTERS, False))
+        self._energy_backoff = RetryBackoff()
 
         scan_interval = entry.options.get(
             CONF_SCAN_INTERVAL,
@@ -101,9 +110,11 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise UpdateFailed(f"Modbus communication error: {exc}") from exc
 
         experimental = await self._async_read_experimental(inp_hi)
+        energy = await self._async_read_energy()
 
         return {
             **experimental,
+            **energy,
             # Input registers (raw × scale)
             # inp_lo[n] = register n  (0-13)
             # inp_hi[n] = register 16+n (16-24)
@@ -222,6 +233,38 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             for offset, value in enumerate(registers):
                 values[register_key(kind, start + offset)] = value
         return values
+
+    async def _async_read_energy(self) -> dict[str, int]:
+        """Read the electrical power / energy block, when the option asks for it.
+
+        Like the experimental registers this never fails the update: not every
+        unit serves input 34-51, and one that does not leaves the sensors
+        without a value while the documented data stays intact. A unit that
+        keeps not answering is asked again only every few polls (see
+        RetryBackoff), because each unanswered request is a timeout on a bus
+        that other integrations share.
+        """
+        if not self._energy or not self._energy_backoff.should_try():
+            return {}
+        try:
+            registers = await self.unit.read_input_registers(
+                ENERGY_BLOCK_START, ENERGY_BLOCK_COUNT
+            )
+        except ModbusError as exc:
+            if self._energy_backoff.record(False):
+                _LOGGER.warning(
+                    "Energy registers %d-%d did not answer; pausing the read "
+                    "for a while. This unit may not serve them - switch the "
+                    "option off in the integration's options if so (%s)",
+                    ENERGY_BLOCK_START,
+                    ENERGY_BLOCK_START + ENERGY_BLOCK_COUNT - 1,
+                    exc,
+                )
+            else:
+                _LOGGER.debug("Energy registers not read: %s", exc)
+            return {}
+        self._energy_backoff.record(True)
+        return decode_block(registers)
 
     async def async_write_coil(self, address: int, value: bool) -> None:
         """Write a single coil register (FC05).
