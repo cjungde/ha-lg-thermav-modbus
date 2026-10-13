@@ -108,6 +108,7 @@ The config flow asks for connection type first, then connection-specific paramet
 | Power limit | off | Options; coil 6 + holding 24, not served by every unit; effect not confirmed yet |
 | Emergency operation button | off | Options; coil 5 |
 | Experimental registers | off | Options; 18 undocumented registers, read only |
+| Poll statistics | off | Options; *Poll Duration* and *Bus Load* diagnostic sensors |
 
 #### Which options the unit supports
 
@@ -120,6 +121,7 @@ After the connection test, the setup asks the unit once which optional register 
 | Power limit | coil 6, then holding 24 | no: whether the unit keeps to the limit is not confirmed yet |
 | Emergency operation button | — | never: coil 5 answers on every unit; the option is off because of what it does |
 | Experimental registers | — | never |
+| Poll statistics | — | never: nothing to check on the unit |
 
 Answering only proves the register exists, not that writing it has an effect. A unit that does not serve a group stays silent, so each missing group waits for a request timeout: on a unit that has none of them, the check takes up to about 30 seconds, shown as progress. It runs only then, never while polling.
 
@@ -169,14 +171,14 @@ Answering only proves the register exists, not that writing it has an effect. A 
 | `sensor.lg_thermav_r290_energy_state` | Energy state (label), holding 9: the command register | — |
 | `sensor.lg_thermav_r290_energy_state_reported` | Energy state (label), input 11: the state the unit reports as active | — |
 
-#### Poll statistics (diagnostic, disabled by default)
+#### Poll statistics (option)
 
 | Entity | Description | Unit |
 |---|---|---|
 | `sensor.lg_thermav_r290_poll_duration` | How long the last poll took, from its first request to its last, including any wait for the bus; attribute `requests`: the reads in that poll | ms |
 | `sensor.lg_thermav_r290_bus_load` | Poll duration ÷ poll interval: how much of the time this integration keeps the bus busy | % |
 
-Both are under *Diagnostic* on the device page, with long-term statistics. Enable them in *Settings → Entities* to see how much your bus carries, e.g. before shortening the poll interval or switching on more options. On a bus of its own (a USB adapter) *Bus Load* is the whole bus; on a gateway shared with other devices, it is this integration's share plus its waiting.
+Switch on **Poll statistics** in *Configure → Options* to get both; switched off, they are removed again. They are under *Diagnostic* on the device page, with long-term statistics, to see how much your bus carries, e.g. before shortening the poll interval or switching on more options. Nothing extra is read from the unit: the integration times the poll it makes anyway. On a bus of its own (a USB adapter) *Bus Load* is the whole bus; on a gateway shared with other devices, it is this integration's share plus its waiting.
 
 Both energy state sensors show the value in front of its name, `0 – Not Used` … `8 – Super Energy Saving Mode`; a value outside 0–8 shows as the bare number. (Up to 1.2.0, *Energy State* showed the name alone, e.g. `Normal Operation`; automations comparing its state need the new text.)
 

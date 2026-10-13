@@ -44,6 +44,8 @@ async def test_entities_without_options(hass, unit) -> None:
         "switch.lg_thermav_r290_power_limit",
         "button.lg_thermav_r290_start_emergency_operation",
         "sensor.lg_thermav_r290_experimental_input_30015",
+        "sensor.lg_thermav_r290_poll_duration",
+        "sensor.lg_thermav_r290_bus_load",
     ):
         assert entity_id not in entities, entity_id
     # Every unique id is <entry id>_<key>.
@@ -60,6 +62,7 @@ async def test_all_options_create_their_entities(hass, unit) -> None:
         "power_limit": True,
         "emergency_operation_button": True,
         "experimental_registers": True,
+        "poll_statistics": True,
     }
     entry = await _set_up(hass, options)
     entities = _entities(hass, entry)
@@ -71,9 +74,11 @@ async def test_all_options_create_their_entities(hass, unit) -> None:
         "switch.lg_thermav_r290_power_limit",
         "button.lg_thermav_r290_start_emergency_operation",
         "sensor.lg_thermav_r290_experimental_input_30015",
+        "sensor.lg_thermav_r290_poll_duration",
+        "sensor.lg_thermav_r290_bus_load",
     ):
         assert entity_id in entities, entity_id
-    assert len(entities) == 109  # incl. the two disabled poll sensors
+    assert len(entities) == 109
 
 
 async def test_writes_reach_the_unit(hass, unit) -> None:

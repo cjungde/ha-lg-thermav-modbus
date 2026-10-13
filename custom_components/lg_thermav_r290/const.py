@@ -13,6 +13,7 @@ CONF_EXPERIMENTAL = "experimental_registers"
 CONF_ENERGY_REGISTERS = "energy_registers"
 CONF_MODULATION_LIMIT = "compressor_modulation_limit"
 CONF_EMERGENCY_OPERATION = "emergency_operation_button"
+CONF_POLL_STATISTICS = "poll_statistics"
 CONF_POWER_LIMIT = "power_limit"
 
 CONNECTION_TCP = "tcp"

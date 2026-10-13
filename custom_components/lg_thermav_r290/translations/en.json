@@ -41,14 +41,16 @@
           "compressor_modulation_limit": "Compressor modulation limit",
           "power_limit": "Power limit",
           "emergency_operation_button": "Emergency operation button",
-          "experimental_registers": "Experimental registers"
+          "experimental_registers": "Experimental registers",
+          "poll_statistics": "Poll statistics"
         },
         "data_description": {
           "energy_registers": "Adds read-only sensors for electrical power, cumulative energy, demand vs. supply and thermal power from input registers 34-51 (32-bit values). Not every unit serves them: a unit that does not answer simply leaves the sensors without a value, and is asked again only every few polls.",
           "compressor_modulation_limit": "Adds a slider (40-100 %) for the maximum compressor modulation, holding register 23. Not every unit serves it; while it does not answer the slider stays unavailable. Writing this register is only possible while this option is on.",
           "power_limit": "Adds a switch (coil 6, \"Wirkleistungsbegrenzung\") that turns the unit's power limit on, and a box (0.1-25.0 kW, holding register 24) for the limit. Documented in the manual, but not every unit serves them; while they do not answer, both stay unavailable. Whether the unit actually keeps its power below the limit is not confirmed yet: check against a separate meter. Both can only be written while this option is on.",
           "emergency_operation_button": "Adds a button that starts the unit's emergency operation (coil 5, \"Auslöser Notaus-Betrieb\"). Emergency operation typically heats with the backup heater and draws far more power than the heat pump. Coil 5 can only be written while this option is on.",
-          "experimental_registers": "Adds read-only sensors for 18 registers the device answers on but the manual does not document. Nothing is ever written to them. Meant for collecting data over time."
+          "experimental_registers": "Adds read-only sensors for 18 registers the device answers on but the manual does not document. Nothing is ever written to them. Meant for collecting data over time.",
+          "poll_statistics": "Adds two diagnostic sensors: Poll Duration (how long a poll takes, in ms) and Bus Load (that time as a share of the poll interval, in %). For judging how much the bus carries, e.g. before shortening the poll interval. Nothing extra is read from the unit."
         }
       }
     },
@@ -70,7 +72,7 @@
     "step": {
       "init": {
         "title": "LG ThermaV R290 — Configure",
-        "description": "| Optional registers | On | Unit answers |\n|---|:-:|:-:|\n| Energy registers | {energy_registers_on} | {energy_registers} |\n| Compressor modulation limit | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Power limit ¹ | {power_limit_on} | {power_limit} |\n| Emergency operation button | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimental registers | {experimental_registers_on} | {experimental_registers} |\n\n✓ answers · ✗ no answer · – not checked · ➕ answers, can be switched on\n\n¹ Whether the unit really keeps to the power limit is not confirmed yet. The emergency operation button and the experimental registers are not checked.\n\nLast check: {checked}",
+        "description": "| Option | On | Unit answers |\n|---|:-:|:-:|\n| Energy registers | {energy_registers_on} | {energy_registers} |\n| Compressor modulation limit | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Power limit ¹ | {power_limit_on} | {power_limit} |\n| Emergency operation button | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimental registers | {experimental_registers_on} | {experimental_registers} |\n| Poll statistics | {poll_statistics_on} | {poll_statistics} |\n\n✓ answers · ✗ no answer · – not checked · ➕ answers, can be switched on\n\n¹ Whether the unit really keeps to the power limit is not confirmed yet. The emergency operation button, the experimental registers and the poll statistics are not checked.\n\nLast check: {checked}",
         "menu_options": {
           "options": "Options (poll interval, optional registers)",
           "detect": "Check the optional registers"
@@ -82,21 +84,23 @@
       },
       "options": {
         "title": "LG ThermaV R290 — Options",
-        "description": "| Optional registers | On | Unit answers |\n|---|:-:|:-:|\n| Energy registers | {energy_registers_on} | {energy_registers} |\n| Compressor modulation limit | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Power limit ¹ | {power_limit_on} | {power_limit} |\n| Emergency operation button | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimental registers | {experimental_registers_on} | {experimental_registers} |\n\n✓ answers · ✗ no answer · – not checked · ➕ answers, can be switched on\n\n¹ Whether the unit really keeps to the power limit is not confirmed yet. The emergency operation button and the experimental registers are not checked.\n\nLast check: {checked}",
+        "description": "| Option | On | Unit answers |\n|---|:-:|:-:|\n| Energy registers | {energy_registers_on} | {energy_registers} |\n| Compressor modulation limit | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Power limit ¹ | {power_limit_on} | {power_limit} |\n| Emergency operation button | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimental registers | {experimental_registers_on} | {experimental_registers} |\n| Poll statistics | {poll_statistics_on} | {poll_statistics} |\n\n✓ answers · ✗ no answer · – not checked · ➕ answers, can be switched on\n\n¹ Whether the unit really keeps to the power limit is not confirmed yet. The emergency operation button, the experimental registers and the poll statistics are not checked.\n\nLast check: {checked}",
         "data": {
           "scan_interval": "Polling interval (seconds)",
           "energy_registers": "Energy registers",
           "compressor_modulation_limit": "Compressor modulation limit",
           "power_limit": "Power limit",
           "emergency_operation_button": "Emergency operation button",
-          "experimental_registers": "Experimental registers"
+          "experimental_registers": "Experimental registers",
+          "poll_statistics": "Poll statistics"
         },
         "data_description": {
           "energy_registers": "Adds read-only sensors for electrical power, cumulative energy, demand vs. supply and thermal power from input registers 34-51 (32-bit values). Not every unit serves them: a unit that does not answer simply leaves the sensors without a value, and is asked again only every few polls.",
           "compressor_modulation_limit": "Adds a slider (40-100 %) for the maximum compressor modulation, holding register 23. Not every unit serves it; while it does not answer the slider stays unavailable. Writing this register is only possible while this option is on.",
           "power_limit": "Adds a switch (coil 6, \"Wirkleistungsbegrenzung\") that turns the unit's power limit on, and a box (0.1-25.0 kW, holding register 24) for the limit. Documented in the manual, but not every unit serves them; while they do not answer, both stay unavailable. Whether the unit actually keeps its power below the limit is not confirmed yet: check against a separate meter. Both can only be written while this option is on.",
           "emergency_operation_button": "Adds a button that starts the unit's emergency operation (coil 5, \"Auslöser Notaus-Betrieb\"). Emergency operation typically heats with the backup heater and draws far more power than the heat pump. Coil 5 can only be written while this option is on.",
-          "experimental_registers": "Adds read-only sensors for 18 registers the device answers on but the manual does not document. Nothing is ever written to them. Meant for collecting data over time."
+          "experimental_registers": "Adds read-only sensors for 18 registers the device answers on but the manual does not document. Nothing is ever written to them. Meant for collecting data over time.",
+          "poll_statistics": "Adds two diagnostic sensors: Poll Duration (how long a poll takes, in ms) and Bus Load (that time as a share of the poll interval, in %). For judging how much the bus carries, e.g. before shortening the poll interval. Nothing extra is read from the unit."
         }
       }
     },
