@@ -1,0 +1,31 @@
+name: Feature request
+description: A register, entity or option you would like to see.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What you would like
+      description: What it should do, and what you would use it for.
+    validations:
+      required: true
+
+  - type: textarea
+    id: registers
+    attributes:
+      label: Registers involved
+      description: If it is about a register, its number in the manual's notation (e.g. 30025, 40025, 00007), the manual's description, and what your unit returns. The README's register map lists what is known.
+
+  - type: dropdown
+    id: size
+    attributes:
+      label: Heat pump size
+      description: Registers differ between sizes and firmware.
+      options:
+        - 5 kW
+        - 7 kW
+        - 9 kW
+        - 12 kW
+        - 14 kW
+        - 16 kW
+        - other / not sure

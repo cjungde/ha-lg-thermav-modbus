@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: README and register map
+    url: https://github.com/isarrider/ha-lg-therma-v-modbus#readme
+    about: Options, entities, the full Modbus register map and known differences from the manual.
+  - name: Coming from a YAML setup
+    url: https://github.com/isarrider/ha-lg-therma-v-modbus/blob/main/docs/migration-from-isarrider-yaml.md
+    about: Which YAML entity became which entity, and what behaves differently.

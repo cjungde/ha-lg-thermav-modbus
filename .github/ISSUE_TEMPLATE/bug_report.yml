@@ -1,0 +1,101 @@
+name: Bug report
+description: Something does not work, or a value looks wrong.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. The **diagnostics file** answers most questions up front:
+        *Settings → Devices & Services → LG ThermaV R290 → ⋮ → Download diagnostics*.
+        It contains no host or serial port.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happens
+      description: What you see, and since when (e.g. after an update).
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: For a value, what it should be and where that comes from (the unit's display, a meter, the manual).
+    validations:
+      required: true
+
+  - type: dropdown
+    id: size
+    attributes:
+      label: Heat pump size
+      options:
+        - 5 kW
+        - 7 kW
+        - 9 kW
+        - 12 kW
+        - 14 kW
+        - 16 kW
+        - other / not sure
+    validations:
+      required: true
+
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware of the unit
+      description: Installer menu, e.g. "kernel 3.0.9 / ramdisk 3.07.6a (2025-01-21)". Leave empty if unknown.
+
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Connection
+      options:
+        - Modbus RTU (USB or serial adapter)
+        - Modbus TCP (gateway)
+        - Modbus TCP-RTU (RTU frames over a gateway socket)
+    validations:
+      required: true
+
+  - type: input
+    id: adapter
+    attributes:
+      label: Adapter or gateway
+      description: Model, e.g. "Waveshare RS485 to ETH (B)" or "FTDI USB-RS485". Leave empty for a plain USB adapter.
+
+  - type: checkboxes
+    id: options
+    attributes:
+      label: Options switched on
+      options:
+        - label: Energy registers
+        - label: Compressor modulation limit
+        - label: Power limit
+        - label: Emergency operation button
+        - label: Experimental registers
+        - label: Compressor statistics
+        - label: Poll statistics
+        - label: External electricity meter
+
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: This integration and Home Assistant, e.g. "1.6.0 / 2026.10.1".
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics file
+      description: Drag the downloaded file here.
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log lines
+      description: Lines mentioning `lg_thermav_r290` from *Settings → System → Logs*. For more detail, enable debug logging on the integration first, reproduce, then disable it.
+      render: text
