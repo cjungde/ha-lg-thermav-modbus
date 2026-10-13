@@ -80,3 +80,47 @@ def _registers() -> tuple[ExperimentalRegister, ...]:
 
 
 EXPERIMENTAL_REGISTERS: tuple[ExperimentalRegister, ...] = _registers()
+
+
+# A block that times out this many polls in a row is given up on.
+MISSES_BEFORE_GIVING_UP = 3
+
+
+class BlockGate:
+    """Which experimental blocks are still read.
+
+    A block the unit does not answer is not asked again until the next
+    restart (or reload): the registers are undocumented, so a unit without
+    them will not grow them, and every unanswered request holds the shared
+    bus for a whole timeout. A refusal (a Modbus exception, e.g. "illegal
+    data address") is definite and stops the block at once. A timeout may
+    also be a hiccup on the bus, so it stops the block only after
+    MISSES_BEFORE_GIVING_UP misses in a row; an answer in between resets the
+    count.
+    """
+
+    def __init__(self, misses_before_giving_up: int = MISSES_BEFORE_GIVING_UP) -> None:
+        self._threshold = misses_before_giving_up
+        self._misses: dict[tuple[str, int], int] = {}
+        self._given_up: set[tuple[str, int]] = set()
+
+    def should_read(self, kind: str, start: int) -> bool:
+        return (kind, start) not in self._given_up
+
+    def record(self, kind: str, start: int, *, ok: bool, refused: bool = False) -> bool:
+        """Record a read; returns True when it makes the block give up."""
+        block = (kind, start)
+        if ok:
+            self._misses.pop(block, None)
+            return False
+        misses = self._misses.get(block, 0) + 1
+        self._misses[block] = misses
+        if refused or misses >= self._threshold:
+            self._given_up.add(block)
+            self._misses.pop(block, None)
+            return True
+        return False
+
+    @property
+    def given_up(self) -> frozenset[tuple[str, int]]:
+        return frozenset(self._given_up)

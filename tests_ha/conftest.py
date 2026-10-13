@@ -22,21 +22,23 @@ import sys
 import types
 
 from homeassistant.exceptions import HomeAssistantError
-from modbus_connection.exceptions import ModbusTimeoutError
+from modbus_connection.exceptions import IllegalDataAddressError, ModbusTimeoutError
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 
 
 class FakeUnit:
-    """Answers every read with zeros, except on the addresses set silent.
+    """Answers every read with zeros, except on the addresses set aside.
 
     A silent address raises a timeout, as a unit that does not serve it
-    would after the request timeout. Writes are recorded.
+    would after the request timeout; a refused one raises an "illegal data
+    address" exception response. Writes are recorded.
     """
 
-    def __init__(self, silent=()) -> None:
+    def __init__(self, silent=(), refused=()) -> None:
         self.silent = set(silent)
+        self.refused = set(refused)
         self.requests: list[tuple[str, int]] = []
         self.writes: list[tuple[str, int, object]] = []
 
@@ -45,6 +47,8 @@ class FakeUnit:
         await asyncio.sleep(0)
         if (kind, address) in self.silent:
             raise ModbusTimeoutError(f"{kind} {address}: no answer")
+        if (kind, address) in self.refused:
+            raise IllegalDataAddressError(f"{kind} {address}: illegal address")
         return [0] * count
 
     async def read_input_registers(self, address, count):

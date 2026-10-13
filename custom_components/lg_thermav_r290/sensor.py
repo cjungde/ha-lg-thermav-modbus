@@ -574,5 +574,11 @@ class LGExperimentalSensor(LGEntity, SensorEntity):
         }
 
     @property
+    def available(self) -> bool:
+        # Unavailable while its block is not read: missed in this poll, or
+        # given up on because the unit does not answer it (see BlockGate).
+        return super().available and self._data(self._data_key) is not None
+
+    @property
     def native_value(self) -> int | None:
         return self._data(self._data_key)

@@ -120,3 +120,31 @@ def test_the_write_whitelist_is_the_set_the_entities_use() -> None:
     # Coil 5 triggers emergency operation; only its option makes it writable.
     assert 5 not in const.WRITABLE_COILS
     assert {5} == const.EMERGENCY_OPERATION_WRITABLE_COILS
+
+
+def test_gate_gives_up_on_a_refused_block_at_once() -> None:
+    gate = experimental.BlockGate()
+    assert gate.should_read("holding", 10)
+    assert gate.record("holding", 10, ok=False, refused=True) is True
+    assert not gate.should_read("holding", 10)
+    assert gate.should_read("input", 14)  # other blocks are unaffected
+
+
+def test_gate_gives_up_after_misses_in_a_row() -> None:
+    gate = experimental.BlockGate()
+    for _ in range(experimental.MISSES_BEFORE_GIVING_UP - 1):
+        assert gate.record("input", 63, ok=False) is False
+        assert gate.should_read("input", 63)
+    assert gate.record("input", 63, ok=False) is True
+    assert not gate.should_read("input", 63)
+    assert gate.given_up == {("input", 63)}
+
+
+def test_gate_an_answer_resets_the_misses() -> None:
+    gate = experimental.BlockGate()
+    gate.record("input", 63, ok=False)
+    gate.record("input", 63, ok=False)
+    gate.record("input", 63, ok=True)
+    gate.record("input", 63, ok=False)
+    gate.record("input", 63, ok=False)
+    assert gate.should_read("input", 63)  # two misses since the answer
