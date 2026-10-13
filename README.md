@@ -504,6 +504,12 @@ The integration only ever writes coils 00001–00005 and holding 40001, 40002, 4
 
 ---
 
+## Reporting a problem
+
+Attach the diagnostics file: *Settings → Devices & Services → LG ThermaV R290 → ⋮ → Download diagnostics*. It contains the integration version, the connection settings without host and serial port, the options with the result of the register check, the state of every optional read (misses, pauses, experimental blocks given up), and the values of the last poll. Together with the firmware version and the unit's size, that answers most questions up front.
+
+---
+
 ## License
 
 MIT

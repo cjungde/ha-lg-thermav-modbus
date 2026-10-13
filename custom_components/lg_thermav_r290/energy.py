@@ -148,6 +148,10 @@ class RetryBackoff:
             return False
         return True
 
+    def state(self) -> dict[str, int]:
+        """Misses in a row and polls left in the current pause, for diagnostics."""
+        return {"misses_in_a_row": self._failures, "paused_polls_left": self._pause}
+
     def record(self, ok: bool) -> bool:
         """Record an attempt; returns True when it starts a pause."""
         if ok:
