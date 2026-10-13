@@ -240,7 +240,7 @@ A side effect worth knowing: the YAML notes that a slider change can take up to 
 
 ### Values and units
 
-- **The electrical values the unit reports are not reliable.** Compared against a smart meter on the 12 kW unit, the electrical power and energy from input 34–45 did not match. The COP sensors built on them (*COP Current*, *COP System*, *COP (Calculated)*, *Heating COP (Cumulative)*) inherit that error. For the Energy dashboard or a COP you want to rely on, use an external meter for the electrical side.
+- **The electrical values the unit reports are not reliable.** Compared against a smart meter on the 12 kW unit, the reported electrical power (input 34–37) was usually **too high**; the energy counters (input 38–45) are presumably derived from it and likely too high as well (not measured separately). The COP sensors built on them (*COP Current*, *COP System*, *COP (Calculated)*, *Heating COP (Cumulative)*) inherit that error and tend to come out too low. For the Energy dashboard or a COP you want to rely on, use an external meter for the electrical side.
 - **Input 16 (liquid gas temperature) is 100× larger here.** The YAML scales it by 0.001 (marked "Scale???"), the integration by 0.1, measured against the other refrigerant temperatures. A YAML reading of 0.25 °C is 25.0 °C here. History from the two is not comparable.
 - **Input 17 is not a temperature.** The YAML shows `hp_temp_pipe_out` as a constant 12.00 °C (raw 12000 × 0.001). The integration does not present it as a sensor. With the *Experimental registers* option it appears raw as `Experimental Input 30018`.
 - **Demand vs Supply has no unit.** The YAML shows %, but the register reads 0–12 on the 12 kW, so it is not a percentage.
