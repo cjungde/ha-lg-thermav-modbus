@@ -17,6 +17,7 @@ from homeassistant.const import (
     UnitOfEnergy,
     UnitOfPower,
     UnitOfTemperature,
+    UnitOfVolumeFlowRate,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
@@ -159,7 +160,12 @@ _SENSORS: tuple[LGSensorDescription, ...] = (
         key="flow_rate",
         data_key="flow_rate",
         name="Flow Rate",
-        native_unit_of_measurement="l/min",
+        # A device class makes the unit convertible in the UI (m³/h, gal/min)
+        # and gives the sensor the matching icon. It requires Home Assistant's
+        # own unit string, "L/min"; the value from the coordinator is still
+        # litres per minute, which the thermal power sensors below rely on.
+        native_unit_of_measurement=UnitOfVolumeFlowRate.LITERS_PER_MINUTE,
+        device_class=SensorDeviceClass.VOLUME_FLOW_RATE,
         state_class=SensorStateClass.MEASUREMENT,
     ),
     LGSensorDescription(

@@ -117,7 +117,7 @@ The config flow asks for connection type first, then connection-specific paramet
 | `sensor.lg_thermav_r290_outdoor_temperature` | Outdoor air temperature | °C |
 | `sensor.lg_thermav_r290_backup_heater_outlet_temperature` | Backup heater outlet temp | °C |
 | `sensor.lg_thermav_r290_flow_temperature_circuit_2` | Flow temperature circuit 2 | °C |
-| `sensor.lg_thermav_r290_flow_rate` | Water flow rate | l/min |
+| `sensor.lg_thermav_r290_flow_rate` | Water flow rate (device class `volume_flow_rate`) | L/min |
 | `sensor.lg_thermav_r290_water_pressure` | Water pressure | bar |
 | `sensor.lg_thermav_r290_high_pressure_condenser` | High pressure (condenser) | bar |
 | `sensor.lg_thermav_r290_low_pressure_evaporator` | Low pressure (evaporator) | bar |
@@ -278,6 +278,7 @@ Switch on **Compressor modulation limit** in the integration's options. Holding 
 
 ## Notes
 
+- Flow rate uses Home Assistant's unit `L/min` and device class `volume_flow_rate` (before: plain `l/min`, no device class). The values are the same, but after updating, *Developer tools → Statistics* may report that the unit of `sensor.lg_thermav_r290_flow_rate` changed; choose *Update the unit* there, nothing needs converting.
 - Thermal power formula: `Q [W] = (flow_rate [l/min] / 60) × (outlet_temp − inlet_temp) [K] × 4186 [J/(l·K)]`
 - Heating circuit / DHW split is based on the `di_dhw_heating` discrete input; when DHW is active the full flow is attributed to DHW and the heating circuit sensor reports 0, and vice versa.
 - Shift values (holding regs 4, 7) are stored as two's-complement uint16; values ≥ 32768 are interpreted as negative.
