@@ -132,6 +132,8 @@ The config flow asks for connection type first, then connection-specific paramet
 | `sensor.lg_thermav_r290_energy_state` | Energy state (label), holding 9: the command register | — |
 | `sensor.lg_thermav_r290_energy_state_reported` | Energy state (label), input 11: the state the unit reports as active | — |
 
+Both energy state sensors show the value in front of its name, `0 – Not Used` … `8 – Super Energy Saving Mode`; a value outside 0–8 shows as the bare number. (Up to 1.2.0, *Energy State* showed the name alone, e.g. `Normal Operation`; automations comparing its state need the new text.)
+
 ### Energy registers (optional)
 
 Switch on **Energy registers** in the integration's options. These are 32-bit values in input registers 34–51 that the manual does not list. Not every unit serves them: a read-only scan of a 9 kW unit got no answer from input 25–62, while a 12 kW unit answers on 34–51.

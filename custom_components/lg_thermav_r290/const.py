@@ -63,6 +63,13 @@ ENERGY_STATE_LABELS = {
     8: "Super Energy Saving Mode",
 }
 
+# What the energy state sensors show: the raw value in front of the name,
+# e.g. "2 – Normal Operation", so the number the unit sends is always visible.
+# A value outside 0-8 is shown as the bare number (see LGMappedSensor).
+ENERGY_STATE_DISPLAY = {
+    value: f"{value} – {name}" for value, name in ENERGY_STATE_LABELS.items()
+}
+
 # The only addresses the integration ever writes. A write to anything else is
 # refused before it reaches the bus, whoever asks: the undocumented registers
 # found by scanning (see experimental.py) must stay read-only, and coil 5 is a
