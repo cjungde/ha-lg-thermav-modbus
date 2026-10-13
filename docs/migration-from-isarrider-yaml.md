@@ -201,7 +201,7 @@ The register values behind the options are identical: operation mode Cooling 0, 
 
 | YAML template | Integration | Difference |
 |---|---|---|
-| `sensor.hp_energy_state` (*HP Energy State*) | `sensor.lg_thermav_r290_energy_state_reported` | Same register (input 11). Labels are English instead of German. Not to be confused with `sensor.lg_thermav_r290_energy_state`, which labels holding 9; see [§10](#10-differences-that-can-bite). |
+| `sensor.hp_energy_state` (*HP Energy State*) | `sensor.lg_thermav_r290_energy_state_reported` | Same register (input 11). Labels are English instead of German, with the value in front (`2 – Normal Operation`); a value outside 0–8 shows as the number instead of *Unknown*. Not to be confused with `sensor.lg_thermav_r290_energy_state`, which labels holding 9; see [§10](#10-differences-that-can-bite). |
 | `sensor.hp_heating_cop_calculated` (*HP Heating COP (Calculated)*) | `sensor.lg_thermav_r290_heating_cop_cumulative` (*Energy registers* option) | Same formula, input 50 ÷ input 40. No value instead of `0` while no electrical energy is counted. No unit (the YAML uses `COP`). |
 | *HP DHW COP (Calculated)* (commented out) | none | Its thermal counter (input 54) does not answer on the 12 kW. |
 
@@ -374,7 +374,7 @@ Replace `modbus.write_register` / `modbus.write_coil` calls and helper writes wi
 |---|---|
 | `sensor.hp_operation_mode` = `4` | `select.lg_thermav_r290_operation_mode` = `Heating` (there is no numeric operation-mode sensor here) |
 | `input_select.hp_set_operation_mode` = `Heizen` | `select.lg_thermav_r290_operation_mode` = `Heating` |
-| `sensor.hp_energy_state` = `Normalbetrieb` | `sensor.lg_thermav_r290_energy_state_reported` = `Normal Operation` |
+| `sensor.hp_energy_state` = `Normalbetrieb` | `sensor.lg_thermav_r290_energy_state_reported` = `2 – Normal Operation` |
 | `sensor.hp_heating_cop_calculated` = `0` before any energy is counted | `unknown` |
 
 ---

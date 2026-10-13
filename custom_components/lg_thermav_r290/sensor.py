@@ -30,7 +30,7 @@ from .const import (
     CONF_EXPERIMENTAL,
     CONTROL_METHOD_FROM_VALUE,
     DOMAIN,
-    ENERGY_STATE_LABELS,
+    ENERGY_STATE_DISPLAY,
     OPERATION_MODE_FROM_VALUE,
 )
 from .coordinator import LGThermaVCoordinator
@@ -310,7 +310,7 @@ async def async_setup_entry(
             entry,
             "energy_state_label",
             "Energy State",
-            ENERGY_STATE_LABELS,
+            ENERGY_STATE_DISPLAY,
             "energy_state_raw",
             "mdi:lightning-bolt",
         )
@@ -325,7 +325,7 @@ async def async_setup_entry(
             entry,
             "energy_state_reported_label",
             "Energy State (Reported)",
-            ENERGY_STATE_LABELS,
+            ENERGY_STATE_DISPLAY,
             "energy_state_input",
             "mdi:lightning-bolt-outline",
         )
