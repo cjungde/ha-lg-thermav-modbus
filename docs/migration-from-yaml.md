@@ -105,4 +105,4 @@ So the two entities of basti242's setup that look like a power limit probably do
 - **`water_flow` is inverted.** basti242 treats 10001 as a *problem* sensor per the manual (1 = flow too low). On the R290 monoblock the bit is set while water is flowing (see the note in the README). Automations built on `hp_water_flow_status` have to be flipped.
 - **Register 7 is called "Technikraum" in the YAML.** It is the same value as `Room Air Temperature Circuit 1` here. The manual lists input 30008 as *Raumlufttemp. (Kreislauf 1)*, so the integration's name follows the manual.
 - **Pressures use the same scale in both:** registers 22 and 23 count in hundredths of a bar (kPa). They are not in the manual's table; the scale comes from measurement.
-- **DHW target range:** the YAML allows 45–60 °C, this integration 35–60 °C.
+- **DHW target range:** the YAML allows 45–60 °C, this integration 35–65 °C (65 °C is the device maximum, raised from 60 in the installer menu; see `number.py`).
