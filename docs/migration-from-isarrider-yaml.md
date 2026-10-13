@@ -32,7 +32,7 @@ For basti242's YAML setup, which this one grew out of, see [migration-from-yaml.
 
 ## 1. Before you start
 
-- **Home Assistant 2026.9 or newer.** The integration uses Home Assistant's shared Modbus connection (see the README, *Requirements*).
+- **Home Assistant 2026.10.1 or newer.** The integration uses Home Assistant's shared Modbus connection (see the README, *Requirements*).
 - **One serial port, one owner.** A USB serial adapter can only be opened by one connection at a time. The YAML `modbus:` hub `lg_heatpump` and the integration both want `/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0`. Whether Home Assistant hands them one shared connection has not been tested. The safe way is to switch in one go: remove (or comment out) the YAML package, restart, then add the integration. Running both at once on the same adapter is not recommended.
 - **Connection settings.** The config flow asks for the same values the YAML hub sets:
 

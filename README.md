@@ -56,8 +56,8 @@ Please tell me what you see, in particular if the values move with the compresso
 
 ## Requirements
 
-**Home Assistant 2026.9.0 or newer.** From version 1.0.0 the integration no
-longer speaks to the bus itself. It asks Home Assistant's `modbus` component
+**Home Assistant 2026.10.1 or newer**, the version the tests run against.
+From version 1.0.0 the integration no longer speaks to the bus itself. It asks Home Assistant's `modbus` component
 for a unit on a *shared* connection, which means:
 
 - Every integration pointing at the same gateway with the same link settings
