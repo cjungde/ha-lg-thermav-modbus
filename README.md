@@ -16,7 +16,7 @@ Replaces a hand-crafted YAML Modbus configuration with native HA entities: senso
 - **Binary sensors** — compressor, pumps, DHW heating, defrost, backup heater stages, fault, silent mode, cooling, emergency modes, energy state slots 0–8
 - **Switches** — main power, DHW, silent mode, emergency stop
 - **Buttons** — start DHW disinfection (momentary trigger coil)
-- **Number inputs** — flow temperature setpoints (circuit 1, circuit 2), DHW target temperature, heating curve shift values (circuit 1, circuit 2)
+- **Number inputs** — flow temperature setpoints (circuit 1, circuit 2), DHW target temperature, heating curve shift values (circuit 1, circuit 2); optional max compressor modulation (40–100 %)
 - **Select inputs** — operation mode (Heating / Cooling / Auto), control method (outlet temp / inlet temp / room air)
 - Supports **Modbus TCP**, **Modbus TCP-RTU**, and **Modbus RTU** (serial)
 - Configurable poll interval (default 30 s), reconfigurable without restart
@@ -43,7 +43,7 @@ Nothing in the manual or in the community projects I could find explains them. T
 
 Switch it on under *Settings → Devices & Services → LG ThermaV R290 → Configure → Experimental registers*. This adds 18 diagnostic sensors named `Experimental Input 30015`, `Experimental Holding 40011`, … They carry the raw, unscaled 16-bit value and have long-term statistics, so they can be compared with compressor speed, temperatures and defrost cycles. Switching the option off removes them again.
 
-**They are read-only.** The integration only ever writes a fixed list of known addresses (holding 0, 1, 2, 4, 5, 7, 8 and coils 0–4); every other write is refused before it reaches the bus, so none of these registers can be written by the integration, whichever entity or service asks. A register that stops answering leaves its sensor empty and does not affect the other values.
+**They are read-only.** The integration only ever writes a fixed list of known addresses (holding 0, 1, 2, 4, 5, 7, 8 and coils 0–4, plus holding 23 while the compressor modulation limit option is on); every other write is refused before it reaches the bus, so none of these registers can be written by the integration, whichever entity or service asks. A register that stops answering leaves its sensor empty and does not affect the other values.
 
 The full result of the scan, what the manual lists and what it does not, is in [docs/register-scan.md](docs/register-scan.md).
 
@@ -101,6 +101,7 @@ The config flow asks for connection type first, then connection-specific paramet
 | Slave ID | 1 | 1–247 |
 | Poll interval | 30 s | Adjustable in Options |
 | Energy registers | off | Options; input 34–51, not served by every unit |
+| Compressor modulation limit | off | Options; holding 23, not served by every unit |
 
 ---
 
@@ -241,6 +242,16 @@ see whether the operation actually started.
 | `number.lg_thermav_r290_dhw_target_temperature` | 35–60 °C | 8 (×0.1) |
 | `number.lg_thermav_r290_setpoint_shift_circuit_1` | −5…+5 K | 4 (signed) |
 | `number.lg_thermav_r290_setpoint_shift_circuit_2` | −5…+5 K | 7 (signed) |
+| `number.lg_thermav_r290_max_compressor_modulation` | 40–100 % | 23 (optional, see below) |
+
+#### Max compressor modulation (optional)
+
+Switch on **Compressor modulation limit** in the integration's options. Holding register 23 (40024) caps how far the compressor may modulate, in percent: 40–100 sets a limit, 0 means no limit is set. It is not in the manual's table and not every unit serves it — the 9 kW unit in [docs/register-scan.md](docs/register-scan.md) does not answer on it, a 12 kW unit does.
+
+- Writable **only while the option is on**; with it off the integration refuses every write to register 23.
+- Every write is clamped to 40–100 % and read back, so the slider shows what the unit stored.
+- While the unit reports 0 (no limit), the slider shows *unknown*; the attributes `register_value` and `limit_active` show the raw state.
+- A unit that does not answer leaves the slider unavailable, with the same back-off as the energy registers. Switching the option off removes the entity.
 
 ### Select inputs
 
@@ -259,6 +270,7 @@ see whether the operation actually started.
 | FC04 (input) | 34–51 | Optional: electrical power/energy, demand vs. supply, thermal yield |
 | FC04 (input) | 9997–9998 | Product info, device group |
 | FC03 (holding) | 0–9 | Operation mode, control method, setpoints, shift values, energy state |
+| FC03 (holding) | 23 | Optional: max compressor modulation (writable while the option is on) |
 | FC01 (coils) | 0–4 | Main switch, DHW, silent mode, disinfection trigger, emergency stop |
 | FC02 (discrete) | 0–16 | Status bits (compressor, pumps, defrost, faults, …) |
 
