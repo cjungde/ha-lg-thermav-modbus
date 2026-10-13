@@ -8,10 +8,13 @@ from typing import Any
 
 from homeassistant import config_entries
 from homeassistant.components.modbus import async_get_temporary_unit
+from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult, section
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.selector import (
+    EntitySelector,
+    EntitySelectorConfig,
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
@@ -24,6 +27,8 @@ from .connection import params_from_entry_data
 from .const import (
     CONF_BAUDRATE,
     CONF_CONNECTION_TYPE,
+    CONF_EXTERNAL_ENERGY,
+    CONF_EXTERNAL_POWER,
     CONF_PARITY,
     CONF_SCAN_INTERVAL,
     CONF_SERIAL_PORT,
@@ -185,12 +190,46 @@ def _option_group_fields(defaults: dict[str, Any]) -> dict:
     return fields
 
 
+# The section with the sensors of the user's own electricity meter.
+EXTERNAL_METER_SECTION = "external_meter"
+_EXTERNAL_METER_FIELDS = (
+    (CONF_EXTERNAL_POWER, SensorDeviceClass.POWER),
+    (CONF_EXTERNAL_ENERGY, SensorDeviceClass.ENERGY),
+)
+
+
+def _external_meter_field(current: dict[str, Any]) -> dict:
+    """Two optional sensor pickers, expanded while one of them is set."""
+    fields = {
+        vol.Optional(key, description={"suggested_value": current.get(key)}): (
+            EntitySelector(
+                EntitySelectorConfig(domain="sensor", device_class=device_class)
+            )
+        )
+        for key, device_class in _EXTERNAL_METER_FIELDS
+    }
+    is_set = any(current.get(key) for key, _ in _EXTERNAL_METER_FIELDS)
+    return {
+        vol.Required(EXTERNAL_METER_SECTION): section(
+            vol.Schema(fields), {"collapsed": not is_set}
+        )
+    }
+
+
 def _flatten_option_groups(user_input: dict[str, Any]) -> dict[str, Any]:
-    """The submitted form with each section's toggle as a plain option."""
+    """The submitted form as plain options: toggles and meter sensors.
+
+    A meter sensor that was cleared is not in the submission and so not in
+    the options any more.
+    """
     values = dict(user_input)
     for key in GROUPS:
         if isinstance(values.get(key), dict):
             values[key] = bool(values[key].get(key, False))
+    meter = values.pop(EXTERNAL_METER_SECTION, None) or {}
+    for key, _ in _EXTERNAL_METER_FIELDS:
+        if meter.get(key):
+            values[key] = meter[key]
     return values
 
 
@@ -437,6 +476,7 @@ class LGThermaVOptionsFlow(config_entries.OptionsFlow):
                     CONF_SCAN_INTERVAL, default=defaults[CONF_SCAN_INTERVAL]
                 ): vol.All(int, vol.Range(min=5, max=3600)),
                 **_option_group_fields(defaults),
+                **_external_meter_field(dict(self._entry.options)),
             }
         )
         return self.async_show_form(

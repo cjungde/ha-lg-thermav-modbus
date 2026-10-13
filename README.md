@@ -171,6 +171,18 @@ Answering only proves the register exists, not that writing it has an effect. A 
 | `sensor.lg_thermav_r290_energy_state` | Energy state (label), holding 9: the command register | — |
 | `sensor.lg_thermav_r290_energy_state_reported` | Energy state (label), input 11: the state the unit reports as active | — |
 
+#### COP with your own meter (option)
+
+The electrical figures the unit reports tend to read high, so COPs built on them come out too low. Under *Configure → Options → External electricity meter*, pick sensors of your own meter for the heat pump (e.g. from vzlogger or a smart plug); both fields are optional:
+
+| You pick | Entity | What it shows |
+|---|---|---|
+| a power sensor (W or kW) | `sensor.lg_thermav_r290_cop_external_meter` | thermal power from flow rate × ΔT ÷ your meter's power: the COP of the moment; no value below 100 W |
+| an energy sensor (a total counter, Wh or kWh) | `sensor.lg_thermav_r290_thermal_energy_calculated` | flow rate × ΔT added up over time, kWh, `total_increasing` |
+| | `sensor.lg_thermav_r290_cop_cumulative_external_meter` | that thermal energy ÷ your meter's energy, both counted from when the sensor was set: the seasonal performance factor (JAZ) over that period; attributes `since`, `thermal_energy_kwh`, `electrical_energy_kwh` |
+
+Both counters are kept across restarts. Gaps over five minutes (Home Assistant down, the unit not answering) are not counted rather than guessed; a reset of your meter's counter counts as growth from zero. Choosing another energy sensor starts a new period. The thermal side is flow rate × ΔT, which reads 0 while cooling or defrosting.
+
 #### Poll statistics (option)
 
 | Entity | Description | Unit |

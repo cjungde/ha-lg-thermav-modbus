@@ -194,6 +194,18 @@
             "data_description": {
               "poll_statistics": "Adds 2 diagnostic sensors:\n\n- **Poll Duration** — ms per poll, with the number of reads as attribute\n- **Bus Load** — poll duration as % of the poll interval"
             }
+          },
+          "external_meter": {
+            "name": "External electricity meter",
+            "description": "Pick sensors of your own electricity meter for the heat pump (e.g. from vzlogger or a smart plug), to compute COPs that do not rely on the unit's electrical figures, which tend to read high. Both are optional; leave a field empty to switch its sensors off.",
+            "data": {
+              "external_power_sensor": "Power sensor (W or kW)",
+              "external_energy_sensor": "Energy sensor (Wh or kWh, a total counter)"
+            },
+            "data_description": {
+              "external_power_sensor": "Adds:\n\n- **COP (External Meter)** — thermal power from flow rate × ΔT ÷ this sensor's power, the COP of the moment; no value below 100 W",
+              "external_energy_sensor": "Adds:\n\n- **Thermal Energy (Calculated)** — flow rate × ΔT added up over time, kWh\n- **COP Cumulative (External Meter)** — that thermal energy ÷ this counter's growth, both counted from when this sensor is set: the seasonal performance factor (JAZ) over that period\n\nBoth are kept across restarts. Choosing another sensor starts a new period."
+            }
           }
         }
       }

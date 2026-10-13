@@ -22,6 +22,9 @@ def defaults(result) -> dict:
     values = {}
     for key, value in result["data_schema"].schema.items():
         if isinstance(value, section):
+            if str(key) == "external_meter":
+                values[str(key)] = None  # sensor pickers, no defaults
+                continue
             for field in value.schema.schema:
                 values[str(field)] = field.default()
         else:
@@ -35,6 +38,9 @@ def form_input(result, values: dict) -> dict:
     for key, value in result["data_schema"].schema.items():
         name = str(key)
         if isinstance(value, section):
+            if name == "external_meter":
+                submitted[name] = values[name] or {}
+                continue
             submitted[name] = {
                 str(field): values[str(field)] for field in value.schema.schema
             }
