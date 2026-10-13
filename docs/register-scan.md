@@ -48,7 +48,9 @@ The optional *Experimental registers* setting of the integration records these o
 
 ## Does not answer
 
-Holding 24 (40025, "power limit" in basti242's YAML) and coil 6 (00007, "active power limitation") get no answer. Neither is in the manual.
+Holding 24 (40025, "power limit" in basti242's YAML) and coil 6 (00007, "active power limitation") get no answer on this unit.
+
+They are documented, though not in the manual this scan was checked against: the installation manual of a 12 kW unit lists coil **00007** *Wirkleistungsbegrenzung* — *0: nicht verwendet / 1: Leistung gemäß 40025 begrenzen* — so 40025 holds the power limit and 00007 switches it on. Whether a 12 kW unit answers on them, and whether the limit takes effect, has not been tested yet.
 
 ## Sources checked
 
