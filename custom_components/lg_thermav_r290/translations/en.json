@@ -87,6 +87,16 @@
               "experimental_registers": "Adds 18 diagnostic sensors with the raw values of registers the manual does not document, read only:\n\n- **Experimental Input 30015, 30018, 30064**\n- **Experimental Holding 40011 … 40023, 40063, 40064**\n\nA block the unit does not answer is not asked again until the next restart."
             }
           },
+          "compressor_statistics": {
+            "name": "Compressor statistics",
+            "description": "Counts compressor starts and run time and averages its speed, from the values polled anyway; nothing extra is read from the unit. Many short runs mean the unit is cycling, which costs efficiency and wear.",
+            "data": {
+              "compressor_statistics": "Switch on"
+            },
+            "data_description": {
+              "compressor_statistics": "Adds:\n\n- **Compressor Starts** — a counter; starts per day or hour come from the statistics. Attribute: the last run's duration\n- **Compressor Run Time** — hours, a counter\n- **Compressor Average Speed** — rpm while running, today (reset at midnight)\n\nAll three are kept across restarts."
+            }
+          },
           "poll_statistics": {
             "name": "Poll statistics",
             "description": "Adds two diagnostic sensors: Poll Duration (how long a poll takes, in ms) and Bus Load (that time as a share of the poll interval, in %). For judging how much the bus carries, e.g. before shortening the poll interval. Nothing extra is read from the unit.",
@@ -118,7 +128,7 @@
     "step": {
       "init": {
         "title": "LG ThermaV R290 — Configure",
-        "description": "| Option | On | Unit answers |\n|---|:-:|:-:|\n| Energy registers | {energy_registers_on} | {energy_registers} |\n| Compressor modulation limit | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Power limit ¹ | {power_limit_on} | {power_limit} |\n| Emergency operation button | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimental registers | {experimental_registers_on} | {experimental_registers} |\n| Poll statistics | {poll_statistics_on} | {poll_statistics} |\n\n✓ answers · ✗ no answer · – not checked · ➕ answers, can be switched on\n\n¹ Whether the unit really keeps to the power limit is not confirmed yet. The emergency operation button, the experimental registers and the poll statistics are not checked.\n\nLast check: {checked}",
+        "description": "| Option | On | Unit answers |\n|---|:-:|:-:|\n| Energy registers | {energy_registers_on} | {energy_registers} |\n| Compressor modulation limit | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Power limit ¹ | {power_limit_on} | {power_limit} |\n| Emergency operation button | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimental registers | {experimental_registers_on} | {experimental_registers} |\n| Compressor statistics | {compressor_statistics_on} | {compressor_statistics} |\n| Poll statistics | {poll_statistics_on} | {poll_statistics} |\n\n✓ answers · ✗ no answer · – not checked · ➕ answers, can be switched on\n\n¹ Whether the unit really keeps to the power limit is not confirmed yet. The emergency operation button, the experimental registers and the statistics are not checked.\n\nLast check: {checked}",
         "menu_options": {
           "options": "Options (poll interval, optional registers)",
           "detect": "Check the optional registers"
@@ -130,7 +140,7 @@
       },
       "options": {
         "title": "LG ThermaV R290 — Options",
-        "description": "| Option | On | Unit answers |\n|---|:-:|:-:|\n| Energy registers | {energy_registers_on} | {energy_registers} |\n| Compressor modulation limit | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Power limit ¹ | {power_limit_on} | {power_limit} |\n| Emergency operation button | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimental registers | {experimental_registers_on} | {experimental_registers} |\n| Poll statistics | {poll_statistics_on} | {poll_statistics} |\n\n✓ answers · ✗ no answer · – not checked · ➕ answers, can be switched on\n\n¹ Whether the unit really keeps to the power limit is not confirmed yet. The emergency operation button, the experimental registers and the poll statistics are not checked.\n\nLast check: {checked}",
+        "description": "| Option | On | Unit answers |\n|---|:-:|:-:|\n| Energy registers | {energy_registers_on} | {energy_registers} |\n| Compressor modulation limit | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Power limit ¹ | {power_limit_on} | {power_limit} |\n| Emergency operation button | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimental registers | {experimental_registers_on} | {experimental_registers} |\n| Compressor statistics | {compressor_statistics_on} | {compressor_statistics} |\n| Poll statistics | {poll_statistics_on} | {poll_statistics} |\n\n✓ answers · ✗ no answer · – not checked · ➕ answers, can be switched on\n\n¹ Whether the unit really keeps to the power limit is not confirmed yet. The emergency operation button, the experimental registers and the statistics are not checked.\n\nLast check: {checked}",
         "data": {
           "scan_interval": "Polling interval (seconds)"
         },
@@ -183,6 +193,16 @@
             },
             "data_description": {
               "experimental_registers": "Adds 18 diagnostic sensors with the raw values of registers the manual does not document, read only:\n\n- **Experimental Input 30015, 30018, 30064**\n- **Experimental Holding 40011 … 40023, 40063, 40064**\n\nA block the unit does not answer is not asked again until the next restart."
+            }
+          },
+          "compressor_statistics": {
+            "name": "Compressor statistics",
+            "description": "Counts compressor starts and run time and averages its speed, from the values polled anyway; nothing extra is read from the unit. Many short runs mean the unit is cycling, which costs efficiency and wear.",
+            "data": {
+              "compressor_statistics": "Switch on"
+            },
+            "data_description": {
+              "compressor_statistics": "Adds:\n\n- **Compressor Starts** — a counter; starts per day or hour come from the statistics. Attribute: the last run's duration\n- **Compressor Run Time** — hours, a counter\n- **Compressor Average Speed** — rpm while running, today (reset at midnight)\n\nAll three are kept across restarts."
             }
           },
           "poll_statistics": {
