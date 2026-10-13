@@ -32,25 +32,11 @@
         "data": {
           "connection_type": "Verbindungsart"
         }
-      }
-    },
-    "error": {
-      "cannot_connect": "Verbindung fehlgeschlagen",
-      "invalid_slave_id": "Ungültige Slave-ID",
-      "link_settings_conflict": "Gerät wird bereits mit anderen Verbindungseinstellungen verwendet",
-      "unknown": "Unbekannter Fehler"
-    },
-    "abort": {
-      "already_configured": "Gerät ist bereits konfiguriert",
-      "reconfigure_successful": "Konfiguration erfolgreich aktualisiert"
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "LG ThermaV R290 — Optionen",
+      },
+      "features": {
+        "title": "LG ThermaV R290 — Optionale Register",
+        "description": "Auf diesem Gerät geprüft (✓ antwortet, ✗ keine Antwort):\n\n- Energieregister: {energy_registers}\n- Begrenzung der Verdichtermodulation: {compressor_modulation_limit}\n- Leistungsbegrenzung: {power_limit}\n\nGruppen, die antworten und gefahrlos eingeschaltet werden können, sind angehakt. Die Leistungsbegrenzung wird auch dann nicht angehakt, wenn sie antwortet: Ob das Gerät den Grenzwert tatsächlich einhält, ist noch nicht bestätigt. Die Taste für Notbetrieb und die experimentellen Register werden nie angehakt. Alles lässt sich später unter Konfigurieren ändern.",
         "data": {
-          "scan_interval": "Abfrageintervall (Sekunden)",
           "energy_registers": "Energieregister",
           "compressor_modulation_limit": "Begrenzung der Verdichtermodulation",
           "power_limit": "Leistungsbegrenzung",
@@ -65,6 +51,47 @@
           "experimental_registers": "Legt schreibgeschützte Sensoren für 18 Register an, die das Gerät beantwortet, die aber nicht im Handbuch stehen. Es wird nie darauf geschrieben. Gedacht zum Sammeln von Daten über längere Zeit."
         }
       }
+    },
+    "error": {
+      "cannot_connect": "Verbindung fehlgeschlagen",
+      "invalid_slave_id": "Ungültige Slave-ID",
+      "link_settings_conflict": "Gerät wird bereits mit anderen Verbindungseinstellungen verwendet",
+      "unknown": "Unbekannter Fehler"
+    },
+    "abort": {
+      "already_configured": "Gerät ist bereits konfiguriert",
+      "reconfigure_successful": "Konfiguration erfolgreich aktualisiert"
+    },
+    "progress": {
+      "detect": "Prüfe, auf welche optionalen Register dieses Gerät antwortet. Ein Gerät, das eine Gruppe nicht liefert, antwortet gar nicht; das kann bis zu etwa 30 Sekunden dauern."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "LG ThermaV R290 — Optionen",
+        "description": "Letzte Prüfung auf diesem Gerät (✓ antwortet, ✗ keine Antwort, – nicht geprüft): Energieregister {energy_registers}, Begrenzung der Verdichtermodulation {compressor_modulation_limit}, Leistungsbegrenzung {power_limit}.",
+        "data": {
+          "scan_interval": "Abfrageintervall (Sekunden)",
+          "energy_registers": "Energieregister",
+          "compressor_modulation_limit": "Begrenzung der Verdichtermodulation",
+          "power_limit": "Leistungsbegrenzung",
+          "emergency_operation_button": "Taste für Notbetrieb",
+          "experimental_registers": "Experimentelle Register",
+          "detect_again": "Optionale Register erneut prüfen"
+        },
+        "data_description": {
+          "energy_registers": "Legt schreibgeschützte Sensoren für elektrische Leistung, kumulierte Energie, Bedarf vs. Versorgung und thermische Leistung aus den Input-Registern 34-51 an (32-Bit-Werte). Nicht jedes Gerät liefert sie: Antwortet das Gerät nicht, bleiben die Sensoren ohne Wert und es wird nur alle paar Abfragen erneut versucht.",
+          "compressor_modulation_limit": "Legt einen Schieberegler (40-100 %) für die maximale Verdichtermodulation an, Holding-Register 23. Nicht jedes Gerät liefert es; solange es nicht antwortet, bleibt der Regler nicht verfügbar. Geschrieben werden kann das Register nur, solange diese Option aktiv ist.",
+          "power_limit": "Legt einen Schalter (Coil 6, „Wirkleistungsbegrenzung“) an, der die Leistungsbegrenzung des Geräts einschaltet, und ein Feld (0,1-25,0 kW, Holding-Register 24) für den Grenzwert. Im Handbuch dokumentiert, aber nicht jedes Gerät liefert sie; solange sie nicht antworten, bleiben beide nicht verfügbar. Ob das Gerät seine Leistung tatsächlich unter dem Grenzwert hält, ist noch nicht bestätigt: mit einem separaten Zähler prüfen. Geschrieben werden können beide nur, solange diese Option aktiv ist.",
+          "emergency_operation_button": "Legt eine Taste an, die den Notbetrieb des Geräts startet (Coil 5, „Auslöser Notaus-Betrieb“). Im Notbetrieb heizt das Gerät in der Regel mit dem Heizstab und verbraucht deutlich mehr Strom als die Wärmepumpe. Coil 5 kann nur geschrieben werden, solange diese Option aktiv ist.",
+          "experimental_registers": "Legt schreibgeschützte Sensoren für 18 Register an, die das Gerät beantwortet, die aber nicht im Handbuch stehen. Es wird nie darauf geschrieben. Gedacht zum Sammeln von Daten über längere Zeit.",
+          "detect_again": "Fragt das Gerät erneut, auf welche optionalen Register es antwortet (bis zu etwa 30 Sekunden), und zeigt dieses Formular dann noch einmal, mit Energieregistern und Begrenzung der Verdichtermodulation angehakt, falls sie antworten. Es wird nichts ausgeschaltet."
+        }
+      }
+    },
+    "progress": {
+      "detect": "Prüfe, auf welche optionalen Register dieses Gerät antwortet. Ein Gerät, das eine Gruppe nicht liefert, antwortet gar nicht; das kann bis zu etwa 30 Sekunden dauern."
     }
   }
 }

@@ -107,6 +107,22 @@ The config flow asks for connection type first, then connection-specific paramet
 | Emergency operation button | off | Options; coil 5 |
 | Experimental registers | off | Options; 18 undocumented registers, read only |
 
+#### Which options the unit supports
+
+After the connection test, the setup asks the unit once which optional register groups it answers on, and shows the result (✓ answers, ✗ no answer) on a last step with the options:
+
+| Option | Checked | Ticked when the unit answers |
+|---|---|---|
+| Energy registers | input 34–51 | yes (read only) |
+| Compressor modulation limit | holding 23 | yes (adds the slider; nothing is written until it is moved) |
+| Power limit | coil 6, then holding 24 | no: whether the unit keeps to the limit is not confirmed yet |
+| Emergency operation button | — | never: coil 5 answers on every unit; the option is off because of what it does |
+| Experimental registers | — | never |
+
+Answering only proves the register exists, not that writing it has an effect. A unit that does not serve a group stays silent, so each missing group waits for a request timeout: on a unit that has none of them, the check takes up to about 30 seconds, shown as progress. It runs only then, never while polling.
+
+The last result is shown again under *Configure*. Tick **Check the optional registers again** there to repeat the check, e.g. on an installation set up before 1.5.0 or after a firmware update. The form then comes back with the groups that answered ticked; nothing is switched off.
+
 ---
 
 ## Entities

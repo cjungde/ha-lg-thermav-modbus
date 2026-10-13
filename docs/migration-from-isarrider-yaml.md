@@ -53,7 +53,7 @@ For basti242's YAML setup, which this one grew out of, see [migration-from-yaml.
 
 ## 2. Options to switch on
 
-*Settings → Devices & Services → LG ThermaV R290 → Configure.* All are off by default, because not every unit serves these registers. On the 12 kW, switch on:
+*Settings → Devices & Services → LG ThermaV R290 → Configure.* All are off by default, because not every unit serves these registers. A new setup checks which of them the unit answers on and ticks the energy registers and the compressor modulation limit if they do (README, *Which options the unit supports*). On the 12 kW, switch on:
 
 | Option | Gives you | YAML counterpart |
 |---|---|---|
@@ -387,7 +387,7 @@ Replace `modbus.write_register` / `modbus.write_coil` calls and helper writes wi
 2. Export or screenshot dashboards and automations that use `hp_*` entities or the helpers.
 3. Remove (or comment out) the YAML package: the `modbus:` hub, `input_number:`, `input_select:`, `template:` and `automation:` parts. Restart Home Assistant.
 4. *Settings → Devices & Services → Add Integration → LG ThermaV R290*: connection type RTU, the same `/dev/serial/by-id/…` port, 9600, N, 1, slave 1.
-5. *Configure*: **Energy registers** on, **Compressor modulation limit** on, **Power limit** on if you used it. Experimental registers only if you want to record the undocumented addresses.
+5. On the setup's last step, **Energy registers** and **Compressor modulation limit** come ticked when the unit answers on them; tick **Power limit** too if you used it. Experimental registers only if you want to record the undocumented addresses.
 6. Enable the disabled-by-default sensors you used: target room air temperature circuit 1/2 (the old *room air temperature circuit 1/2 (holding)*).
 7. Compare the values from step 1 with the new entities. Compressor modulation shows *unknown* if no limit is set.
 8. Update the Energy dashboard. For the electrical consumption, prefer an external meter over the unit's own counters, which deviate from a smart meter (see [§10](#10-differences-that-can-bite)); the unit's thermal counter can be added if you use it.
