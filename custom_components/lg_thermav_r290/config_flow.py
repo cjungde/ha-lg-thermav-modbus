@@ -12,6 +12,7 @@ from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult, section
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.selector import (
     EntitySelector,
     EntitySelectorConfig,
@@ -55,6 +56,7 @@ from .detect import (
     suggested,
 )
 from .migration import UNIQUE_ID_MINOR_VERSION
+from .yaml_takeover import UNIT_SPELLING, Found, plan
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -233,6 +235,69 @@ def _flatten_option_groups(user_input: dict[str, Any]) -> dict[str, Any]:
     return values
 
 
+# Markers in the takeover tables; their meaning is in the step's text, so
+# the tables work in every language.
+_LEFT_MARKERS = {
+    "scale": "①",
+    "not_a_temperature": "②",
+    "unit": "③",
+    "text": "④",
+    "other_type": "⑤",
+    "still_loaded": "⑥",
+    "target_taken": "⑦",
+}
+
+
+def _plan_yaml_takeover(hass: HomeAssistant) -> tuple[list[Found], list]:
+    """The YAML entities whose history can be taken over, and the others."""
+    registry = er.async_get(hass)
+    yaml_entries = [
+        (e.platform, e.unique_id, e.domain, e.entity_id)
+        for e in registry.entities.values()
+        if e.config_entry_id is None and e.platform in ("modbus", "template")
+    ]
+    live = {
+        state.entity_id
+        for state in hass.states.async_all()
+        if not state.attributes.get("restored", False)
+    }
+    return plan(yaml_entries, live, set(registry.entities.keys()))
+
+
+def _take_over(hass: HomeAssistant, found: list[Found]) -> None:
+    """Move each YAML entity's history to the integration's id, then drop it.
+
+    Renaming in the registry makes the recorder move the history and the
+    long-term statistics to the new id; removing the registry entry keeps
+    them. The integration's entity then registers under that id.
+    """
+    registry = er.async_get(hass)
+    for item in found:
+        registry.async_update_entity(
+            item.old_entity_id, new_entity_id=item.new_entity_id
+        )
+        registry.async_remove(item.new_entity_id)
+        _LOGGER.info(
+            "History of %s continues as %s", item.old_entity_id, item.new_entity_id
+        )
+
+
+def _takeover_table(found: list[Found]) -> str:
+    rows = ["| YAML | | |", "|---|---|---|"]
+    for item in found:
+        note = " ⚠" if item.takeover.note == UNIT_SPELLING else ""
+        rows.append(f"| `{item.old_entity_id}` | → | `{item.new_entity_id}`{note} |")
+    return "\n".join(rows)
+
+
+def _left_table(left: list) -> str:
+    if not left:
+        return "–"
+    return "\n".join(
+        f"- `{entity_id}` {_LEFT_MARKERS[reason]}" for entity_id, reason in left
+    )
+
+
 class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle the UI config flow for LG ThermaV R290."""
 
@@ -366,19 +431,45 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_features(self, user_input=None) -> FlowResult:
         """The optional register groups, ticked where the unit answered."""
         if user_input is not None:
-            return self.async_create_entry(
-                title=self._title,
-                data=self._data,
-                options={
-                    **_flatten_option_groups(user_input),
-                    CONF_DETECTED: self._detected,
-                    CONF_DETECTED_AT: dt_util.utcnow().isoformat(),
-                },
-            )
+            self._options = {
+                **_flatten_option_groups(user_input),
+                CONF_DETECTED: self._detected,
+                CONF_DETECTED_AT: dt_util.utcnow().isoformat(),
+            }
+            self._takeover, self._left = _plan_yaml_takeover(self.hass)
+            if self._takeover:
+                return await self.async_step_yaml_takeover()
+            return self._create()
         return self.async_show_form(
             step_id="features",
             data_schema=vol.Schema(_option_group_fields(suggested(self._detected, {}))),
             description_placeholders=placeholders(self._detected),
+        )
+
+    async def async_step_yaml_takeover(self, user_input=None) -> FlowResult:
+        """Offer to continue the history of the YAML setup (yaml_takeover.py).
+
+        Shown only when orphaned entities of the isarrider YAML package are in
+        the registry. Done here, before the entry exists, so the integration's
+        entities register under the ids the old history was moved to.
+        """
+        if user_input is not None:
+            if user_input.get("take_over", False):
+                _take_over(self.hass, self._takeover)
+            return self._create()
+        return self.async_show_form(
+            step_id="yaml_takeover",
+            data_schema=vol.Schema({vol.Required("take_over", default=True): bool}),
+            description_placeholders={
+                "count": str(len(self._takeover)),
+                "takeover_table": _takeover_table(self._takeover),
+                "left_table": _left_table(self._left),
+            },
+        )
+
+    def _create(self) -> FlowResult:
+        return self.async_create_entry(
+            title=self._title, data=self._data, options=self._options
         )
 
     async def async_step_reconfigure(self, user_input=None) -> FlowResult:

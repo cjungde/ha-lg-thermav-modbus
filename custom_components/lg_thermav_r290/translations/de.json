@@ -108,6 +108,16 @@
             }
           }
         }
+      },
+      "yaml_takeover": {
+        "title": "LG ThermaV R290 — Verlauf aus dem YAML-Setup",
+        "description": "Entitäten des YAML-Pakets (homeassistant_lg_therma_v_modbus) sind noch in Home Assistant, mit ihrem Verlauf. {count} davon haben hier ein Gegenstück. Bei der Übernahme wird jede auf die Entitäts-ID der Integration umbenannt, sodass Verlauf und Langzeitstatistik dort weiterlaufen, und die alte Entität wird entfernt. Aus der Datenbank wird nichts gelöscht.\n\n{takeover_table}\n\n⚠ Die Einheit ist anders geschrieben (z. B. U/min → rpm). Der Verlauf läuft weiter; Home Assistant fragt danach einmal unter *Entwicklerwerkzeuge → Statistiken*, ob die neue Einheit übernommen werden soll. Die Werte sind dieselben.\n\nNicht übernommen, bleiben wie sie sind:\n\n{left_table}\n\n① die Integration skaliert den Wert anders · ② keine Temperatur · ③ andere Einheit · ④ Text statt Zahl, oder andere Texte · ⑤ hier ein anderer Entitätstyp (Zahl, Taste) · ⑥ das YAML ist noch geladen: erst entfernen und neu starten · ⑦ die Entitäts-ID ist schon vergeben",
+        "data": {
+          "take_over": "Verlauf übernehmen"
+        },
+        "data_description": {
+          "take_over": "Abwählen, um die Entitäten der Integration mit leerem Verlauf zu starten; die YAML-Entitäten bleiben dann wie sie sind."
+        }
       }
     },
     "error": {
