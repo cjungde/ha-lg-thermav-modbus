@@ -243,5 +243,316 @@
     "progress": {
       "detect": "Checking which optional registers this unit answers on. A unit that does not serve a group stays silent, so this can take up to about 30 seconds."
     }
+  },
+  "entity": {
+    "binary_sensor": {
+      "water_flow": {
+        "name": "Water Flow"
+      },
+      "water_pump": {
+        "name": "Water Pump"
+      },
+      "external_water_pump": {
+        "name": "External Water Pump"
+      },
+      "compressor": {
+        "name": "Compressor"
+      },
+      "defrost": {
+        "name": "Defrost"
+      },
+      "dhw_heating": {
+        "name": "DHW Heating"
+      },
+      "dhw_disinfection": {
+        "name": "DHW Disinfection"
+      },
+      "silent_mode": {
+        "name": "Silent Mode"
+      },
+      "cooling_active": {
+        "name": "Cooling Active"
+      },
+      "solar_pump": {
+        "name": "Solar Pump"
+      },
+      "backup_heater_step_1": {
+        "name": "Backup Heater Step 1"
+      },
+      "backup_heater_step_2": {
+        "name": "Backup Heater Step 2"
+      },
+      "dhw_boost_heater": {
+        "name": "DHW Boost Heater"
+      },
+      "fault": {
+        "name": "Fault"
+      },
+      "emergency_heating_cooling_available": {
+        "name": "Emergency Heating/Cooling Available"
+      },
+      "emergency_dhw_available": {
+        "name": "Emergency DHW Available"
+      },
+      "mixing_pump": {
+        "name": "Mixing Pump"
+      },
+      "energy_state_not_used": {
+        "name": "Energy State: Not Used"
+      },
+      "energy_state_forced_off": {
+        "name": "Energy State: Forced Off"
+      },
+      "energy_state_normal_operation": {
+        "name": "Energy State: Normal Operation"
+      },
+      "energy_state_on_recommendation": {
+        "name": "Energy State: On Recommendation"
+      },
+      "energy_state_on_command": {
+        "name": "Energy State: On Command"
+      },
+      "energy_state_on_command_step_2": {
+        "name": "Energy State: On Command Step 2"
+      },
+      "energy_state_on_recommendation_step_1": {
+        "name": "Energy State: On Recommendation Step 1"
+      },
+      "energy_state_energy_saving_mode": {
+        "name": "Energy State: Energy Saving Mode"
+      },
+      "energy_state_super_energy_saving_mode": {
+        "name": "Energy State: Super Energy Saving Mode"
+      }
+    },
+    "button": {
+      "start_disinfection": {
+        "name": "Start Disinfection"
+      },
+      "start_emergency_operation": {
+        "name": "Start Emergency Operation"
+      }
+    },
+    "number": {
+      "target_temperature_circuit_1_radiators": {
+        "name": "Target Temperature Circuit 1 (Radiators)"
+      },
+      "target_temperature_circuit_2_underfloor": {
+        "name": "Target Temperature Circuit 2 (Underfloor)"
+      },
+      "dhw_target_temperature": {
+        "name": "DHW Target Temperature"
+      },
+      "setpoint_shift_circuit_1": {
+        "name": "Setpoint Shift Circuit 1"
+      },
+      "setpoint_shift_circuit_2": {
+        "name": "Setpoint Shift Circuit 2"
+      },
+      "max_compressor_modulation": {
+        "name": "Max Compressor Modulation"
+      },
+      "max_electrical_power": {
+        "name": "Max Electrical Power"
+      }
+    },
+    "select": {
+      "operation_mode": {
+        "name": "Operation Mode"
+      },
+      "control_method": {
+        "name": "Control Method"
+      }
+    },
+    "sensor": {
+      "inlet_temperature": {
+        "name": "Inlet Temperature"
+      },
+      "outlet_temperature": {
+        "name": "Outlet Temperature"
+      },
+      "backup_heater_outlet_temperature": {
+        "name": "Backup Heater Outlet Temperature"
+      },
+      "dhw_temperature": {
+        "name": "DHW Temperature"
+      },
+      "solar_collector_temperature": {
+        "name": "Solar Collector Temperature"
+      },
+      "room_air_temperature_circuit_1": {
+        "name": "Room Air Temperature Circuit 1"
+      },
+      "room_air_temperature_circuit_2": {
+        "name": "Room Air Temperature Circuit 2"
+      },
+      "flow_temperature_circuit_2": {
+        "name": "Flow Temperature Circuit 2"
+      },
+      "outdoor_temperature": {
+        "name": "Outdoor Temperature"
+      },
+      "flow_rate": {
+        "name": "Flow Rate"
+      },
+      "water_pressure": {
+        "name": "Water Pressure"
+      },
+      "liquid_gas_temperature": {
+        "name": "Liquid Gas Temperature"
+      },
+      "suction_temperature": {
+        "name": "Suction Temperature"
+      },
+      "hot_gas_temperature": {
+        "name": "Hot Gas Temperature"
+      },
+      "temperature_before_evaporator": {
+        "name": "Temperature Before Evaporator"
+      },
+      "temperature_after_evaporator": {
+        "name": "Temperature After Evaporator"
+      },
+      "high_pressure_condenser": {
+        "name": "High Pressure (Condenser)"
+      },
+      "low_pressure_evaporator": {
+        "name": "Low Pressure (Evaporator)"
+      },
+      "compressor_speed": {
+        "name": "Compressor Speed"
+      },
+      "error_code": {
+        "name": "Error Code"
+      },
+      "operation_cycle_odu": {
+        "name": "Operation Cycle (ODU)"
+      },
+      "energy_control_signal": {
+        "name": "Energy Control Signal"
+      },
+      "device_group": {
+        "name": "Device Group"
+      },
+      "product_information": {
+        "name": "Product Information"
+      },
+      "target_room_air_temperature_circuit_1": {
+        "name": "Target Room Air Temperature Circuit 1"
+      },
+      "target_room_air_temperature_circuit_2": {
+        "name": "Target Room Air Temperature Circuit 2"
+      },
+      "operation_mode": {
+        "name": "Operation Mode"
+      },
+      "control_method": {
+        "name": "Control Method"
+      },
+      "operation_state_odu": {
+        "name": "Operation State (ODU)"
+      },
+      "energy_state": {
+        "name": "Energy State"
+      },
+      "energy_state_reported": {
+        "name": "Energy State (Reported)"
+      },
+      "thermal_power_calculated": {
+        "name": "Thermal Power (Calculated)"
+      },
+      "thermal_power_heating_circuit_calculated": {
+        "name": "Thermal Power Heating Circuit (Calculated)"
+      },
+      "thermal_power_dhw_calculated": {
+        "name": "Thermal Power DHW (Calculated)"
+      },
+      "electrical_power_total_system": {
+        "name": "Electrical Power Total System"
+      },
+      "electrical_power_heat_pump": {
+        "name": "Electrical Power Heat Pump"
+      },
+      "electrical_energy_total": {
+        "name": "Electrical Energy Total"
+      },
+      "electrical_energy_space_heating": {
+        "name": "Electrical Energy Space Heating"
+      },
+      "electrical_energy_space_cooling": {
+        "name": "Electrical Energy Space Cooling"
+      },
+      "electrical_energy_dhw": {
+        "name": "Electrical Energy DHW"
+      },
+      "demand_vs_supply": {
+        "name": "Demand vs Supply"
+      },
+      "thermal_power_reported": {
+        "name": "Thermal Power (Reported)"
+      },
+      "thermal_energy_space_heating": {
+        "name": "Thermal Energy Space Heating"
+      },
+      "cop_reported": {
+        "name": "COP (Reported)"
+      },
+      "cop_system_reported": {
+        "name": "COP System (Reported)"
+      },
+      "cop_calculated": {
+        "name": "COP (Calculated)"
+      },
+      "cop_heating_cumulative": {
+        "name": "COP Heating (Cumulative)"
+      },
+      "compressor_starts": {
+        "name": "Compressor Starts"
+      },
+      "compressor_run_time": {
+        "name": "Compressor Run Time"
+      },
+      "compressor_average_speed": {
+        "name": "Compressor Average Speed"
+      },
+      "cop_external_meter": {
+        "name": "COP (External Meter)"
+      },
+      "thermal_energy_calculated": {
+        "name": "Thermal Energy (Calculated)"
+      },
+      "cop_cumulative_external_meter": {
+        "name": "COP Cumulative (External Meter)"
+      },
+      "poll_duration": {
+        "name": "Poll Duration"
+      },
+      "bus_load": {
+        "name": "Bus Load"
+      },
+      "experimental_input": {
+        "name": "Experimental Input {register}"
+      },
+      "experimental_holding": {
+        "name": "Experimental Holding {register}"
+      }
+    },
+    "switch": {
+      "heating_cooling": {
+        "name": "Heating/Cooling"
+      },
+      "dhw": {
+        "name": "DHW"
+      },
+      "silent_mode": {
+        "name": "Silent Mode"
+      },
+      "emergency_stop": {
+        "name": "Emergency Stop"
+      },
+      "power_limit": {
+        "name": "Power Limit"
+      }
+    }
   }
 }

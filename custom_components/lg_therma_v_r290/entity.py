@@ -8,10 +8,13 @@ as Home Assistant slugifies it into an entity id (see docs/naming.md).
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import slugify
 
 from .const import DOMAIN
 from .coordinator import LGThermaVCoordinator
@@ -43,11 +46,20 @@ class LGEntity(CoordinatorEntity[LGThermaVCoordinator]):
     _attr_has_entity_name = True
 
     def __init__(
-        self, coordinator: LGThermaVCoordinator, entry: ConfigEntry, key: str
+        self,
+        coordinator: LGThermaVCoordinator,
+        entry: ConfigEntry,
+        key: str,
+        translation_key: str | None = None,
     ) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = unique_id(entry, key)
         self._attr_device_info = device_info(entry)
+        self.entity_key = key
+        # The name comes from the translations (entity.<platform>.<key>.name
+        # in strings.json), so it shows in the user's language. Entity ids
+        # stay English: see english_entity_ids.
+        self._attr_translation_key = translation_key or key
 
     def _data(self, data_key: str):
         """A value from the coordinator data, None before the first update."""
@@ -66,3 +78,22 @@ def remove_entities(hass, entry: ConfigEntry, domain: str, keys) -> None:
         entity_id = registry.async_get_entity_id(domain, DOMAIN, unique_id(entry, key))
         if entity_id is not None:
             registry.async_remove(entity_id)
+
+
+def english_entity_ids(domain: str, entities: Iterable[LGEntity]) -> list[LGEntity]:
+    """Suggest the English entity id for each entity, in every language.
+
+    Home Assistant makes new entity ids from the name in the system language,
+    so a German system would get sensor.<device>_aussentemperatur. The README,
+    the guides, the example dashboard and the YAML takeover use the English
+    ids, and an automation should work on every installation, so the
+    integration suggests <domain>.<device name as id>_<key> itself. Only new
+    entities are affected: an entity already in the registry keeps its id,
+    whatever the language is changed to later, and a taken id gets Home
+    Assistant's usual _2 suffix.
+    """
+    result = list(entities)
+    prefix = slugify(DEVICE_NAME)
+    for entity in result:
+        entity.entity_id = f"{domain}.{prefix}_{entity.entity_key}"
+    return result

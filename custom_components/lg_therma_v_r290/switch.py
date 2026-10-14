@@ -23,7 +23,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from . import power_limit
 from .const import CONF_POWER_LIMIT, DOMAIN
 from .coordinator import LGThermaVCoordinator
-from .entity import LGEntity, remove_entities
+from .entity import LGEntity, english_entity_ids, remove_entities
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -78,7 +78,7 @@ async def async_setup_entry(
         entities.append(LGOptionalSwitch(coordinator, entry, POWER_LIMIT_SWITCH))
     else:
         remove_entities(hass, entry, "switch", (POWER_LIMIT_SWITCH.key,))
-    async_add_entities(entities)
+    async_add_entities(english_entity_ids("switch", entities))
 
 
 class LGSwitch(LGEntity, SwitchEntity):
