@@ -1,4 +1,4 @@
-"""DataUpdateCoordinator for the LG ThermaV R290."""
+"""DataUpdateCoordinator for the LG Therma V R290."""
 
 from __future__ import annotations
 
@@ -70,7 +70,7 @@ def _signed16(value: int) -> int:
 
 
 class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
-    """Polls the LG ThermaV R290 at a fixed interval and distributes data to entities."""
+    """Polls the LG Therma V R290 at a fixed interval and distributes data to entities."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         """Take a unit on a shared connection and poll it.

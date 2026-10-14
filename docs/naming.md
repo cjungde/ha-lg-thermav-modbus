@@ -40,14 +40,14 @@ Every unique id is
 
 and the **key is the entity name as Home Assistant slugifies it** (lower case,
 everything that is not a letter or digit becomes `_`). With the default device
-name *LG ThermaV R290*, the entity id is then `<platform>.lg_thermav_r290_<key>`:
+name *LG Therma V R290*, the entity id is then `<platform>.lg_therma_v_r290_<key>`:
 
 | Name | Key | Entity id |
 |---|---|---|
-| Outdoor Temperature | `outdoor_temperature` | `sensor.lg_thermav_r290_outdoor_temperature` |
-| COP System (Reported) | `cop_system_reported` | `sensor.lg_thermav_r290_cop_system_reported` |
-| Energy State: Normal Operation | `energy_state_normal_operation` | `binary_sensor.lg_thermav_r290_energy_state_normal_operation` |
-| Experimental Input 30015 | `experimental_input_30015` | `sensor.lg_thermav_r290_experimental_input_30015` |
+| Outdoor Temperature | `outdoor_temperature` | `sensor.lg_therma_v_r290_outdoor_temperature` |
+| COP System (Reported) | `cop_system_reported` | `sensor.lg_therma_v_r290_cop_system_reported` |
+| Energy State: Normal Operation | `energy_state_normal_operation` | `binary_sensor.lg_therma_v_r290_energy_state_normal_operation` |
+| Experimental Input 30015 | `experimental_input_30015` | `sensor.lg_therma_v_r290_experimental_input_30015` |
 
 So key, unique id and entity id can be read off the name, and
 `tests/test_migration.py` checks that every key is the slug of its name.

@@ -16,14 +16,19 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
 from .coordinator import LGThermaVCoordinator
 
+# The device name; Home Assistant makes the entity ids from it
+# (the device name as an id, then the key), and the YAML takeover targets
+# those ids.
+DEVICE_NAME = "LG Therma V R290"
+
 
 def device_info(entry: ConfigEntry) -> DeviceInfo:
     """The one device every entity of a config entry belongs to."""
     return DeviceInfo(
         identifiers={(DOMAIN, entry.entry_id)},
-        name="LG ThermaV R290",
+        name=DEVICE_NAME,
         manufacturer="LG",
-        model="ThermaV R290",
+        model="Therma V R290",
     )
 
 
@@ -33,7 +38,7 @@ def unique_id(entry: ConfigEntry, key: str) -> str:
 
 
 class LGEntity(CoordinatorEntity[LGThermaVCoordinator]):
-    """An entity of the LG ThermaV R290 device, keyed per docs/naming.md."""
+    """An entity of the LG Therma V R290 device, keyed per docs/naming.md."""
 
     _attr_has_entity_name = True
 

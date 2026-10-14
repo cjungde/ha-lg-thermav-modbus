@@ -1,4 +1,4 @@
-"""Number platform for LG ThermaV R290 — writable holding registers.
+"""Number platform for LG Therma V R290 — writable holding registers.
 
 Keys follow docs/naming.md: the entity key is the name as an entity id slug,
 the data key is ``holding_<what the register holds>``. The coordinator data

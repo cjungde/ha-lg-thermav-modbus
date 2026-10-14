@@ -31,8 +31,8 @@
   Rows are collected into a list and joined at the end. Emitting them inside
   the loop looks simpler but loses the line breaks to whitespace control.
 -#}
-{%- set shadow_prefix = 'thermav_testkopie_' -%}
-{%- set prod_prefix = 'lg_thermav_r290_' -%}
+{%- set shadow_prefix = 'therma_v_testkopie_' -%}
+{%- set prod_prefix = 'lg_therma_v_r290_' -%}
 
 {#- Absolute tolerance by entity-id suffix. Everything unlisted must match
     exactly: register contents that are codes, not measurements. -#}
@@ -93,13 +93,13 @@
   {%- endfor -%}
 {%- endfor -%}
 
-{%- set p_age = (now() - states.sensor.lg_thermav_r290_outlet_temperature.last_updated).total_seconds() | round(0) -%}
-{%- set t_ent = states.sensor.thermav_testkopie_outlet_temperature -%}
+{%- set p_age = (now() - states.sensor.lg_therma_v_r290_outlet_temperature.last_updated).total_seconds() | round(0) -%}
+{%- set t_ent = states.sensor.therma_v_testkopie_outlet_temperature -%}
 {%- set t_age = (now() - t_ent.last_updated).total_seconds() | round(0) if t_ent else -1 -%}
-{%- set running = is_state('binary_sensor.lg_thermav_r290_compressor', 'on') -%}
+{%- set running = is_state('binary_sensor.lg_therma_v_r290_compressor', 'on') -%}
 {%- if ns.total == 0 -%}
 Keine Entitaeten mit dem Praefix "{{ shadow_prefix }}" gefunden.
-Ist der Config-Entry "LG ThermaV R290 (Testkopie, nur lesend)" schon angelegt?
+Ist der Config-Entry "LG Therma V R290 (Testkopie, nur lesend)" schon angelegt?
 {%- else -%}
 {{ '%-38s %-14s %-14s %-9s %s' | format('Groesse', 'produktiv', 'Testkopie', 'Delta', 'Status') }}
 {{ '-' * 95 }}

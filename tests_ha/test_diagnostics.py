@@ -6,7 +6,7 @@ import json
 
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.lg_thermav_r290.diagnostics import (
+from custom_components.lg_therma_v_r290.diagnostics import (
     async_get_config_entry_diagnostics,
 )
 

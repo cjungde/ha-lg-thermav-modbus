@@ -35,9 +35,9 @@ async def test_refused_block_is_asked_once(hass, unit) -> None:
     assert unit.requests.count(("holding", 10)) == 1
     # The other blocks are still read every poll.
     assert unit.requests.count(("holding", 62)) == 6
-    state = hass.states.get("sensor.lg_thermav_r290_experimental_holding_40011")
+    state = hass.states.get("sensor.lg_therma_v_r290_experimental_holding_40011")
     assert state.state == "unavailable"
-    state = hass.states.get("sensor.lg_thermav_r290_experimental_holding_40063")
+    state = hass.states.get("sensor.lg_therma_v_r290_experimental_holding_40063")
     assert state.state == "0"
 
 
@@ -46,7 +46,7 @@ async def test_silent_block_is_given_up_after_three_misses(hass, unit) -> None:
     entry = await _set_up(hass)
     await _poll(hass, entry, 6)
     assert unit.requests.count(("input", 63)) == 3
-    state = hass.states.get("sensor.lg_thermav_r290_experimental_input_30064")
+    state = hass.states.get("sensor.lg_therma_v_r290_experimental_input_30064")
     assert state.state == "unavailable"
 
 
@@ -59,5 +59,5 @@ async def test_a_reload_asks_again(hass, unit) -> None:
     await hass.config_entries.async_reload(entry.entry_id)
     await hass.async_block_till_done()
     assert unit.requests.count(("input", 14)) == 2
-    state = hass.states.get("sensor.lg_thermav_r290_experimental_input_30015")
+    state = hass.states.get("sensor.lg_therma_v_r290_experimental_input_30015")
     assert state.state == "0"

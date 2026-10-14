@@ -5,7 +5,7 @@ from __future__ import annotations
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResultType, section
 
-DOMAIN = "lg_thermav_r290"
+DOMAIN = "lg_therma_v_r290"
 RTU = {
     "serial_port": "/dev/ttyUSB0",
     "baudrate": 9600,
@@ -123,9 +123,9 @@ async def test_a_unit_that_answers_everywhere(hass, unit) -> None:
     }
     assert entry.options["detected_at"]
     # The entry is set up with the options ticked.
-    assert hass.states.get("sensor.lg_thermav_r290_electrical_power_heat_pump")
-    assert hass.states.get("number.lg_thermav_r290_max_compressor_modulation")
-    assert hass.states.get("number.lg_thermav_r290_max_electrical_power") is None
+    assert hass.states.get("sensor.lg_therma_v_r290_electrical_power_heat_pump")
+    assert hass.states.get("number.lg_therma_v_r290_max_compressor_modulation")
+    assert hass.states.get("number.lg_therma_v_r290_max_electrical_power") is None
 
 
 async def test_a_unit_like_the_scanned_9_kw(hass, unit) -> None:

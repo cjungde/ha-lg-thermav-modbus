@@ -47,7 +47,8 @@ class Takeover:
     key: str  # the integration entity's key (docs/naming.md)
     note: str | None = None
 
-    def target_entity_id(self, prefix: str = "lg_thermav_r290") -> str:
+    def target_entity_id(self, prefix: str) -> str:
+        """The integration's entity id; prefix is the device name as an id."""
         return f"{self.domain}.{prefix}_{self.key}"
 
 
@@ -187,6 +188,7 @@ def plan(
     registry_entries: list[tuple[str, str, str, str]],
     live_entity_ids: set[str],
     taken_entity_ids: set[str],
+    prefix: str,
 ) -> tuple[list[Found], list[tuple[str, str]]]:
     """Which takeovers apply, and which YAML entities are left alone, and why.
 
@@ -194,7 +196,8 @@ def plan(
     registry entry without a config entry (YAML entities have none).
     live_entity_ids: entity ids that currently have a live state, i.e. the
     YAML is still loaded; those are skipped. taken_entity_ids: entity ids
-    already in the registry, so a target that is taken is skipped.
+    already in the registry, so a target that is taken is skipped. prefix:
+    the device name as Home Assistant turns it into entity ids.
     """
     by_key = {(p, u, d): e for p, u, d, e in registry_entries}
     found: list[Found] = []
@@ -203,7 +206,7 @@ def plan(
         old = by_key.get((takeover.platform, takeover.unique_id, takeover.domain))
         if old is None:
             continue
-        new = takeover.target_entity_id()
+        new = takeover.target_entity_id(prefix)
         if old in live_entity_ids:
             left.append((old, "still_loaded"))
         elif new in taken_entity_ids and new != old:

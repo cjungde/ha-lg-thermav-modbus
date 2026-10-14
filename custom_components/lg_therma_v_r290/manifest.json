@@ -1,6 +1,6 @@
 {
-  "domain": "lg_thermav_r290",
-  "name": "LG ThermaV R290",
+  "domain": "lg_therma_v_r290",
+  "name": "LG Therma V R290",
   "codeowners": [
     "@cjungde"
   ],

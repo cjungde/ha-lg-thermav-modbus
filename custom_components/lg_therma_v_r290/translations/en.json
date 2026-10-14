@@ -2,13 +2,13 @@
   "config": {
     "step": {
       "user": {
-        "title": "LG ThermaV R290 — Connection Type",
+        "title": "LG Therma V R290 — Connection Type",
         "data": {
           "connection_type": "Connection type"
         }
       },
       "tcp": {
-        "title": "LG ThermaV R290 — TCP Connection",
+        "title": "LG Therma V R290 — TCP Connection",
         "data": {
           "host": "Host / IP address",
           "port": "Port",
@@ -17,7 +17,7 @@
         }
       },
       "rtu": {
-        "title": "LG ThermaV R290 — RTU Connection",
+        "title": "LG Therma V R290 — RTU Connection",
         "data": {
           "serial_port": "Serial port",
           "baudrate": "Baudrate",
@@ -28,13 +28,13 @@
         }
       },
       "reconfigure": {
-        "title": "LG ThermaV R290 — Reconfigure",
+        "title": "LG Therma V R290 — Reconfigure",
         "data": {
           "connection_type": "Connection type"
         }
       },
       "features": {
-        "title": "LG ThermaV R290 — Optional registers",
+        "title": "LG Therma V R290 — Optional registers",
         "description": "| Optional registers | Unit answers |\n|---|:-:|\n| Energy registers | {energy_registers} |\n| Compressor modulation limit | {compressor_modulation_limit} |\n| Power limit | {power_limit} |\n\n✓ answers · ✗ no answer\n\nGroups that answered and are safe to switch on are ticked. The power limit is not ticked even when it answers: whether the unit really keeps to the limit is not confirmed yet. The emergency operation button and the experimental registers are never ticked. Everything can be changed later under Configure.",
         "sections": {
           "energy_registers": {
@@ -110,7 +110,7 @@
         }
       },
       "yaml_takeover": {
-        "title": "LG ThermaV R290 — History from the YAML setup",
+        "title": "LG Therma V R290 — History from the YAML setup",
         "description": "Entities of the YAML package (homeassistant_lg_therma_v_modbus) are still in Home Assistant, with their history. {count} of them have a counterpart here. Taking them over renames each to the integration's entity id, so its history and long-term statistics continue there, and removes the old entity. Nothing is deleted from the database.\n\n{takeover_table}\n\n⚠ The unit is spelled differently (e.g. U/min → rpm). The history continues; Home Assistant then asks once under *Developer tools → Statistics* to confirm the new unit. The values are the same.\n\nNot taken over, left as they are:\n\n{left_table}\n\n① the integration scales the value differently · ② not a temperature · ③ different unit · ④ text instead of a number, or different texts · ⑤ a different entity type here (number, button) · ⑥ the YAML is still loaded: remove it and restart first · ⑦ the entity id is already taken",
         "data": {
           "take_over": "Take over the history"
@@ -137,7 +137,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "LG ThermaV R290 — Configure",
+        "title": "LG Therma V R290 — Configure",
         "description": "| Option | On | Unit answers |\n|---|:-:|:-:|\n| Energy registers | {energy_registers_on} | {energy_registers} |\n| Compressor modulation limit | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Power limit ¹ | {power_limit_on} | {power_limit} |\n| Emergency operation button | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimental registers | {experimental_registers_on} | {experimental_registers} |\n| Compressor statistics | {compressor_statistics_on} | {compressor_statistics} |\n| Poll statistics | {poll_statistics_on} | {poll_statistics} |\n\n✓ answers · ✗ no answer · – not checked · ➕ answers, can be switched on\n\n¹ Whether the unit really keeps to the power limit is not confirmed yet. The emergency operation button, the experimental registers and the statistics are not checked.\n\nLast check: {checked}",
         "menu_options": {
           "options": "Options (poll interval, optional registers)",
@@ -149,7 +149,7 @@
         }
       },
       "options": {
-        "title": "LG ThermaV R290 — Options",
+        "title": "LG Therma V R290 — Options",
         "description": "| Option | On | Unit answers |\n|---|:-:|:-:|\n| Energy registers | {energy_registers_on} | {energy_registers} |\n| Compressor modulation limit | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Power limit ¹ | {power_limit_on} | {power_limit} |\n| Emergency operation button | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimental registers | {experimental_registers_on} | {experimental_registers} |\n| Compressor statistics | {compressor_statistics_on} | {compressor_statistics} |\n| Poll statistics | {poll_statistics_on} | {poll_statistics} |\n\n✓ answers · ✗ no answer · – not checked · ➕ answers, can be switched on\n\n¹ Whether the unit really keeps to the power limit is not confirmed yet. The emergency operation button, the experimental registers and the statistics are not checked.\n\nLast check: {checked}",
         "data": {
           "scan_interval": "Polling interval (seconds)"

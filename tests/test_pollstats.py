@@ -13,12 +13,12 @@ import sys
 import types
 
 COMPONENT = (
-    Path(__file__).resolve().parent.parent / "custom_components" / "lg_thermav_r290"
+    Path(__file__).resolve().parent.parent / "custom_components" / "lg_therma_v_r290"
 )
 
 
 def _load(module_name: str):
-    package = "lg_thermav_r290_under_test"
+    package = "lg_therma_v_r290_under_test"
     if package not in sys.modules:
         stub = types.ModuleType(package)
         stub.__path__ = [str(COMPONENT)]

@@ -20,7 +20,7 @@ from pytest_homeassistant_custom_component.components.recorder.common import (
     async_wait_recording_done,
 )
 
-from custom_components.lg_thermav_r290 import yaml_takeover
+from custom_components.lg_therma_v_r290 import yaml_takeover
 
 from .test_config_flow import DOMAIN, RTU, defaults, form_input
 
@@ -32,9 +32,9 @@ def auto_enable_custom_integrations(recorder_mock, enable_custom_integrations):
 
 
 OLD_INLET = "sensor.hp_inlet_temp"
-NEW_INLET = "sensor.lg_thermav_r290_inlet_temperature"
+NEW_INLET = "sensor.lg_therma_v_r290_inlet_temperature"
 OLD_SWITCH = "switch.hp_hauptschalter"
-NEW_SWITCH = "switch.lg_thermav_r290_heating_cooling"
+NEW_SWITCH = "switch.lg_therma_v_r290_heating_cooling"
 OLD_LIQUID_GAS = "sensor.hp_temp_liquid_gas"
 
 
@@ -222,8 +222,8 @@ async def test_every_target_is_an_integration_entity(hass, unit) -> None:
     await hass.async_block_till_done()
     registry = er.async_get(hass)
     missing = [
-        t.target_entity_id()
+        t.target_entity_id("lg_therma_v_r290")
         for t in yaml_takeover.TAKEOVERS
-        if registry.async_get(t.target_entity_id()) is None
+        if registry.async_get(t.target_entity_id("lg_therma_v_r290")) is None
     ]
     assert missing == []

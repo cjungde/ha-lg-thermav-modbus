@@ -1,6 +1,6 @@
 # Example dashboard
 
-A ready-to-paste dashboard view for the heat pump, built from Home Assistant's own cards only; nothing to install. Entity ids are the defaults (`…lg_thermav_r290_…`); if you renamed yours, adjust them.
+A ready-to-paste dashboard view for the heat pump, built from Home Assistant's own cards only; nothing to install. Entity ids are the defaults (`…lg_therma_v_r290_…`); if you renamed yours, adjust them.
 
 **To use it:** *Settings → Dashboards → Add dashboard → New dashboard from scratch*, open it, *⋮ → Edit dashboard → ⋮ → Raw configuration editor*, and paste the YAML below (it replaces the empty `views:`). Or paste only the cards you want into an existing view.
 
@@ -14,47 +14,47 @@ views:
     cards:
       # --- Now --------------------------------------------------------------
       - type: tile
-        entity: sensor.lg_thermav_r290_operation_state_odu
+        entity: sensor.lg_therma_v_r290_operation_state_odu
         name: Outdoor unit
       - type: glance
         title: Temperatures
         columns: 4
         entities:
-          - entity: sensor.lg_thermav_r290_outdoor_temperature
+          - entity: sensor.lg_therma_v_r290_outdoor_temperature
             name: Outdoor
-          - entity: sensor.lg_thermav_r290_outlet_temperature
+          - entity: sensor.lg_therma_v_r290_outlet_temperature
             name: Flow
-          - entity: sensor.lg_thermav_r290_inlet_temperature
+          - entity: sensor.lg_therma_v_r290_inlet_temperature
             name: Return
-          - entity: sensor.lg_thermav_r290_dhw_temperature
+          - entity: sensor.lg_therma_v_r290_dhw_temperature
             name: DHW
       - type: glance
         title: Running
         columns: 4
         entities:
-          - entity: binary_sensor.lg_thermav_r290_compressor
+          - entity: binary_sensor.lg_therma_v_r290_compressor
             name: Compressor
-          - entity: sensor.lg_thermav_r290_compressor_speed
+          - entity: sensor.lg_therma_v_r290_compressor_speed
             name: Speed
-          - entity: sensor.lg_thermav_r290_flow_rate
+          - entity: sensor.lg_therma_v_r290_flow_rate
             name: Flow rate
-          - entity: binary_sensor.lg_thermav_r290_defrost
+          - entity: binary_sensor.lg_therma_v_r290_defrost
             name: Defrost
-          - entity: binary_sensor.lg_thermav_r290_dhw_heating
+          - entity: binary_sensor.lg_therma_v_r290_dhw_heating
             name: DHW heating
-          - entity: binary_sensor.lg_thermav_r290_backup_heater_step_1
+          - entity: binary_sensor.lg_therma_v_r290_backup_heater_step_1
             name: Heater 1
-          - entity: binary_sensor.lg_thermav_r290_backup_heater_step_2
+          - entity: binary_sensor.lg_therma_v_r290_backup_heater_step_2
             name: Heater 2
-          - entity: binary_sensor.lg_thermav_r290_fault
+          - entity: binary_sensor.lg_therma_v_r290_fault
             name: Fault
 
       # --- Efficiency ---------------------------------------------------------
       # COP against your own meter (option: External electricity meter,
-      # power sensor). Without it, use sensor.lg_thermav_r290_cop_reported
+      # power sensor). Without it, use sensor.lg_therma_v_r290_cop_reported
       # (option: Energy registers), which tends to read low.
       - type: gauge
-        entity: sensor.lg_thermav_r290_cop_external_meter
+        entity: sensor.lg_therma_v_r290_cop_external_meter
         name: COP now
         min: 0
         max: 7
@@ -66,34 +66,34 @@ views:
       - type: entities
         title: Efficiency
         entities:
-          - entity: sensor.lg_thermav_r290_thermal_power_calculated
+          - entity: sensor.lg_therma_v_r290_thermal_power_calculated
             name: Thermal power (flow × ΔT)
-          - entity: sensor.lg_thermav_r290_electrical_power_heat_pump
+          - entity: sensor.lg_therma_v_r290_electrical_power_heat_pump
             name: Electrical power (unit, reads high)  # option: Energy registers
-          - entity: sensor.lg_thermav_r290_cop_cumulative_external_meter
+          - entity: sensor.lg_therma_v_r290_cop_cumulative_external_meter
             name: JAZ since start  # option: External electricity meter, energy sensor
-          - entity: sensor.lg_thermav_r290_thermal_energy_calculated
+          - entity: sensor.lg_therma_v_r290_thermal_energy_calculated
             name: Heat delivered  # option: External electricity meter, energy sensor
 
       # --- Controls -----------------------------------------------------------
       - type: entities
         title: Controls
         entities:
-          - entity: switch.lg_thermav_r290_heating_cooling
+          - entity: switch.lg_therma_v_r290_heating_cooling
             name: Heating/Cooling
-          - entity: switch.lg_thermav_r290_dhw
+          - entity: switch.lg_therma_v_r290_dhw
             name: DHW
-          - entity: switch.lg_thermav_r290_silent_mode
+          - entity: switch.lg_therma_v_r290_silent_mode
             name: Silent mode
-          - entity: select.lg_thermav_r290_operation_mode
-          - entity: select.lg_thermav_r290_control_method
-          - entity: number.lg_thermav_r290_target_temperature_circuit_1_radiators
+          - entity: select.lg_therma_v_r290_operation_mode
+          - entity: select.lg_therma_v_r290_control_method
+          - entity: number.lg_therma_v_r290_target_temperature_circuit_1_radiators
             name: Flow target circuit 1
-          - entity: number.lg_thermav_r290_setpoint_shift_circuit_1
+          - entity: number.lg_therma_v_r290_setpoint_shift_circuit_1
             name: Shift circuit 1
-          - entity: number.lg_thermav_r290_dhw_target_temperature
+          - entity: number.lg_therma_v_r290_dhw_target_temperature
             name: DHW target
-          - entity: sensor.lg_thermav_r290_energy_state_reported
+          - entity: sensor.lg_therma_v_r290_energy_state_reported
             name: Energy state (SG Ready)
 
       # --- History ------------------------------------------------------------
@@ -101,23 +101,23 @@ views:
         title: Temperatures, 24 h
         hours_to_show: 24
         entities:
-          - entity: sensor.lg_thermav_r290_outlet_temperature
+          - entity: sensor.lg_therma_v_r290_outlet_temperature
             name: Flow
-          - entity: sensor.lg_thermav_r290_inlet_temperature
+          - entity: sensor.lg_therma_v_r290_inlet_temperature
             name: Return
-          - entity: sensor.lg_thermav_r290_outdoor_temperature
+          - entity: sensor.lg_therma_v_r290_outdoor_temperature
             name: Outdoor
-          - entity: sensor.lg_thermav_r290_dhw_temperature
+          - entity: sensor.lg_therma_v_r290_dhw_temperature
             name: DHW
       - type: history-graph
         title: Compressor, 24 h
         hours_to_show: 24
         entities:
-          - entity: sensor.lg_thermav_r290_compressor_speed
+          - entity: sensor.lg_therma_v_r290_compressor_speed
             name: Speed
-          - entity: binary_sensor.lg_thermav_r290_compressor
+          - entity: binary_sensor.lg_therma_v_r290_compressor
             name: Running
-          - entity: binary_sensor.lg_thermav_r290_defrost
+          - entity: binary_sensor.lg_therma_v_r290_defrost
             name: Defrost
 
       # --- Per day (option: Compressor statistics) ----------------------------
@@ -131,7 +131,7 @@ views:
         stat_types:
           - change
         entities:
-          - entity: sensor.lg_thermav_r290_compressor_starts
+          - entity: sensor.lg_therma_v_r290_compressor_starts
             name: Starts
       - type: statistics-graph
         title: Compressor hours per day
@@ -141,13 +141,13 @@ views:
         stat_types:
           - change
         entities:
-          - entity: sensor.lg_thermav_r290_compressor_run_time
+          - entity: sensor.lg_therma_v_r290_compressor_run_time
             name: Hours
       - type: history-graph
         title: Average compressor speed while running, per day
         hours_to_show: 720
         entities:
-          - entity: sensor.lg_thermav_r290_compressor_average_speed
+          - entity: sensor.lg_therma_v_r290_compressor_average_speed
             name: Average rpm
 
       # --- Energy per day (option: External electricity meter / Energy registers)
@@ -159,9 +159,9 @@ views:
         stat_types:
           - change
         entities:
-          - entity: sensor.lg_thermav_r290_thermal_energy_calculated
+          - entity: sensor.lg_therma_v_r290_thermal_energy_calculated
             name: Heat (flow × ΔT)
-          - entity: sensor.lg_thermav_r290_thermal_energy_space_heating
+          - entity: sensor.lg_therma_v_r290_thermal_energy_space_heating
             name: Heat (unit's counter)
 ```
 

@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Thanks for reporting. The **diagnostics file** answers most questions up front:
-        *Settings → Devices & Services → LG ThermaV R290 → ⋮ → Download diagnostics*.
+        *Settings → Devices & Services → LG Therma V R290 → ⋮ → Download diagnostics*.
         It contains no host or serial port.
 
   - type: textarea
@@ -97,5 +97,5 @@ body:
     id: logs
     attributes:
       label: Log lines
-      description: Lines mentioning `lg_thermav_r290` from *Settings → System → Logs*. For more detail, enable debug logging on the integration first, reproduce, then disable it.
+      description: Lines mentioning `lg_therma_v_r290` from *Settings → System → Logs*. For more detail, enable debug logging on the integration first, reproduce, then disable it.
       render: text

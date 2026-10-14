@@ -1,4 +1,4 @@
-"""Select platform for LG ThermaV R290 — operation mode and control method.
+"""Select platform for LG Therma V R290 — operation mode and control method.
 
 Keys follow docs/naming.md: the entity key is the name as an entity id slug,
 the data key is ``holding_<key>``.

@@ -1,6 +1,6 @@
-"""Constants for the LG ThermaV R290 integration."""
+"""Constants for the LG Therma V R290 integration."""
 
-DOMAIN = "lg_thermav_r290"
+DOMAIN = "lg_therma_v_r290"
 
 CONF_CONNECTION_TYPE = "connection_type"
 CONF_SLAVE_ID = "slave_id"
