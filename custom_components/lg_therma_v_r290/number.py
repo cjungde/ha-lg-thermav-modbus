@@ -23,7 +23,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from . import limits, power_limit
 from .const import CONF_MODULATION_LIMIT, CONF_POWER_LIMIT, DOMAIN
 from .coordinator import LGThermaVCoordinator
-from .entity import LGEntity, remove_entities
+from .entity import LGEntity, english_entity_ids, remove_entities
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -149,7 +149,7 @@ async def async_setup_entry(
         entities.append(LGMaxElectricalPowerNumber(coordinator, entry))
     else:
         remove_entities(hass, entry, "number", (power_limit.KEY_MAX_ELECTRICAL_POWER,))
-    async_add_entities(entities)
+    async_add_entities(english_entity_ids("number", entities))
 
 
 class LGNumber(LGEntity, NumberEntity):
@@ -191,7 +191,6 @@ class LGMaxCompressorModulationNumber(LGEntity, NumberEntity):
     so the slider shows what the unit actually stored, not what was sent.
     """
 
-    _attr_name = "Max Compressor Modulation"
     _attr_icon = "mdi:engine-outline"
     _attr_native_min_value = limits.MODULATION_LIMIT_MIN
     _attr_native_max_value = limits.MODULATION_LIMIT_MAX
@@ -243,7 +242,6 @@ class LGMaxElectricalPowerNumber(LGEntity, NumberEntity):
     unit actually stored.
     """
 
-    _attr_name = "Max Electrical Power"
     _attr_icon = "mdi:flash"
     _attr_device_class = NumberDeviceClass.POWER
     _attr_native_min_value = power_limit.POWER_LIMIT_MIN_KW

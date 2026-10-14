@@ -73,7 +73,7 @@ from .energy import (
     KIND_POWER,
     EnergyRegister,
 )
-from .entity import LGEntity, remove_entities
+from .entity import LGEntity, english_entity_ids, remove_entities
 from .experimental import EXPERIMENTAL_REGISTERS, ExperimentalRegister
 
 # Data keys the calculated sensors read.
@@ -507,7 +507,7 @@ async def async_setup_entry(
         entities.extend(LGPollSensor(coordinator, entry, d) for d in _POLL_SENSORS)
     else:
         remove_entities(hass, entry, "sensor", tuple(d.key for d in _POLL_SENSORS))
-    async_add_entities(entities)
+    async_add_entities(english_entity_ids("sensor", entities))
 
 
 # --- Entities ---------------------------------------------------------------
@@ -594,7 +594,6 @@ class LGEnergySensor(LGEntity, SensorEntity):
     ) -> None:
         super().__init__(coordinator, entry, register.key)
         self._data_key = register.data_key
-        self._attr_name = register.name
         self._attr_extra_state_attributes = {"modbus_register": register.modbus_number}
         if register.kind == KIND_POWER:
             self._attr_device_class = SensorDeviceClass.POWER
@@ -633,9 +632,13 @@ class LGExperimentalSensor(LGEntity, SensorEntity):
         entry: ConfigEntry,
         register: ExperimentalRegister,
     ) -> None:
-        super().__init__(coordinator, entry, register.key)
+        # One translation per register type, with the number as placeholder:
+        # "Experimental Input 30015" / "Experimentelles Input-Register 30015".
+        super().__init__(
+            coordinator, entry, register.key, f"experimental_{register.kind}"
+        )
+        self._attr_translation_placeholders = {"register": str(register.modbus_number)}
         self._data_key = register.data_key
-        self._attr_name = register.name
         self._attr_extra_state_attributes = {
             "modbus_register": register.modbus_number,
             "register_type": register.kind,
@@ -693,7 +696,6 @@ class LGExternalMeterCopSensor(LGEntity, SensorEntity):
     cop.MIN_ELECTRICAL_POWER_W (standby). Updated on every poll.
     """
 
-    _attr_name = "COP (External Meter)"
     _attr_icon = "mdi:heat-pump-outline"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 2
@@ -723,7 +725,6 @@ class LGThermalEnergySensor(LGEntity, RestoreEntity, SensorEntity):
     across restarts; the time Home Assistant is down is a gap, not counted.
     """
 
-    _attr_name = "Thermal Energy (Calculated)"
     _attr_icon = "mdi:heat-wave"
     _attr_device_class = SensorDeviceClass.ENERGY
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
@@ -775,7 +776,6 @@ class LGCumulativeCopSensor(LGEntity, RestoreEntity, SensorEntity):
     restarts. Switching the option off and on again starts a new period.
     """
 
-    _attr_name = "COP Cumulative (External Meter)"
     _attr_icon = "mdi:chart-timeline-variant"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 2
@@ -865,7 +865,6 @@ class LGCompressorStartsSensor(LGEntity, RestoreEntity, SensorEntity):
     restart.
     """
 
-    _attr_name = "Compressor Starts"
     _attr_icon = "mdi:counter"
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
 
@@ -898,7 +897,6 @@ class LGCompressorStartsSensor(LGEntity, RestoreEntity, SensorEntity):
 class LGCompressorRunTimeSensor(LGEntity, SensorEntity):
     """Hours the compressor ran, a total counter."""
 
-    _attr_name = "Compressor Run Time"
     _attr_icon = "mdi:timer-cog-outline"
     _attr_device_class = SensorDeviceClass.DURATION
     _attr_native_unit_of_measurement = UnitOfTime.HOURS
@@ -917,7 +915,6 @@ class LGCompressorRunTimeSensor(LGEntity, SensorEntity):
 class LGCompressorAverageSpeedSensor(LGEntity, SensorEntity):
     """Average compressor speed while running, today (reset at midnight)."""
 
-    _attr_name = "Compressor Average Speed"
     _attr_icon = "mdi:speedometer"
     _attr_native_unit_of_measurement = "rpm"
     _attr_state_class = SensorStateClass.MEASUREMENT

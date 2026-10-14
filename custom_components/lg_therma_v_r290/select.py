@@ -24,7 +24,7 @@ from .const import (
     OPERATION_MODE_TO_VALUE,
 )
 from .coordinator import LGThermaVCoordinator
-from .entity import LGEntity
+from .entity import LGEntity, english_entity_ids
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -68,7 +68,10 @@ async def async_setup_entry(
 ) -> None:
     coordinator: LGThermaVCoordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(
-        LGSelect(coordinator, entry, description) for description in _SELECTS
+        english_entity_ids(
+            "select",
+            (LGSelect(coordinator, entry, description) for description in _SELECTS),
+        )
     )
 
 

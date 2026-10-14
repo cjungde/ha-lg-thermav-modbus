@@ -19,7 +19,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, ENERGY_STATE_LABELS
 from .coordinator import LGThermaVCoordinator
-from .entity import LGEntity
+from .entity import LGEntity, english_entity_ids
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -86,7 +86,7 @@ async def async_setup_entry(
         LGEnergyStateBinarySensor(coordinator, entry, value, label)
         for value, label in ENERGY_STATE_LABELS.items()
     )
-    async_add_entities(entities)
+    async_add_entities(english_entity_ids("binary_sensor", entities))
 
 
 class LGBinarySensor(LGEntity, BinarySensorEntity):
@@ -123,7 +123,6 @@ class LGEnergyStateBinarySensor(LGEntity, BinarySensorEntity):
     ) -> None:
         super().__init__(coordinator, entry, _energy_state_key(label))
         self._value = value
-        self._attr_name = f"Energy State: {label}"
 
     @property
     def is_on(self) -> bool | None:

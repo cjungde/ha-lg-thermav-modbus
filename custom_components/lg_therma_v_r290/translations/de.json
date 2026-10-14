@@ -44,7 +44,7 @@
               "energy_registers": "Einschalten"
             },
             "data_description": {
-              "energy_registers": "Legt 13 Sensoren an, nur lesend:\n\n- **Electrical Power Total System** — W, gesamtes System inkl. Heizstab (Input 30035–36)\n- **Electrical Power Heat Pump** — W (30037–38)\n- **Electrical Energy Total / Space Heating / Space Cooling / DHW** — kWh-Zähler (30039–46)\n- **Demand vs Supply** — Stufe 0–12, ohne Einheit (30047–48)\n- **Thermal Power (Reported)** — W, Angabe des Geräts (30049–50)\n- **Thermal Energy Space Heating** — kWh-Zähler (30051–52)\n- **COP (Reported)** — thermische ÷ elektrische Leistung der Wärmepumpe\n- **COP System (Reported)** — thermische ÷ elektrische Leistung des gesamten Systems\n- **COP (Calculated)** — Durchfluss × ΔT ÷ elektrische Leistung\n- **COP Heating (Cumulative)** — thermische ÷ elektrische Energie für die Raumheizung\n\nDie elektrischen Werte des Geräts liegen meist zu hoch; für Abrechnung oder einen verlässlichen COP einen separaten Zähler verwenden."
+              "energy_registers": "Legt 13 Sensoren an, nur lesend:\n\n- **Elektrische Leistung Gesamtsystem** — W, gesamtes System inkl. Heizstab (Input 30035–36)\n- **Elektrische Leistung Wärmepumpe** — W (30037–38)\n- **Elektrische Energie gesamt / Raumheizung / Raumkühlung / Warmwasser** — kWh-Zähler (30039–46)\n- **Bedarf vs. Versorgung** — Stufe 0–12, ohne Einheit (30047–48)\n- **Thermische Leistung (gemeldet)** — W, Angabe des Geräts (30049–50)\n- **Thermische Energie Raumheizung** — kWh-Zähler (30051–52)\n- **COP (gemeldet)** — thermische ÷ elektrische Leistung der Wärmepumpe\n- **COP System (gemeldet)** — thermische ÷ elektrische Leistung des gesamten Systems\n- **COP (berechnet)** — Durchfluss × ΔT ÷ elektrische Leistung\n- **COP Heizen (kumuliert)** — thermische ÷ elektrische Energie für die Raumheizung\n\nDie elektrischen Werte des Geräts liegen meist zu hoch; für Abrechnung oder einen verlässlichen COP einen separaten Zähler verwenden."
             }
           },
           "compressor_modulation_limit": {
@@ -54,7 +54,7 @@
               "compressor_modulation_limit": "Einschalten"
             },
             "data_description": {
-              "compressor_modulation_limit": "Legt an:\n\n- **Max Compressor Modulation** — Regler 40–100 % (Holding 40024). Wie weit der Verdichter modulieren darf; leer, solange keine Begrenzung gesetzt ist."
+              "compressor_modulation_limit": "Legt an:\n\n- **Max. Verdichtermodulation** — Regler 40–100 % (Holding 40024). Wie weit der Verdichter modulieren darf; leer, solange keine Begrenzung gesetzt ist."
             }
           },
           "power_limit": {
@@ -64,7 +64,7 @@
               "power_limit": "Einschalten"
             },
             "data_description": {
-              "power_limit": "Legt an:\n\n- **Power Limit** — Schalter (Coil 00007), schaltet die Begrenzung ein\n- **Max Electrical Power** — 0,1–25,0 kW (Holding 40025), der Grenzwert"
+              "power_limit": "Legt an:\n\n- **Leistungsbegrenzung** — Schalter (Coil 00007), schaltet die Begrenzung ein\n- **Max. elektrische Leistung** — 0,1–25,0 kW (Holding 40025), der Grenzwert"
             }
           },
           "emergency_operation_button": {
@@ -74,7 +74,7 @@
               "emergency_operation_button": "Einschalten"
             },
             "data_description": {
-              "emergency_operation_button": "Legt an:\n\n- **Start Emergency Operation** — Taste (Coil 00006)\n\nOb Notbetrieb möglich ist, zeigen *Emergency Heating/Cooling Available* und *Emergency DHW Available*."
+              "emergency_operation_button": "Legt an:\n\n- **Notbetrieb starten** — Taste (Coil 00006)\n\nOb Notbetrieb möglich ist, zeigen *Notbetrieb Heizen/Kühlen verfügbar* und *Notbetrieb Warmwasser verfügbar*."
             }
           },
           "experimental_registers": {
@@ -84,7 +84,7 @@
               "experimental_registers": "Einschalten"
             },
             "data_description": {
-              "experimental_registers": "Legt 18 Diagnose-Sensoren mit den Rohwerten von Registern an, die nicht im Handbuch stehen, nur lesend:\n\n- **Experimental Input 30015, 30018, 30064**\n- **Experimental Holding 40011 … 40023, 40063, 40064**\n\nEin Block, auf den das Gerät nicht antwortet, wird bis zum nächsten Neustart nicht mehr abgefragt."
+              "experimental_registers": "Legt 18 Diagnose-Sensoren mit den Rohwerten von Registern an, die nicht im Handbuch stehen, nur lesend:\n\n- **Experimentelles Input-Register 30015, 30018, 30064**\n- **Experimentelles Holding-Register 40011 … 40023, 40063, 40064**\n\nEin Block, auf den das Gerät nicht antwortet, wird bis zum nächsten Neustart nicht mehr abgefragt."
             }
           },
           "compressor_statistics": {
@@ -94,7 +94,7 @@
               "compressor_statistics": "Einschalten"
             },
             "data_description": {
-              "compressor_statistics": "Legt an:\n\n- **Compressor Starts** — ein Zähler; Starts pro Tag oder Stunde liefert die Statistik. Attribut: Dauer des letzten Laufs\n- **Compressor Run Time** — Stunden, ein Zähler\n- **Compressor Average Speed** — Drehzahl während des Laufs, heute (Rücksetzung um Mitternacht)\n\nAlle drei bleiben über Neustarts erhalten."
+              "compressor_statistics": "Legt an:\n\n- **Verdichterstarts** — ein Zähler; Starts pro Tag oder Stunde liefert die Statistik. Attribut: Dauer des letzten Laufs\n- **Verdichterlaufzeit** — Stunden, ein Zähler\n- **Mittlere Verdichterdrehzahl** — Drehzahl während des Laufs, heute (Rücksetzung um Mitternacht)\n\nAlle drei bleiben über Neustarts erhalten."
             }
           },
           "poll_statistics": {
@@ -104,7 +104,7 @@
               "poll_statistics": "Einschalten"
             },
             "data_description": {
-              "poll_statistics": "Legt 2 Diagnose-Sensoren an:\n\n- **Poll Duration** — ms pro Abfrage, mit der Zahl der Lesezugriffe als Attribut\n- **Bus Load** — Abfragedauer in % des Abfrageintervalls"
+              "poll_statistics": "Legt 2 Diagnose-Sensoren an:\n\n- **Abfragedauer** — ms pro Abfrage, mit der Zahl der Lesezugriffe als Attribut\n- **Buslast** — Abfragedauer in % des Abfrageintervalls"
             }
           }
         }
@@ -162,7 +162,7 @@
               "energy_registers": "Einschalten"
             },
             "data_description": {
-              "energy_registers": "Legt 13 Sensoren an, nur lesend:\n\n- **Electrical Power Total System** — W, gesamtes System inkl. Heizstab (Input 30035–36)\n- **Electrical Power Heat Pump** — W (30037–38)\n- **Electrical Energy Total / Space Heating / Space Cooling / DHW** — kWh-Zähler (30039–46)\n- **Demand vs Supply** — Stufe 0–12, ohne Einheit (30047–48)\n- **Thermal Power (Reported)** — W, Angabe des Geräts (30049–50)\n- **Thermal Energy Space Heating** — kWh-Zähler (30051–52)\n- **COP (Reported)** — thermische ÷ elektrische Leistung der Wärmepumpe\n- **COP System (Reported)** — thermische ÷ elektrische Leistung des gesamten Systems\n- **COP (Calculated)** — Durchfluss × ΔT ÷ elektrische Leistung\n- **COP Heating (Cumulative)** — thermische ÷ elektrische Energie für die Raumheizung\n\nDie elektrischen Werte des Geräts liegen meist zu hoch; für Abrechnung oder einen verlässlichen COP einen separaten Zähler verwenden."
+              "energy_registers": "Legt 13 Sensoren an, nur lesend:\n\n- **Elektrische Leistung Gesamtsystem** — W, gesamtes System inkl. Heizstab (Input 30035–36)\n- **Elektrische Leistung Wärmepumpe** — W (30037–38)\n- **Elektrische Energie gesamt / Raumheizung / Raumkühlung / Warmwasser** — kWh-Zähler (30039–46)\n- **Bedarf vs. Versorgung** — Stufe 0–12, ohne Einheit (30047–48)\n- **Thermische Leistung (gemeldet)** — W, Angabe des Geräts (30049–50)\n- **Thermische Energie Raumheizung** — kWh-Zähler (30051–52)\n- **COP (gemeldet)** — thermische ÷ elektrische Leistung der Wärmepumpe\n- **COP System (gemeldet)** — thermische ÷ elektrische Leistung des gesamten Systems\n- **COP (berechnet)** — Durchfluss × ΔT ÷ elektrische Leistung\n- **COP Heizen (kumuliert)** — thermische ÷ elektrische Energie für die Raumheizung\n\nDie elektrischen Werte des Geräts liegen meist zu hoch; für Abrechnung oder einen verlässlichen COP einen separaten Zähler verwenden."
             }
           },
           "compressor_modulation_limit": {
@@ -172,7 +172,7 @@
               "compressor_modulation_limit": "Einschalten"
             },
             "data_description": {
-              "compressor_modulation_limit": "Legt an:\n\n- **Max Compressor Modulation** — Regler 40–100 % (Holding 40024). Wie weit der Verdichter modulieren darf; leer, solange keine Begrenzung gesetzt ist."
+              "compressor_modulation_limit": "Legt an:\n\n- **Max. Verdichtermodulation** — Regler 40–100 % (Holding 40024). Wie weit der Verdichter modulieren darf; leer, solange keine Begrenzung gesetzt ist."
             }
           },
           "power_limit": {
@@ -182,7 +182,7 @@
               "power_limit": "Einschalten"
             },
             "data_description": {
-              "power_limit": "Legt an:\n\n- **Power Limit** — Schalter (Coil 00007), schaltet die Begrenzung ein\n- **Max Electrical Power** — 0,1–25,0 kW (Holding 40025), der Grenzwert"
+              "power_limit": "Legt an:\n\n- **Leistungsbegrenzung** — Schalter (Coil 00007), schaltet die Begrenzung ein\n- **Max. elektrische Leistung** — 0,1–25,0 kW (Holding 40025), der Grenzwert"
             }
           },
           "emergency_operation_button": {
@@ -192,7 +192,7 @@
               "emergency_operation_button": "Einschalten"
             },
             "data_description": {
-              "emergency_operation_button": "Legt an:\n\n- **Start Emergency Operation** — Taste (Coil 00006)\n\nOb Notbetrieb möglich ist, zeigen *Emergency Heating/Cooling Available* und *Emergency DHW Available*."
+              "emergency_operation_button": "Legt an:\n\n- **Notbetrieb starten** — Taste (Coil 00006)\n\nOb Notbetrieb möglich ist, zeigen *Notbetrieb Heizen/Kühlen verfügbar* und *Notbetrieb Warmwasser verfügbar*."
             }
           },
           "experimental_registers": {
@@ -202,7 +202,7 @@
               "experimental_registers": "Einschalten"
             },
             "data_description": {
-              "experimental_registers": "Legt 18 Diagnose-Sensoren mit den Rohwerten von Registern an, die nicht im Handbuch stehen, nur lesend:\n\n- **Experimental Input 30015, 30018, 30064**\n- **Experimental Holding 40011 … 40023, 40063, 40064**\n\nEin Block, auf den das Gerät nicht antwortet, wird bis zum nächsten Neustart nicht mehr abgefragt."
+              "experimental_registers": "Legt 18 Diagnose-Sensoren mit den Rohwerten von Registern an, die nicht im Handbuch stehen, nur lesend:\n\n- **Experimentelles Input-Register 30015, 30018, 30064**\n- **Experimentelles Holding-Register 40011 … 40023, 40063, 40064**\n\nEin Block, auf den das Gerät nicht antwortet, wird bis zum nächsten Neustart nicht mehr abgefragt."
             }
           },
           "compressor_statistics": {
@@ -212,7 +212,7 @@
               "compressor_statistics": "Einschalten"
             },
             "data_description": {
-              "compressor_statistics": "Legt an:\n\n- **Compressor Starts** — ein Zähler; Starts pro Tag oder Stunde liefert die Statistik. Attribut: Dauer des letzten Laufs\n- **Compressor Run Time** — Stunden, ein Zähler\n- **Compressor Average Speed** — Drehzahl während des Laufs, heute (Rücksetzung um Mitternacht)\n\nAlle drei bleiben über Neustarts erhalten."
+              "compressor_statistics": "Legt an:\n\n- **Verdichterstarts** — ein Zähler; Starts pro Tag oder Stunde liefert die Statistik. Attribut: Dauer des letzten Laufs\n- **Verdichterlaufzeit** — Stunden, ein Zähler\n- **Mittlere Verdichterdrehzahl** — Drehzahl während des Laufs, heute (Rücksetzung um Mitternacht)\n\nAlle drei bleiben über Neustarts erhalten."
             }
           },
           "poll_statistics": {
@@ -222,7 +222,7 @@
               "poll_statistics": "Einschalten"
             },
             "data_description": {
-              "poll_statistics": "Legt 2 Diagnose-Sensoren an:\n\n- **Poll Duration** — ms pro Abfrage, mit der Zahl der Lesezugriffe als Attribut\n- **Bus Load** — Abfragedauer in % des Abfrageintervalls"
+              "poll_statistics": "Legt 2 Diagnose-Sensoren an:\n\n- **Abfragedauer** — ms pro Abfrage, mit der Zahl der Lesezugriffe als Attribut\n- **Buslast** — Abfragedauer in % des Abfrageintervalls"
             }
           },
           "external_meter": {
@@ -233,8 +233,8 @@
               "external_energy_sensor": "Energiesensor (Wh oder kWh, ein Gesamtzähler)"
             },
             "data_description": {
-              "external_power_sensor": "Legt an:\n\n- **COP (External Meter)** — thermische Leistung aus Durchfluss × ΔT ÷ Leistung dieses Sensors, der COP des Moments; kein Wert unter 100 W",
-              "external_energy_sensor": "Legt an:\n\n- **Thermal Energy (Calculated)** — Durchfluss × ΔT über die Zeit aufsummiert, kWh\n- **COP Cumulative (External Meter)** — diese thermische Energie ÷ Zuwachs dieses Zählers, beides gezählt ab dem Setzen dieses Sensors: die Jahresarbeitszahl (JAZ) über diesen Zeitraum\n\nBeide bleiben über Neustarts erhalten. Ein anderer Sensor beginnt einen neuen Zeitraum."
+              "external_power_sensor": "Legt an:\n\n- **COP (externer Zähler)** — thermische Leistung aus Durchfluss × ΔT ÷ Leistung dieses Sensors, der COP des Moments; kein Wert unter 100 W",
+              "external_energy_sensor": "Legt an:\n\n- **Thermische Energie (berechnet)** — Durchfluss × ΔT über die Zeit aufsummiert, kWh\n- **COP kumuliert (externer Zähler)** — diese thermische Energie ÷ Zuwachs dieses Zählers, beides gezählt ab dem Setzen dieses Sensors: die Jahresarbeitszahl (JAZ) über diesen Zeitraum\n\nBeide bleiben über Neustarts erhalten. Ein anderer Sensor beginnt einen neuen Zeitraum."
             }
           }
         }
@@ -242,6 +242,317 @@
     },
     "progress": {
       "detect": "Prüfe, auf welche optionalen Register dieses Gerät antwortet. Ein Gerät, das eine Gruppe nicht liefert, antwortet gar nicht; das kann bis zu etwa 30 Sekunden dauern."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "water_flow": {
+        "name": "Wasserdurchfluss"
+      },
+      "water_pump": {
+        "name": "Wasserpumpe"
+      },
+      "external_water_pump": {
+        "name": "Externe Wasserpumpe"
+      },
+      "compressor": {
+        "name": "Verdichter"
+      },
+      "defrost": {
+        "name": "Abtauen"
+      },
+      "dhw_heating": {
+        "name": "Warmwasserbereitung"
+      },
+      "dhw_disinfection": {
+        "name": "Warmwasser-Desinfektion"
+      },
+      "silent_mode": {
+        "name": "Ruhemodus"
+      },
+      "cooling_active": {
+        "name": "Kühlen aktiv"
+      },
+      "solar_pump": {
+        "name": "Solarpumpe"
+      },
+      "backup_heater_step_1": {
+        "name": "Heizstab Stufe 1"
+      },
+      "backup_heater_step_2": {
+        "name": "Heizstab Stufe 2"
+      },
+      "dhw_boost_heater": {
+        "name": "Warmwasser-Zusatzheizung"
+      },
+      "fault": {
+        "name": "Störung"
+      },
+      "emergency_heating_cooling_available": {
+        "name": "Notbetrieb Heizen/Kühlen verfügbar"
+      },
+      "emergency_dhw_available": {
+        "name": "Notbetrieb Warmwasser verfügbar"
+      },
+      "mixing_pump": {
+        "name": "Mischerpumpe"
+      },
+      "energy_state_not_used": {
+        "name": "Energiezustand: Nicht verwendet"
+      },
+      "energy_state_forced_off": {
+        "name": "Energiezustand: Zwangsabschaltung"
+      },
+      "energy_state_normal_operation": {
+        "name": "Energiezustand: Normalbetrieb"
+      },
+      "energy_state_on_recommendation": {
+        "name": "Energiezustand: Einschaltempfehlung"
+      },
+      "energy_state_on_command": {
+        "name": "Energiezustand: Einschaltbefehl"
+      },
+      "energy_state_on_command_step_2": {
+        "name": "Energiezustand: Einschaltbefehl Stufe 2"
+      },
+      "energy_state_on_recommendation_step_1": {
+        "name": "Energiezustand: Einschaltempfehlung Stufe 1"
+      },
+      "energy_state_energy_saving_mode": {
+        "name": "Energiezustand: Energiesparmodus"
+      },
+      "energy_state_super_energy_saving_mode": {
+        "name": "Energiezustand: Super-Energiesparmodus"
+      }
+    },
+    "button": {
+      "start_disinfection": {
+        "name": "Desinfektion starten"
+      },
+      "start_emergency_operation": {
+        "name": "Notbetrieb starten"
+      }
+    },
+    "number": {
+      "target_temperature_circuit_1_radiators": {
+        "name": "Solltemperatur Kreis 1 (Heizkörper)"
+      },
+      "target_temperature_circuit_2_underfloor": {
+        "name": "Solltemperatur Kreis 2 (Fußbodenheizung)"
+      },
+      "dhw_target_temperature": {
+        "name": "Warmwasser-Solltemperatur"
+      },
+      "setpoint_shift_circuit_1": {
+        "name": "Sollwertverschiebung Kreis 1"
+      },
+      "setpoint_shift_circuit_2": {
+        "name": "Sollwertverschiebung Kreis 2"
+      },
+      "max_compressor_modulation": {
+        "name": "Max. Verdichtermodulation"
+      },
+      "max_electrical_power": {
+        "name": "Max. elektrische Leistung"
+      }
+    },
+    "select": {
+      "operation_mode": {
+        "name": "Betriebsart"
+      },
+      "control_method": {
+        "name": "Regelungsart"
+      }
+    },
+    "sensor": {
+      "inlet_temperature": {
+        "name": "Rücklauftemperatur"
+      },
+      "outlet_temperature": {
+        "name": "Vorlauftemperatur"
+      },
+      "backup_heater_outlet_temperature": {
+        "name": "Vorlauftemperatur nach Heizstab"
+      },
+      "dhw_temperature": {
+        "name": "Warmwassertemperatur"
+      },
+      "solar_collector_temperature": {
+        "name": "Solarkollektortemperatur"
+      },
+      "room_air_temperature_circuit_1": {
+        "name": "Raumlufttemperatur Kreis 1"
+      },
+      "room_air_temperature_circuit_2": {
+        "name": "Raumlufttemperatur Kreis 2"
+      },
+      "flow_temperature_circuit_2": {
+        "name": "Vorlauftemperatur Kreis 2"
+      },
+      "outdoor_temperature": {
+        "name": "Außentemperatur"
+      },
+      "flow_rate": {
+        "name": "Durchfluss"
+      },
+      "water_pressure": {
+        "name": "Wasserdruck"
+      },
+      "liquid_gas_temperature": {
+        "name": "Flüssiggastemperatur"
+      },
+      "suction_temperature": {
+        "name": "Sauggastemperatur"
+      },
+      "hot_gas_temperature": {
+        "name": "Heißgastemperatur"
+      },
+      "temperature_before_evaporator": {
+        "name": "Temperatur vor Verdampfer"
+      },
+      "temperature_after_evaporator": {
+        "name": "Temperatur nach Verdampfer"
+      },
+      "high_pressure_condenser": {
+        "name": "Hochdruck (Verflüssiger)"
+      },
+      "low_pressure_evaporator": {
+        "name": "Niederdruck (Verdampfer)"
+      },
+      "compressor_speed": {
+        "name": "Verdichterdrehzahl"
+      },
+      "error_code": {
+        "name": "Fehlercode"
+      },
+      "operation_cycle_odu": {
+        "name": "Betriebszyklus (Außeneinheit)"
+      },
+      "energy_control_signal": {
+        "name": "Energiesteuersignal"
+      },
+      "device_group": {
+        "name": "Gerätegruppe"
+      },
+      "product_information": {
+        "name": "Produktinformation"
+      },
+      "target_room_air_temperature_circuit_1": {
+        "name": "Soll-Raumlufttemperatur Kreis 1"
+      },
+      "target_room_air_temperature_circuit_2": {
+        "name": "Soll-Raumlufttemperatur Kreis 2"
+      },
+      "operation_mode": {
+        "name": "Betriebsart"
+      },
+      "control_method": {
+        "name": "Regelungsart"
+      },
+      "operation_state_odu": {
+        "name": "Betriebszustand (Außeneinheit)"
+      },
+      "energy_state": {
+        "name": "Energiezustand"
+      },
+      "energy_state_reported": {
+        "name": "Energiezustand (gemeldet)"
+      },
+      "thermal_power_calculated": {
+        "name": "Thermische Leistung (berechnet)"
+      },
+      "thermal_power_heating_circuit_calculated": {
+        "name": "Thermische Leistung Heizkreis (berechnet)"
+      },
+      "thermal_power_dhw_calculated": {
+        "name": "Thermische Leistung Warmwasser (berechnet)"
+      },
+      "electrical_power_total_system": {
+        "name": "Elektrische Leistung Gesamtsystem"
+      },
+      "electrical_power_heat_pump": {
+        "name": "Elektrische Leistung Wärmepumpe"
+      },
+      "electrical_energy_total": {
+        "name": "Elektrische Energie gesamt"
+      },
+      "electrical_energy_space_heating": {
+        "name": "Elektrische Energie Raumheizung"
+      },
+      "electrical_energy_space_cooling": {
+        "name": "Elektrische Energie Raumkühlung"
+      },
+      "electrical_energy_dhw": {
+        "name": "Elektrische Energie Warmwasser"
+      },
+      "demand_vs_supply": {
+        "name": "Bedarf vs. Versorgung"
+      },
+      "thermal_power_reported": {
+        "name": "Thermische Leistung (gemeldet)"
+      },
+      "thermal_energy_space_heating": {
+        "name": "Thermische Energie Raumheizung"
+      },
+      "cop_reported": {
+        "name": "COP (gemeldet)"
+      },
+      "cop_system_reported": {
+        "name": "COP System (gemeldet)"
+      },
+      "cop_calculated": {
+        "name": "COP (berechnet)"
+      },
+      "cop_heating_cumulative": {
+        "name": "COP Heizen (kumuliert)"
+      },
+      "poll_duration": {
+        "name": "Abfragedauer"
+      },
+      "compressor_starts": {
+        "name": "Verdichterstarts"
+      },
+      "compressor_run_time": {
+        "name": "Verdichterlaufzeit"
+      },
+      "compressor_average_speed": {
+        "name": "Mittlere Verdichterdrehzahl"
+      },
+      "cop_external_meter": {
+        "name": "COP (externer Zähler)"
+      },
+      "thermal_energy_calculated": {
+        "name": "Thermische Energie (berechnet)"
+      },
+      "cop_cumulative_external_meter": {
+        "name": "COP kumuliert (externer Zähler)"
+      },
+      "bus_load": {
+        "name": "Buslast"
+      },
+      "experimental_input": {
+        "name": "Experimentelles Input-Register {register}"
+      },
+      "experimental_holding": {
+        "name": "Experimentelles Holding-Register {register}"
+      }
+    },
+    "switch": {
+      "heating_cooling": {
+        "name": "Heizen/Kühlen"
+      },
+      "dhw": {
+        "name": "Warmwasser"
+      },
+      "silent_mode": {
+        "name": "Ruhemodus"
+      },
+      "emergency_stop": {
+        "name": "Notaus"
+      },
+      "power_limit": {
+        "name": "Leistungsbegrenzung"
+      }
     }
   }
 }

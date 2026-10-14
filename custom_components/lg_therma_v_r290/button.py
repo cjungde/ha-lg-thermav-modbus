@@ -20,7 +20,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_EMERGENCY_OPERATION, DOMAIN
 from .coordinator import LGThermaVCoordinator
-from .entity import LGEntity, remove_entities
+from .entity import LGEntity, english_entity_ids, remove_entities
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -63,7 +63,7 @@ async def async_setup_entry(
         entities.append(LGButton(coordinator, entry, EMERGENCY_OPERATION_BUTTON))
     else:
         remove_entities(hass, entry, "button", (EMERGENCY_OPERATION_BUTTON.key,))
-    async_add_entities(entities)
+    async_add_entities(english_entity_ids("button", entities))
 
 
 class LGButton(LGEntity, ButtonEntity):

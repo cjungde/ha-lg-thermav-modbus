@@ -7,6 +7,14 @@ automatically (see [Migration from 1.2.0 and earlier](#migration-from-120-and-ea
 
 ## Entity names
 
+Names come from the translations: every entity's translation key is its key
+(below), and `strings.json` / `translations/en.json` hold the English name,
+`translations/de.json` the German one, under `entity.<platform>.<key>.name`.
+The experimental sensors share one translation per register type, with the
+number as placeholder (`Experimental Input {register}`). A new entity needs
+its name in all three files; `tests_ha/test_translations.py` checks that.
+The rules below are for the English name, which the key is made from.
+
 - **English, title case, no abbreviations**: *Outdoor Temperature*, not
   *outside_temp*; *Heating/Cooling*, not *Hauptschalter*. Name what the
   register does per the manual: coil 0 switches space heating/cooling, not the
@@ -48,6 +56,12 @@ name *LG Therma V R290*, the entity id is then `<platform>.lg_therma_v_r290_<key
 | COP System (Reported) | `cop_system_reported` | `sensor.lg_therma_v_r290_cop_system_reported` |
 | Energy State: Normal Operation | `energy_state_normal_operation` | `binary_sensor.lg_therma_v_r290_energy_state_normal_operation` |
 | Experimental Input 30015 | `experimental_input_30015` | `sensor.lg_therma_v_r290_experimental_input_30015` |
+
+Entity ids stay English in every language: Home Assistant would make them
+from the name in the system language, so the integration suggests
+`<platform>.<device name as id>_<key>` itself (`english_entity_ids` in
+`entity.py`). Changing the language later keeps every entity id; only the
+names follow.
 
 So key, unique id and entity id can be read off the name, and
 `tests/test_migration.py` checks that every key is the slug of its name.
