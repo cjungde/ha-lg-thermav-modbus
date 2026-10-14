@@ -301,12 +301,32 @@ Which of the two follows SG-Ready on a 12 kW has not been checked yet; compare b
 
 ## 13. Keeping history
 
-The integration's entities have new ids, so their history starts empty. Two ways to keep the old history in view:
+**The setup takes the history over for you.** The YAML entities had a `unique_id`, so after you remove the package and restart, they stay in Home Assistant's entity registry (as *unavailable*), with their history and long-term statistics. When you then add the integration, its setup finds them and, after the options, shows a page listing which YAML entity continues as which integration entity, and which are left alone and why. With **Take over the history** ticked (the default), for each pair it
 
-- **Side by side in a history graph.** The old YAML entities' recorded history stays in the database until the recorder purges it (long-term statistics stay longer). Put old and new entity in one history card for the overlap.
-- **Rename to the old id.** After removing the YAML package and restarting, the old YAML entities stay in the entity registry as *unavailable* (they had a `unique_id`), and their ids stay taken. Delete the old entity first (*Settings → Entities*, select it, *Delete*), then give the integration entity the old id in its entity settings (for example `sensor.lg_thermav_r290_outdoor_temperature` → `sensor.hp_outside_temp`). From then on its states are recorded under the old id, so the graph continues the old history. Do it early: whatever was recorded under the new id before the rename stays with that id, and Home Assistant may log that it could not move it because the old id is already in use. **Only do this where the value means the same thing in the same unit.** Do not do it for input 16 (scale differs), input 17 (gone), Demand vs Supply (% → no unit), the energy counters if you rely on their long-term statistics (`total` → `total_increasing`), or *Energy State* (rename `energy_state_reported` instead, which reads the same register as *HP Energy State*; its values are English, so the old German states do not continue). Check *Developer tools → Statistics* afterwards for unit warnings.
+1. renames the YAML entity to the integration's entity id, e.g. `sensor.hp_inlet_temp` → `sensor.lg_thermav_r290_inlet_temperature`; Home Assistant's recorder moves the **history and the long-term statistics** to that id;
+2. removes the YAML entity from the registry; nothing is deleted from the database;
+3. creates the integration's entity under exactly that id, so the graphs and statistics continue where the YAML left off.
 
-Renaming makes the entity ids in this guide and the README no longer apply to your system; dashboards and automations then keep working unchanged.
+You keep the integration's entity ids (the ones in this guide and the README) and the full history. This happens once, at setup, before the integration records anything, so there is nothing to merge.
+
+**Taken over (52):** all temperatures (except input 16), pressures, flow rate, compressor speed, error code, ODU cycle, `hp_energy_state_input` (input 11, raw), the identity registers, the energy registers including the counters, the two holding room-air sensors, the switches `hp_hauptschalter`, `hp_dhw`, `hp_silent_mode`, `hp_emergency_stop_switch_off`, `hp_active_power_limit`, all binary sensors, and the template *HP Heating COP (Calculated)* → *COP Heating (Cumulative)*.
+
+**Left alone (16), with the reason the page gives:**
+
+| YAML | Why |
+|---|---|
+| `hp_temp_liquid_gas` | the integration scales input 16 by 0.1, the YAML by 0.001 |
+| `hp_temp_pipe_out` | input 17 is not a temperature |
+| `hp_Demand_vs_Supply` (`modbus.hp_DvS`) | % in the YAML, no unit here |
+| `hp_operation_mode`, `hp_control_method`, `hp_energy_state_input_raw`, *HP Energy State* | a number or German text in the YAML, English text here |
+| `hp_target_temp_circuit1/2`, `hp_dhw_target_temp`, `hp_shift_value_in_auto_mode_circuit1/2`, `hp_compressor_modulation`, `hp_power_limitation` | sensors in the YAML, *number* entities here: Home Assistant cannot move an entity id to another entity type |
+| `hp_dhw_desinfection_mode`, `hp_emergency_stop_switch_on` | switches in the YAML, *buttons* here |
+
+Their history stays under the old ids until the recorder purges it (long-term statistics stay longer); delete the leftover entities in *Settings → Entities* when you no longer need them.
+
+**Units spelled differently** (`U/min` → `rpm` for the compressor speed, `COP` → no unit for the COP): the history continues; Home Assistant then shows a note under *Developer tools → Statistics*; choose *Update the unit* there. The values are the same. The energy counters were in Wh and are shown in kWh: the recorder converts these itself.
+
+**Requirements:** the YAML package must be removed and Home Assistant restarted before you add the integration; an entity whose YAML is still loaded is listed with ⑥ and not taken over. The integration's entity ids must still be free, i.e. it has not been set up before (⑦ otherwise).
 
 ---
 
@@ -387,11 +407,11 @@ Replace `modbus.write_register` / `modbus.write_coil` calls and helper writes wi
 2. Export or screenshot dashboards and automations that use `hp_*` entities or the helpers.
 3. Remove (or comment out) the YAML package: the `modbus:` hub, `input_number:`, `input_select:`, `template:` and `automation:` parts. Restart Home Assistant.
 4. *Settings → Devices & Services → Add Integration → LG ThermaV R290*: connection type RTU, the same `/dev/serial/by-id/…` port, 9600, N, 1, slave 1.
-5. On the setup's last step, **Energy registers** and **Compressor modulation limit** come ticked when the unit answers on them; tick **Power limit** too if you used it. Experimental registers only if you want to record the undocumented addresses.
+5. On the options step, **Energy registers** and **Compressor modulation limit** come ticked when the unit answers on them; tick **Power limit** too if you used it. Experimental registers only if you want to record the undocumented addresses. The next page lists which YAML entities continue as which integration entities: keep **Take over the history** ticked ([§13](#13-keeping-history)).
 6. Enable the disabled-by-default sensors you used: target room air temperature circuit 1/2 (the old *room air temperature circuit 1/2 (holding)*).
 7. Compare the values from step 1 with the new entities. Compressor modulation shows *unknown* if no limit is set.
 8. Update the Energy dashboard. For the electrical consumption, prefer an external meter over the unit's own counters, which deviate from a smart meter (see [§10](#10-differences-that-can-bite)); the unit's thermal counter can be added if you use it.
 9. Rewrite automations and dashboards using the tables in §3–§9 and the examples in §14. Check [§10](#10-differences-that-can-bite) for every automation that uses input 16, input 17, Energy State, coil 3, coil 5, or setpoints outside the new ranges.
-10. Delete the old YAML entities left in the entity registry (they show as *unavailable*).
-11. Optionally rename integration entities to their old ids where the meaning is identical ([§13](#13-keeping-history)). This only works after step 10.
+10. Under *Developer tools → Statistics*, choose *Update the unit* where Home Assistant shows a note (compressor speed, COP).
+11. Delete the YAML entities that were not taken over (they show as *unavailable*) once you no longer need their old history.
 12. Delete the YAML file once everything works.

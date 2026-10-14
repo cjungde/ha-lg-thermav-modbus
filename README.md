@@ -57,7 +57,7 @@ Replaces a hand-crafted YAML Modbus configuration with native HA entities: senso
 ## Coming from a YAML setup?
 
 - **basti242's setup:** [entity translation table](docs/migration-from-yaml.md): every entity of [basti242/homeassistant_lg_therma_v_modbus](https://github.com/basti242/homeassistant_lg_therma_v_modbus) next to its counterpart here, including the differences that matter when switching (inverted water-flow bit, missing write entities).
-- **isarrider's setup (12 kW, RTU):** [migration guide](docs/migration-from-isarrider-yaml.md): every entity, helper, template sensor and automation of [isarrider/homeassistant_lg_therma_v_modbus](https://github.com/isarrider/homeassistant_lg_therma_v_modbus) mapped to the integration, which options to switch on, every difference in behaviour, how to keep history, and how to rewrite automations.
+- **isarrider's setup (12 kW, RTU):** [migration guide](docs/migration-from-isarrider-yaml.md): every entity, helper, template sensor and automation of [isarrider/homeassistant_lg_therma_v_modbus](https://github.com/isarrider/homeassistant_lg_therma_v_modbus) mapped to the integration, which options to switch on, every difference in behaviour, and how to rewrite automations. **The setup takes the YAML entities' history and long-term statistics over** to the integration's entities, so graphs and statistics continue.
 
 ---
 

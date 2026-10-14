@@ -108,6 +108,16 @@
             }
           }
         }
+      },
+      "yaml_takeover": {
+        "title": "LG ThermaV R290 — History from the YAML setup",
+        "description": "Entities of the YAML package (homeassistant_lg_therma_v_modbus) are still in Home Assistant, with their history. {count} of them have a counterpart here. Taking them over renames each to the integration's entity id, so its history and long-term statistics continue there, and removes the old entity. Nothing is deleted from the database.\n\n{takeover_table}\n\n⚠ The unit is spelled differently (e.g. U/min → rpm). The history continues; Home Assistant then asks once under *Developer tools → Statistics* to confirm the new unit. The values are the same.\n\nNot taken over, left as they are:\n\n{left_table}\n\n① the integration scales the value differently · ② not a temperature · ③ different unit · ④ text instead of a number, or different texts · ⑤ a different entity type here (number, button) · ⑥ the YAML is still loaded: remove it and restart first · ⑦ the entity id is already taken",
+        "data": {
+          "take_over": "Take over the history"
+        },
+        "data_description": {
+          "take_over": "Untick to start the integration's entities with an empty history; the YAML entities then stay as they are."
+        }
       }
     },
     "error": {
