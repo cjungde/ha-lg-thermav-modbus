@@ -1,4 +1,4 @@
-"""Config flow for the LG ThermaV R290 integration."""
+"""Config flow for the LG Therma V R290 integration."""
 
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ from homeassistant.helpers.selector import (
     NumberSelectorMode,
 )
 from homeassistant.util import dt as dt_util
+from homeassistant.util import slugify
 from modbus_connection.exceptions import ModbusError, ModbusExceptionError
 import voluptuous as vol
 
@@ -55,6 +56,7 @@ from .detect import (
     status_placeholders,
     suggested,
 )
+from .entity import DEVICE_NAME
 from .migration import UNIQUE_ID_MINOR_VERSION
 from .yaml_takeover import UNIT_SPELLING, Found, plan
 
@@ -143,12 +145,12 @@ async def _test_connection(hass: HomeAssistant, data: dict) -> str | None:
         return "link_settings_conflict"
     except ModbusExceptionError:
         # Something answered but refused the request, which for register 0 of
-        # a ThermaV means we are talking to the wrong unit.
+        # a Therma V means we are talking to the wrong unit.
         return "invalid_slave_id"
     except ModbusError:
         return "cannot_connect"
     except Exception:
-        _LOGGER.exception("Unexpected error testing LG ThermaV connection")
+        _LOGGER.exception("Unexpected error testing LG Therma V connection")
         return "unknown"
     return None
 
@@ -261,7 +263,7 @@ def _plan_yaml_takeover(hass: HomeAssistant) -> tuple[list[Found], list]:
         for state in hass.states.async_all()
         if not state.attributes.get("restored", False)
     }
-    return plan(yaml_entries, live, set(registry.entities.keys()))
+    return plan(yaml_entries, live, set(registry.entities.keys()), slugify(DEVICE_NAME))
 
 
 def _take_over(hass: HomeAssistant, found: list[Found]) -> None:
@@ -299,7 +301,7 @@ def _left_table(left: list) -> str:
 
 
 class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle the UI config flow for LG ThermaV R290."""
+    """Handle the UI config flow for LG Therma V R290."""
 
     VERSION = 1
     # Minor versions carry the unique id renames (migration.MIGRATION_STEPS):
@@ -363,7 +365,7 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 if self._reconfigure_entry:
                     return self.async_update_reload_and_abort(
                         self._reconfigure_entry,
-                        title=f"LG ThermaV {data['host']}",
+                        title=f"LG Therma V {data['host']}",
                         data=data,
                     )
                 await self.async_set_unique_id(
@@ -371,7 +373,7 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
                 self._abort_if_unique_id_configured()
                 self._data = data
-                self._title = f"LG ThermaV {data['host']}"
+                self._title = f"LG Therma V {data['host']}"
                 return await self.async_step_detect()
             errors["base"] = error
 
@@ -391,7 +393,7 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 if self._reconfigure_entry:
                     return self.async_update_reload_and_abort(
                         self._reconfigure_entry,
-                        title=f"LG ThermaV {data[CONF_SERIAL_PORT]}",
+                        title=f"LG Therma V {data[CONF_SERIAL_PORT]}",
                         data=data,
                     )
                 await self.async_set_unique_id(
@@ -399,7 +401,7 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
                 self._abort_if_unique_id_configured()
                 self._data = data
-                self._title = f"LG ThermaV {data[CONF_SERIAL_PORT]}"
+                self._title = f"LG Therma V {data[CONF_SERIAL_PORT]}"
                 return await self.async_step_detect()
             errors["base"] = error
 

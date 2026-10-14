@@ -17,9 +17,9 @@ from .test_config_flow import DOMAIN, RTU, defaults, form_input
 
 POWER = "sensor.heat_pump_meter_power"
 ENERGY = "sensor.heat_pump_meter_energy"
-COP = "sensor.lg_thermav_r290_cop_external_meter"
-THERMAL = "sensor.lg_thermav_r290_thermal_energy_calculated"
-CUMULATIVE = "sensor.lg_thermav_r290_cop_cumulative_external_meter"
+COP = "sensor.lg_therma_v_r290_cop_external_meter"
+THERMAL = "sensor.lg_therma_v_r290_thermal_energy_calculated"
+CUMULATIVE = "sensor.lg_therma_v_r290_cop_cumulative_external_meter"
 # 20 L/min at 30 -> 35 °C: 20/60 × 5 × 4186 = 6977 W thermal.
 THERMAL_W = 6977
 
@@ -62,7 +62,7 @@ async def test_cop_and_jaz_from_the_meter(hass, running) -> None:
     _meter(hass, 1.5, 100.0)
     clock = iter([1000.0, 1000.0, 1300.0, 1300.0, 1600.0, 1600.0] + [1600.0] * 20)
     with patch(
-        "custom_components.lg_thermav_r290.sensor._monotonic",
+        "custom_components.lg_therma_v_r290.sensor._monotonic",
         side_effect=lambda: next(clock),
     ):
         entry = await _set_up(

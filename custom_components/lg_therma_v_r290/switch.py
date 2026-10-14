@@ -1,4 +1,4 @@
-"""Switch platform for LG ThermaV R290 — state coil registers.
+"""Switch platform for LG Therma V R290 — state coil registers.
 
 Only coils that hold a state belong here. The momentary trigger coils
 ("0: hold status / 1: start operation") are buttons instead — see button.py.

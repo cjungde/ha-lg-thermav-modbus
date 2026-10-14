@@ -1,4 +1,4 @@
-"""Binary sensor platform for LG ThermaV R290 — discrete inputs.
+"""Binary sensor platform for LG Therma V R290 — discrete inputs.
 
 Keys follow docs/naming.md: the entity key is the name as an entity id slug,
 the data key is ``discrete_<key>``.

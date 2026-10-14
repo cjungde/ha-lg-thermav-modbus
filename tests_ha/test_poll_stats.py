@@ -7,8 +7,8 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from .test_config_flow import DOMAIN, RTU
 
-DURATION = "sensor.lg_thermav_r290_poll_duration"
-LOAD = "sensor.lg_thermav_r290_bus_load"
+DURATION = "sensor.lg_therma_v_r290_poll_duration"
+LOAD = "sensor.lg_therma_v_r290_bus_load"
 
 
 async def test_poll_sensors_with_the_option(hass, unit) -> None:

@@ -1,4 +1,4 @@
-"""Button platform for LG ThermaV R290 — momentary trigger coils.
+"""Button platform for LG Therma V R290 — momentary trigger coils.
 
 Some coils are not state switches but one-shot triggers. The manual describes
 them as "0: hold status / 1: start operation": writing 1 starts the operation

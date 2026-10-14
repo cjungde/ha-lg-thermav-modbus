@@ -1,8 +1,8 @@
-# LG ThermaV R290 — Home Assistant Integration
+# LG Therma V R290 — Home Assistant Integration
 
-<p align="center"><img src="https://raw.githubusercontent.com/cjungde/ha-lg-thermav-modbus/main/custom_components/lg_thermav_r290/brand/icon.png" alt="LG ThermaV R290" width="128"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/cjungde/ha-lg-thermav-modbus/main/custom_components/lg_thermav_r290/brand/icon.png" alt="LG Therma V R290" width="128"></p>
 
-HACS custom integration for the LG ThermaV R290 heat pump via Modbus TCP or RTU.
+HACS custom integration for the LG Therma V R290 heat pump via Modbus TCP or RTU.
 
 Based on [cjungde/ha-lg-thermav-modbus](https://github.com/cjungde/ha-lg-thermav-modbus) by [@cjungde](https://github.com/cjungde), who had the original idea and wrote the first version. This repository continues it.
 
@@ -15,6 +15,7 @@ Replaces a hand-crafted YAML Modbus configuration with native HA entities: senso
 - [Experimental registers](#experimental-registers)
 - [Requirements](#requirements)
 - [Installation via HACS](#installation-via-hacs)
+  - [Upgrading from 1.x](#upgrading-from-1x)
   - [Manual installation](#manual-installation)
 - [Configuration](#configuration)
   - [Which options the unit supports](#which-options-the-unit-supports)
@@ -72,7 +73,7 @@ The device answers on 18 registers that the manual does not list (a read-only sc
 
 Nothing in the manual or in the community projects I could find explains them. To find out what they are, the integration can record them over a longer time.
 
-Switch it on under *Settings → Devices & Services → LG ThermaV R290 → Configure → Experimental registers*. This adds 18 diagnostic sensors named `Experimental Input 30015`, `Experimental Holding 40011`, … They carry the raw, unscaled 16-bit value and have long-term statistics, so they can be compared with compressor speed, temperatures and defrost cycles. Switching the option off removes them again.
+Switch it on under *Settings → Devices & Services → LG Therma V R290 → Configure → Experimental registers*. This adds 18 diagnostic sensors named `Experimental Input 30015`, `Experimental Holding 40011`, … They carry the raw, unscaled 16-bit value and have long-term statistics, so they can be compared with compressor speed, temperatures and defrost cycles. Switching the option off removes them again.
 
 **They are read-only.** The integration only ever writes a fixed list of known addresses (holding 0, 1, 2, 4, 5, 7, 8 and coils 0–4, plus holding 23 while the compressor modulation limit option is on, holding 24 and coil 6 while the power limit option is on, and coil 5 while the emergency operation button option is on); every other write is refused before it reaches the bus, so none of these registers can be written by the integration, whichever entity or service asks. They are read in four blocks. A block the unit does not answer is not asked again until Home Assistant restarts or the integration is reloaded, and its sensors show *unavailable*: at once if the unit refuses the addresses, after three timeouts in a row if it stays silent. The other blocks and all other values are not affected.
 
@@ -106,13 +107,23 @@ for a unit on a *shared* connection, which means:
 ## Installation via HACS
 
 1. In HACS → Integrations → ⋮ → Custom repositories, add `https://github.com/isarrider/ha-lg-therma-v-modbus` with category **Integration**.
-2. Install "LG ThermaV R290".
+2. Install "LG Therma V R290".
 3. Restart Home Assistant.
-4. Settings → Devices & Services → Add Integration → search "LG ThermaV R290".
+4. Settings → Devices & Services → Add Integration → search "LG Therma V R290".
+
+### Upgrading from 1.x
+
+Version 2.0.0 renamed the integration from `lg_thermav_r290` to **`lg_therma_v_r290`** (*LG Therma V R290*). Home Assistant treats that as a different integration, so an existing installation does not carry over:
+
+1. *Settings → Devices & Services → LG ThermaV R290 → ⋮ → Delete*.
+2. Update in HACS and restart. If the folder `custom_components/lg_thermav_r290` is still there, delete it and restart again.
+3. Add **LG Therma V R290** again.
+
+New entity ids start with `lg_therma_v_r290_` instead of `lg_thermav_r290_`; dashboards, automations and filters (e.g. an InfluxDB `entity_globs` such as `sensor.lg_thermav_r290*`) need the new prefix. The history of the old ids is not taken over.
 
 ### Manual installation
 
-Copy the `custom_components/lg_thermav_r290/` folder into your HA `custom_components/` directory and restart.
+Copy the `custom_components/lg_therma_v_r290/` folder into your HA `custom_components/` directory and restart.
 
 ---
 
@@ -180,28 +191,28 @@ A ready-to-paste dashboard with temperatures, compressor, COP, controls and per-
 
 | Entity | Description | Unit |
 |---|---|---|
-| `sensor.lg_thermav_r290_inlet_temperature` | Inlet water temperature | °C |
-| `sensor.lg_thermav_r290_outlet_temperature` | Outlet water temperature | °C |
-| `sensor.lg_thermav_r290_dhw_temperature` | DHW tank temperature | °C |
-| `sensor.lg_thermav_r290_outdoor_temperature` | Outdoor air temperature | °C |
-| `sensor.lg_thermav_r290_backup_heater_outlet_temperature` | Backup heater outlet temp | °C |
-| `sensor.lg_thermav_r290_flow_temperature_circuit_2` | Flow temperature circuit 2 | °C |
-| `sensor.lg_thermav_r290_room_air_temperature_circuit_1` | Room air temperature circuit 1, measured at the wired remote controller. **Without a wired remote, the indoor unit's own sensor**: the temperature of the room the unit is installed in, see [*Notes*](#notes) | °C |
-| `sensor.lg_thermav_r290_room_air_temperature_circuit_2` | Room air temperature circuit 2 | °C |
-| `sensor.lg_thermav_r290_flow_rate` | Water flow rate (device class `volume_flow_rate`) | L/min |
-| `sensor.lg_thermav_r290_water_pressure` | Water pressure | bar |
-| `sensor.lg_thermav_r290_high_pressure_condenser` | High pressure (condenser) | bar |
-| `sensor.lg_thermav_r290_low_pressure_evaporator` | Low pressure (evaporator) | bar |
-| `sensor.lg_thermav_r290_compressor_speed` | Compressor speed | rpm |
-| `sensor.lg_thermav_r290_error_code` | Error code | — |
-| `sensor.lg_thermav_r290_operation_state_odu` | Outdoor unit cycle as text: Standby/Off, Cooling, Heating (input 30002; raw value in *Operation Cycle (ODU)*) | — |
-| `sensor.lg_thermav_r290_thermal_power_calculated` | Thermal power, calculated from flow rate × ΔT | W |
-| `sensor.lg_thermav_r290_thermal_power_heating_circuit_calculated` | Same, while not heating DHW (0 otherwise) | W |
-| `sensor.lg_thermav_r290_thermal_power_dhw_calculated` | Same, while heating DHW (0 otherwise) | W |
-| `sensor.lg_thermav_r290_operation_mode` | Operation mode (label) | — |
-| `sensor.lg_thermav_r290_control_method` | Control method (label) | — |
-| `sensor.lg_thermav_r290_energy_state` | Energy state (label), holding 9: the command register | — |
-| `sensor.lg_thermav_r290_energy_state_reported` | Energy state (label), input 11: the state the unit reports as active | — |
+| `sensor.lg_therma_v_r290_inlet_temperature` | Inlet water temperature | °C |
+| `sensor.lg_therma_v_r290_outlet_temperature` | Outlet water temperature | °C |
+| `sensor.lg_therma_v_r290_dhw_temperature` | DHW tank temperature | °C |
+| `sensor.lg_therma_v_r290_outdoor_temperature` | Outdoor air temperature | °C |
+| `sensor.lg_therma_v_r290_backup_heater_outlet_temperature` | Backup heater outlet temp | °C |
+| `sensor.lg_therma_v_r290_flow_temperature_circuit_2` | Flow temperature circuit 2 | °C |
+| `sensor.lg_therma_v_r290_room_air_temperature_circuit_1` | Room air temperature circuit 1, measured at the wired remote controller. **Without a wired remote, the indoor unit's own sensor**: the temperature of the room the unit is installed in, see [*Notes*](#notes) | °C |
+| `sensor.lg_therma_v_r290_room_air_temperature_circuit_2` | Room air temperature circuit 2 | °C |
+| `sensor.lg_therma_v_r290_flow_rate` | Water flow rate (device class `volume_flow_rate`) | L/min |
+| `sensor.lg_therma_v_r290_water_pressure` | Water pressure | bar |
+| `sensor.lg_therma_v_r290_high_pressure_condenser` | High pressure (condenser) | bar |
+| `sensor.lg_therma_v_r290_low_pressure_evaporator` | Low pressure (evaporator) | bar |
+| `sensor.lg_therma_v_r290_compressor_speed` | Compressor speed | rpm |
+| `sensor.lg_therma_v_r290_error_code` | Error code | — |
+| `sensor.lg_therma_v_r290_operation_state_odu` | Outdoor unit cycle as text: Standby/Off, Cooling, Heating (input 30002; raw value in *Operation Cycle (ODU)*) | — |
+| `sensor.lg_therma_v_r290_thermal_power_calculated` | Thermal power, calculated from flow rate × ΔT | W |
+| `sensor.lg_therma_v_r290_thermal_power_heating_circuit_calculated` | Same, while not heating DHW (0 otherwise) | W |
+| `sensor.lg_therma_v_r290_thermal_power_dhw_calculated` | Same, while heating DHW (0 otherwise) | W |
+| `sensor.lg_therma_v_r290_operation_mode` | Operation mode (label) | — |
+| `sensor.lg_therma_v_r290_control_method` | Control method (label) | — |
+| `sensor.lg_therma_v_r290_energy_state` | Energy state (label), holding 9: the command register | — |
+| `sensor.lg_therma_v_r290_energy_state_reported` | Energy state (label), input 11: the state the unit reports as active | — |
 
 #### COP with your own meter (option)
 
@@ -209,9 +220,9 @@ The electrical figures the unit reports tend to read high, so COPs built on them
 
 | You pick | Entity | What it shows |
 |---|---|---|
-| a power sensor (W or kW) | `sensor.lg_thermav_r290_cop_external_meter` | thermal power from flow rate × ΔT ÷ your meter's power: the COP of the moment; no value below 100 W |
-| an energy sensor (a total counter, Wh or kWh) | `sensor.lg_thermav_r290_thermal_energy_calculated` | flow rate × ΔT added up over time, kWh, `total_increasing` |
-| | `sensor.lg_thermav_r290_cop_cumulative_external_meter` | that thermal energy ÷ your meter's energy, both counted from when the sensor was set: the seasonal performance factor (JAZ) over that period; attributes `since`, `thermal_energy_kwh`, `electrical_energy_kwh` |
+| a power sensor (W or kW) | `sensor.lg_therma_v_r290_cop_external_meter` | thermal power from flow rate × ΔT ÷ your meter's power: the COP of the moment; no value below 100 W |
+| an energy sensor (a total counter, Wh or kWh) | `sensor.lg_therma_v_r290_thermal_energy_calculated` | flow rate × ΔT added up over time, kWh, `total_increasing` |
+| | `sensor.lg_therma_v_r290_cop_cumulative_external_meter` | that thermal energy ÷ your meter's energy, both counted from when the sensor was set: the seasonal performance factor (JAZ) over that period; attributes `since`, `thermal_energy_kwh`, `electrical_energy_kwh` |
 
 Both counters are kept across restarts. Gaps over five minutes (Home Assistant down, the unit not answering) are not counted rather than guessed; a reset of your meter's counter counts as growth from zero. Choosing another energy sensor starts a new period. The thermal side is flow rate × ΔT, which reads 0 while cooling or defrosting.
 
@@ -221,9 +232,9 @@ Switch on **Compressor statistics** in *Configure → Options*. Counted from the
 
 | Entity | What it shows |
 |---|---|
-| `sensor.lg_thermav_r290_compressor_starts` | starts, a `total_increasing` counter: starts per day or per hour come from Home Assistant's statistics (e.g. a *Statistic* card, *change* per day). Attribute `last_run_minutes`: the run in progress, or the last one |
-| `sensor.lg_thermav_r290_compressor_run_time` | hours the compressor ran, a counter |
-| `sensor.lg_thermav_r290_compressor_average_speed` | rpm while running, today; resets at midnight, so the history shows one value per day. Standstill is left out. Attributes `day`, `run_hours_today` |
+| `sensor.lg_therma_v_r290_compressor_starts` | starts, a `total_increasing` counter: starts per day or per hour come from Home Assistant's statistics (e.g. a *Statistic* card, *change* per day). Attribute `last_run_minutes`: the run in progress, or the last one |
+| `sensor.lg_therma_v_r290_compressor_run_time` | hours the compressor ran, a counter |
+| `sensor.lg_therma_v_r290_compressor_average_speed` | rpm while running, today; resets at midnight, so the history shows one value per day. Standstill is left out. Attributes `day`, `run_hours_today` |
 
 Many short runs mean the unit is cycling, which costs efficiency and wear; a low average speed over long runs means it mostly modulates at the bottom of its range. All three are kept across restarts; a gap over five minutes is not counted, and a restart never counts as a start.
 
@@ -231,8 +242,8 @@ Many short runs mean the unit is cycling, which costs efficiency and wear; a low
 
 | Entity | Description | Unit |
 |---|---|---|
-| `sensor.lg_thermav_r290_poll_duration` | How long the last poll took, from its first request to its last, including any wait for the bus; attribute `requests`: the reads in that poll | ms |
-| `sensor.lg_thermav_r290_bus_load` | Poll duration ÷ poll interval: how much of the time this integration keeps the bus busy | % |
+| `sensor.lg_therma_v_r290_poll_duration` | How long the last poll took, from its first request to its last, including any wait for the bus; attribute `requests`: the reads in that poll | ms |
+| `sensor.lg_therma_v_r290_bus_load` | Poll duration ÷ poll interval: how much of the time this integration keeps the bus busy | % |
 
 Switch on **Poll statistics** in *Configure → Options* to get both; switched off, they are removed again. They are under *Diagnostic* on the device page, with long-term statistics, to see how much your bus carries, e.g. before shortening the poll interval or switching on more options. Nothing extra is read from the unit: the integration times the poll it makes anyway. On a bus of its own (a USB adapter) *Bus Load* is the whole bus; on a gateway shared with other devices, it is this integration's share plus its waiting.
 
@@ -246,46 +257,46 @@ Switch on **Energy registers** in the integration's options. These are 32-bit va
 
 | Entity | Registers | Unit |
 | --- | --- | --- |
-| `sensor.lg_thermav_r290_electrical_power_total_system` | 34–35 | W |
-| `sensor.lg_thermav_r290_electrical_power_heat_pump` | 36–37 | W |
-| `sensor.lg_thermav_r290_electrical_energy_total` | 38–39 | Wh (shown as kWh) |
-| `sensor.lg_thermav_r290_electrical_energy_space_heating` | 40–41 | Wh (shown as kWh) |
-| `sensor.lg_thermav_r290_electrical_energy_space_cooling` | 42–43 | Wh (shown as kWh) |
-| `sensor.lg_thermav_r290_electrical_energy_dhw` | 44–45 | Wh (shown as kWh) |
-| `sensor.lg_thermav_r290_demand_vs_supply` | 46–47 | none (reads 0–12 on a 12 kW unit) |
-| `sensor.lg_thermav_r290_thermal_power_reported` | 48–49 | W |
-| `sensor.lg_thermav_r290_thermal_energy_space_heating` | 50–51 | Wh (shown as kWh) |
+| `sensor.lg_therma_v_r290_electrical_power_total_system` | 34–35 | W |
+| `sensor.lg_therma_v_r290_electrical_power_heat_pump` | 36–37 | W |
+| `sensor.lg_therma_v_r290_electrical_energy_total` | 38–39 | Wh (shown as kWh) |
+| `sensor.lg_therma_v_r290_electrical_energy_space_heating` | 40–41 | Wh (shown as kWh) |
+| `sensor.lg_therma_v_r290_electrical_energy_space_cooling` | 42–43 | Wh (shown as kWh) |
+| `sensor.lg_therma_v_r290_electrical_energy_dhw` | 44–45 | Wh (shown as kWh) |
+| `sensor.lg_therma_v_r290_demand_vs_supply` | 46–47 | none (reads 0–12 on a 12 kW unit) |
+| `sensor.lg_therma_v_r290_thermal_power_reported` | 48–49 | W |
+| `sensor.lg_therma_v_r290_thermal_energy_space_heating` | 50–51 | Wh (shown as kWh) |
 
 The block is read in one request, high word first. A unit that does not answer leaves the sensors without a value and does not affect the other entities; after three misses in a row the read is skipped for 20 polls before it is tried again, so a unit that does not serve the block costs a few timeouts, not one per poll. Registers 52–55 (cumulative thermal yield for cooling and DHW) are not read; they do not answer on a 12 kW unit. Switching the option off removes the sensors again.
 
-The option also adds `sensor.lg_thermav_r290_cop_heating_cumulative`: thermal energy for space heating (input 50) divided by electrical energy for space heating (input 40). Both are counters since the unit's counters were last reset, so this is a long-term average (closer to a seasonal performance factor), not the COP of the moment. It has no value until electrical energy has been counted.
+The option also adds `sensor.lg_therma_v_r290_cop_heating_cumulative`: thermal energy for space heating (input 50) divided by electrical energy for space heating (input 40). Both are counters since the unit's counters were last reset, so this is a long-term average (closer to a seasonal performance factor), not the COP of the moment. It has no value until electrical energy has been counted.
 
 `thermal_power_reported` is the unit's own figure and is separate from the computed `thermal_power_*` sensors below.
 
-The option also adds `sensor.lg_thermav_r290_cop_reported`: the unit's thermal power (input 48) divided by the heat pump's electrical power (input 36), the COP of the moment, in space heating and DHW alike. It has no value while the electrical power is below 100 W, i.e. while the unit idles, so standby periods do not drag down its statistics.
+The option also adds `sensor.lg_therma_v_r290_cop_reported`: the unit's thermal power (input 48) divided by the heat pump's electrical power (input 36), the COP of the moment, in space heating and DHW alike. It has no value while the electrical power is below 100 W, i.e. while the unit idles, so standby periods do not drag down its statistics.
 
-`sensor.lg_thermav_r290_cop_system_reported` is the same, but over the total system's electrical power (input 34) instead of the heat pump's (input 36). Where the two are equal, so are the COPs; when something the heat pump figure leaves out draws power, such as a backup heater, the system COP is the lower, more honest one.
+`sensor.lg_therma_v_r290_cop_system_reported` is the same, but over the total system's electrical power (input 34) instead of the heat pump's (input 36). Where the two are equal, so are the COPs; when something the heat pump figure leaves out draws power, such as a backup heater, the system COP is the lower, more honest one.
 
-`sensor.lg_thermav_r290_cop_calculated` is a cross-check of `cop_reported`: same electrical side (input 36), but the thermal side is the integration's own figure from flow rate × ΔT (the same calculation as `thermal_power_calculated`) instead of the unit's thermal power register (input 48). If the two COPs agree, the unit's thermal figure can be trusted; if they differ consistently, one of the two thermal values is off. Same idle rule (no value below 100 W).
+`sensor.lg_therma_v_r290_cop_calculated` is a cross-check of `cop_reported`: same electrical side (input 36), but the thermal side is the integration's own figure from flow rate × ΔT (the same calculation as `thermal_power_calculated`) instead of the unit's thermal power register (input 48). If the two COPs agree, the unit's thermal figure can be trusted; if they differ consistently, one of the two thermal values is off. Same idle rule (no value below 100 W).
 
 ### Binary sensors
 
 | Entity | Description |
 |---|---|
-| `binary_sensor.lg_thermav_r290_compressor` | Compressor running |
-| `binary_sensor.lg_thermav_r290_water_pump` | Water pump running |
-| `binary_sensor.lg_thermav_r290_external_water_pump` | External water pump |
-| `binary_sensor.lg_thermav_r290_dhw_heating` | DHW heating active |
-| `binary_sensor.lg_thermav_r290_defrost` | Defrost active |
-| `binary_sensor.lg_thermav_r290_dhw_disinfection` | DHW disinfection |
-| `binary_sensor.lg_thermav_r290_backup_heater_step_1` | Backup heater step 1 |
-| `binary_sensor.lg_thermav_r290_backup_heater_step_2` | Backup heater step 2 |
-| `binary_sensor.lg_thermav_r290_dhw_boost_heater` | DHW boost heater |
-| `binary_sensor.lg_thermav_r290_fault` | Fault active |
-| `binary_sensor.lg_thermav_r290_silent_mode` | Silent mode |
-| `binary_sensor.lg_thermav_r290_cooling_active` | Cooling active |
-| `binary_sensor.lg_thermav_r290_water_flow` | Water flow present (see note below) |
-| `binary_sensor.lg_thermav_r290_energy_state_normal_operation` | Energy state: normal (value 2) |
+| `binary_sensor.lg_therma_v_r290_compressor` | Compressor running |
+| `binary_sensor.lg_therma_v_r290_water_pump` | Water pump running |
+| `binary_sensor.lg_therma_v_r290_external_water_pump` | External water pump |
+| `binary_sensor.lg_therma_v_r290_dhw_heating` | DHW heating active |
+| `binary_sensor.lg_therma_v_r290_defrost` | Defrost active |
+| `binary_sensor.lg_therma_v_r290_dhw_disinfection` | DHW disinfection |
+| `binary_sensor.lg_therma_v_r290_backup_heater_step_1` | Backup heater step 1 |
+| `binary_sensor.lg_therma_v_r290_backup_heater_step_2` | Backup heater step 2 |
+| `binary_sensor.lg_therma_v_r290_dhw_boost_heater` | DHW boost heater |
+| `binary_sensor.lg_therma_v_r290_fault` | Fault active |
+| `binary_sensor.lg_therma_v_r290_silent_mode` | Silent mode |
+| `binary_sensor.lg_therma_v_r290_cooling_active` | Cooling active |
+| `binary_sensor.lg_therma_v_r290_water_flow` | Water flow present (see note below) |
+| `binary_sensor.lg_therma_v_r290_energy_state_normal_operation` | Energy state: normal (value 2) |
 | … | Energy states 0–8 as individual binary sensors |
 
 > **Note on discrete input 10001 (water flow).** The LG manual documents this bit as
@@ -296,7 +307,7 @@ The option also adds `sensor.lg_thermav_r290_cop_reported`: the unit's thermal p
 > poll. A read offset is ruled out, since `di[3]` (compressor) and `di[5]` (DHW heating)
 > stay correctly aligned.
 >
-> The entity is therefore exposed as `binary_sensor.lg_thermav_r290_water_flow` with
+> The entity is therefore exposed as `binary_sensor.lg_therma_v_r290_water_flow` with
 > device class `running`. Exposing it as a `problem` sensor (as the manual suggests)
 > would raise a false problem alert on every pump run.
 
@@ -318,7 +329,7 @@ The option also adds `sensor.lg_thermav_r290_cop_reported`: the unit's thermal p
 > continuously from 2026-09-21 22:03 to 2026-09-24 07:02 while the unit started and
 > stopped repeatedly. What it actually reports on this model is unknown.
 >
-> The entity `binary_sensor.lg_thermav_r290_cooling_active` is therefore **not
+> The entity `binary_sensor.lg_therma_v_r290_cooling_active` is therefore **not
 > usable for diagnostics** on the R290 monoblock. It is left in place because the
 > register is read anyway and the mapping follows the manual — but do not build
 > automations on it.
@@ -330,11 +341,11 @@ The option also adds `sensor.lg_thermav_r290_cop_reported`: the unit's thermal p
 
 | Entity | Modbus coil |
 |---|---|
-| `switch.lg_thermav_r290_heating_cooling` | Coil 0 (00001: enable/disable heating/cooling; DHW is coil 1) |
-| `switch.lg_thermav_r290_dhw` | Coil 1 |
-| `switch.lg_thermav_r290_silent_mode` | Coil 2 |
-| `switch.lg_thermav_r290_emergency_stop` | Coil 4 |
-| `switch.lg_thermav_r290_power_limit` | Coil 6 (00007) — **option, off by default**, see [Power limit](#power-limit-optional) |
+| `switch.lg_therma_v_r290_heating_cooling` | Coil 0 (00001: enable/disable heating/cooling; DHW is coil 1) |
+| `switch.lg_therma_v_r290_dhw` | Coil 1 |
+| `switch.lg_therma_v_r290_silent_mode` | Coil 2 |
+| `switch.lg_therma_v_r290_emergency_stop` | Coil 4 |
+| `switch.lg_therma_v_r290_power_limit` | Coil 6 (00007) — **option, off by default**, see [Power limit](#power-limit-optional) |
 
 ### Buttons
 
@@ -345,8 +356,8 @@ binary sensors to see the status.
 
 | Entity | Modbus coil | Status entity |
 |---|---|---|
-| `button.lg_thermav_r290_start_disinfection` | Coil 3 (00004, trigger) | `binary_sensor.lg_thermav_r290_dhw_disinfection` (discrete 6) |
-| `button.lg_thermav_r290_start_emergency_operation` | Coil 5 (00006, trigger) — **option, off by default** | `binary_sensor.lg_thermav_r290_emergency_heating_cooling_available` / `…_emergency_dhw_available` (discrete 14 / 15) |
+| `button.lg_therma_v_r290_start_disinfection` | Coil 3 (00004, trigger) | `binary_sensor.lg_therma_v_r290_dhw_disinfection` (discrete 6) |
+| `button.lg_therma_v_r290_start_emergency_operation` | Coil 5 (00006, trigger) — **option, off by default** | `binary_sensor.lg_therma_v_r290_emergency_heating_cooling_available` / `…_emergency_dhw_available` (discrete 14 / 15) |
 
 > A trigger coil modelled as a switch would always read back `off`, even when the
 > write succeeded, which is why this is a button. Note that the trigger
@@ -358,19 +369,19 @@ binary sensors to see the status.
 > coil 00006 *Auslöser Notaus-Betrieb*. Emergency operation typically heats with the
 > backup heater and draws far more power than the heat pump itself, so the button
 > is not created by default. Not to be confused with coil 4 (00005, *Notaus*),
-> which is the `switch.lg_thermav_r290_emergency_stop` (0 normal / 1 emergency stop).
+> which is the `switch.lg_therma_v_r290_emergency_stop` (0 normal / 1 emergency stop).
 
 ### Number inputs
 
 | Entity | Range | Holding register |
 |---|---|---|
-| `number.lg_thermav_r290_target_temperature_circuit_1_radiators` | 20–60 °C | 2 (×0.1) |
-| `number.lg_thermav_r290_target_temperature_circuit_2_underfloor` | 20–40 °C | 5 (×0.1) |
-| `number.lg_thermav_r290_dhw_target_temperature` | 35–65 °C | 8 (×0.1) |
-| `number.lg_thermav_r290_setpoint_shift_circuit_1` | −5…+5 K | 4 (signed) |
-| `number.lg_thermav_r290_setpoint_shift_circuit_2` | −5…+5 K | 7 (signed) |
-| `number.lg_thermav_r290_max_compressor_modulation` | 40–100 % | 23 (optional, see below) |
-| `number.lg_thermav_r290_max_electrical_power` | 0.1–25.0 kW | 24 (×0.1, optional, see below) |
+| `number.lg_therma_v_r290_target_temperature_circuit_1_radiators` | 20–60 °C | 2 (×0.1) |
+| `number.lg_therma_v_r290_target_temperature_circuit_2_underfloor` | 20–40 °C | 5 (×0.1) |
+| `number.lg_therma_v_r290_dhw_target_temperature` | 35–65 °C | 8 (×0.1) |
+| `number.lg_therma_v_r290_setpoint_shift_circuit_1` | −5…+5 K | 4 (signed) |
+| `number.lg_therma_v_r290_setpoint_shift_circuit_2` | −5…+5 K | 7 (signed) |
+| `number.lg_therma_v_r290_max_compressor_modulation` | 40–100 % | 23 (optional, see below) |
+| `number.lg_therma_v_r290_max_electrical_power` | 0.1–25.0 kW | 24 (×0.1, optional, see below) |
 
 #### Max compressor modulation (optional)
 
@@ -387,8 +398,8 @@ Switch on **Power limit** in the integration's options. The manual documents the
 
 | Entity | What it does | Register |
 |---|---|---|
-| `switch.lg_thermav_r290_power_limit` | Turns the limit on or off | Coil 6 (00007) |
-| `number.lg_thermav_r290_max_electrical_power` | The limit, 0.1–25.0 kW in steps of 0.1 | Holding 24 (40025), tenths of a kW |
+| `switch.lg_therma_v_r290_power_limit` | Turns the limit on or off | Coil 6 (00007) |
+| `number.lg_therma_v_r290_max_electrical_power` | The limit, 0.1–25.0 kW in steps of 0.1 | Holding 24 (40025), tenths of a kW |
 
 - **Not confirmed yet** whether a unit actually keeps its power below the limit. The 9 kW unit in [docs/register-scan.md](docs/register-scan.md) does not answer on either address. Check against a separate meter: the unit's own power figures run high (see *Energy registers*).
 - Both are writable **only while the option is on**; with it off the integration refuses every write to coil 6 and holding 24.
@@ -399,8 +410,8 @@ Switch on **Power limit** in the integration's options. The manual documents the
 
 | Entity | Options | Holding register |
 |---|---|---|
-| `select.lg_thermav_r290_operation_mode` | Heating / Cooling / Auto | 0 |
-| `select.lg_thermav_r290_control_method` | Outlet / Inlet Water Temp Control / Room Air Control | 1 |
+| `select.lg_therma_v_r290_operation_mode` | Heating / Cooling / Auto | 0 |
+| `select.lg_therma_v_r290_control_method` | Outlet / Inlet Water Temp Control / Room Air Control | 1 |
 
 *Room Air Control* regulates on *Room Air Temperature Circuit 1*. Without a wired remote that is the temperature where the indoor unit is installed, not that of a living room (see [*Notes*](#notes)).
 
@@ -433,11 +444,11 @@ Every register of the manual's four tables (*Modbus-Speicherzuordnung*), with th
 - **Room Air Temperature Circuit 1 without a wired remote.** The manual's input 30008 is the room temperature measured at the wired remote controller. With no remote connected, the unit reports its own sensor instead, so the value is the temperature of the room the indoor unit is installed in (a plant room, a basement), not of a living room. The integration cannot tell from Modbus whether a remote is connected, so the name follows the manual. On such an installation:
   - rename the entity in *Settings → Entities* to what it measures, e.g. *Plant Room Temperature* (only your display name; the unique id stays);
   - do not use *Control Method: Room Air Control*: the unit would regulate on that room's temperature.
-- Flow rate uses Home Assistant's unit `L/min` and device class `volume_flow_rate` (before: plain `l/min`, no device class). The values are the same, but after updating, *Developer tools → Statistics* may report that the unit of `sensor.lg_thermav_r290_flow_rate` changed; choose *Update the unit* there, nothing needs converting.
+- Flow rate uses Home Assistant's unit `L/min` and device class `volume_flow_rate` (before: plain `l/min`, no device class). The values are the same, but after updating, *Developer tools → Statistics* may report that the unit of `sensor.lg_therma_v_r290_flow_rate` changed; choose *Update the unit* there, nothing needs converting.
 - Thermal power formula: `Q [W] = (flow rate [l/min] / 60) × (outlet − inlet temperature) [K] × 4186 [J/(l·K)]`
 - Heating circuit / DHW split is based on the *DHW Heating* discrete input (10006); when DHW is active the full flow is attributed to DHW and the heating circuit sensor reports 0, and vice versa.
 - Shift values (holding regs 4, 7) are stored as two's-complement uint16; values ≥ 32768 are interpreted as negative.
-- Tested on LG ThermaV R290 9 kW via Modbus TCP, slave ID 33, and on a 12 kW unit via Modbus RTU (USB serial adapter), slave ID 1, firmware kernel 3.0.9 / ramdisk 3.07.6a (2025-01-21). The energy registers (input 34–51) and the compressor modulation limit (holding 23) answer on the 12 kW only.
+- Tested on LG Therma V R290 9 kW via Modbus TCP, slave ID 33, and on a 12 kW unit via Modbus RTU (USB serial adapter), slave ID 1, firmware kernel 3.0.9 / ramdisk 3.07.6a (2025-01-21). The energy registers (input 34–51) and the compressor modulation limit (holding 23) answer on the 12 kW only.
 - `tools/make_shadow.py` builds a read-only copy of the integration under a
   second domain so a change to the Modbus layer can be measured against the
   running one on the same hardware. See `tools/README.md`.
@@ -446,7 +457,7 @@ Every register of the manual's four tables (*Modbus-Speicherzuordnung*), with th
 
 ## Reporting a problem
 
-Open an issue with the [bug report form](https://github.com/isarrider/ha-lg-therma-v-modbus/issues/new?template=bug_report.yml) and attach the diagnostics file: *Settings → Devices & Services → LG ThermaV R290 → ⋮ → Download diagnostics*. It contains the integration version, the connection settings without host and serial port, the options with the result of the register check, the state of every optional read (misses, pauses, experimental blocks given up), and the values of the last poll. Together with the firmware version and the unit's size, that answers most questions up front.
+Open an issue with the [bug report form](https://github.com/isarrider/ha-lg-therma-v-modbus/issues/new?template=bug_report.yml) and attach the diagnostics file: *Settings → Devices & Services → LG Therma V R290 → ⋮ → Download diagnostics*. It contains the integration version, the connection settings without host and serial port, the options with the result of the register check, the state of every optional read (misses, pauses, experimental blocks given up), and the values of the last poll. Together with the firmware version and the unit's size, that answers most questions up front.
 
 ---
 

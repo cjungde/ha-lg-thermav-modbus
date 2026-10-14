@@ -1,4 +1,4 @@
-"""Sensor platform for LG ThermaV R290.
+"""Sensor platform for LG Therma V R290.
 
 Keys follow docs/naming.md: the entity key is the name as an entity id slug,
 the data key is ``<register type>_<what the register holds>``.

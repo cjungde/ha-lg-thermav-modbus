@@ -1,6 +1,6 @@
 # Modbus register map
 
-The four tables of the R290 installation manual (*Modbus-Speicherzuordnung*), each register with the manual's wording (German, as printed) and what the integration makes of it. Registers the manual does not list, but the integration reads, follow each table. Addresses in code are 0-based: manual register 30003 is input address 2, 40001 is holding address 0, 00001 is coil 0, 10001 is discrete input 0. Entity ids are given without the `lg_thermav_r290_` prefix.
+The four tables of the R290 installation manual (*Modbus-Speicherzuordnung*), each register with the manual's wording (German, as printed) and what the integration makes of it. Registers the manual does not list, but the integration reads, follow each table. Addresses in code are 0-based: manual register 30003 is input address 2, 40001 is holding address 0, 00001 is coil 0, 10001 is discrete input 0. Entity ids are given without the `lg_therma_v_r290_` prefix.
 
 Marks: ⚠ the unit behaves differently from the manual (measured) · ⚙ only with an option (*Configure*) · ⛔ disabled by default · ✗ not read or written
 

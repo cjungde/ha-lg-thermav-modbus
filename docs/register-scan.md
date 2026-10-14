@@ -1,6 +1,6 @@
 # Register scan of the R290
 
-A read-only scan of the Modbus address space of a LG ThermaV R290 9 kW (HN1639HC NK0, slave 33, Modbus TCP via gateway), 2026-10-03. One request per address, one connection per request, 1 s timeout. Nothing was written.
+A read-only scan of the Modbus address space of a LG Therma V R290 9 kW (HN1639HC NK0, slave 33, Modbus TCP via gateway), 2026-10-03. One request per address, one connection per request, 1 s timeout. Nothing was written.
 
 An address that the device does not serve is not answered at all (timeout) instead of getting a Modbus exception. A block read that contains such an address is dropped as a whole, which is why input register 15 breaks a bulk read.
 

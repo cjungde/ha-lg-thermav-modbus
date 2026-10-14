@@ -2,13 +2,13 @@
   "config": {
     "step": {
       "user": {
-        "title": "LG ThermaV R290 — Verbindungsart",
+        "title": "LG Therma V R290 — Verbindungsart",
         "data": {
           "connection_type": "Verbindungsart"
         }
       },
       "tcp": {
-        "title": "LG ThermaV R290 — TCP-Verbindung",
+        "title": "LG Therma V R290 — TCP-Verbindung",
         "data": {
           "host": "Host / IP-Adresse",
           "port": "Port",
@@ -17,7 +17,7 @@
         }
       },
       "rtu": {
-        "title": "LG ThermaV R290 — RTU-Verbindung",
+        "title": "LG Therma V R290 — RTU-Verbindung",
         "data": {
           "serial_port": "Serieller Port",
           "baudrate": "Baudrate",
@@ -28,13 +28,13 @@
         }
       },
       "reconfigure": {
-        "title": "LG ThermaV R290 — Neu konfigurieren",
+        "title": "LG Therma V R290 — Neu konfigurieren",
         "data": {
           "connection_type": "Verbindungsart"
         }
       },
       "features": {
-        "title": "LG ThermaV R290 — Optionale Register",
+        "title": "LG Therma V R290 — Optionale Register",
         "description": "| Optionale Register | Gerät antwortet |\n|---|:-:|\n| Energieregister | {energy_registers} |\n| Begrenzung der Verdichtermodulation | {compressor_modulation_limit} |\n| Leistungsbegrenzung | {power_limit} |\n\n✓ antwortet · ✗ keine Antwort\n\nGruppen, die antworten und gefahrlos eingeschaltet werden können, sind angehakt. Die Leistungsbegrenzung wird auch dann nicht angehakt, wenn sie antwortet: Ob das Gerät den Grenzwert tatsächlich einhält, ist noch nicht bestätigt. Die Taste für Notbetrieb und die experimentellen Register werden nie angehakt. Alles lässt sich später unter Konfigurieren ändern.",
         "sections": {
           "energy_registers": {
@@ -110,7 +110,7 @@
         }
       },
       "yaml_takeover": {
-        "title": "LG ThermaV R290 — Verlauf aus dem YAML-Setup",
+        "title": "LG Therma V R290 — Verlauf aus dem YAML-Setup",
         "description": "Entitäten des YAML-Pakets (homeassistant_lg_therma_v_modbus) sind noch in Home Assistant, mit ihrem Verlauf. {count} davon haben hier ein Gegenstück. Bei der Übernahme wird jede auf die Entitäts-ID der Integration umbenannt, sodass Verlauf und Langzeitstatistik dort weiterlaufen, und die alte Entität wird entfernt. Aus der Datenbank wird nichts gelöscht.\n\n{takeover_table}\n\n⚠ Die Einheit ist anders geschrieben (z. B. U/min → rpm). Der Verlauf läuft weiter; Home Assistant fragt danach einmal unter *Entwicklerwerkzeuge → Statistiken*, ob die neue Einheit übernommen werden soll. Die Werte sind dieselben.\n\nNicht übernommen, bleiben wie sie sind:\n\n{left_table}\n\n① die Integration skaliert den Wert anders · ② keine Temperatur · ③ andere Einheit · ④ Text statt Zahl, oder andere Texte · ⑤ hier ein anderer Entitätstyp (Zahl, Taste) · ⑥ das YAML ist noch geladen: erst entfernen und neu starten · ⑦ die Entitäts-ID ist schon vergeben",
         "data": {
           "take_over": "Verlauf übernehmen"
@@ -137,7 +137,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "LG ThermaV R290 — Konfigurieren",
+        "title": "LG Therma V R290 — Konfigurieren",
         "description": "| Option | An | Gerät antwortet |\n|---|:-:|:-:|\n| Energieregister | {energy_registers_on} | {energy_registers} |\n| Begrenzung der Verdichtermodulation | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Leistungsbegrenzung ¹ | {power_limit_on} | {power_limit} |\n| Taste für Notbetrieb | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimentelle Register | {experimental_registers_on} | {experimental_registers} |\n| Verdichterstatistik | {compressor_statistics_on} | {compressor_statistics} |\n| Abfragestatistik | {poll_statistics_on} | {poll_statistics} |\n\n✓ antwortet · ✗ keine Antwort · – nicht geprüft · ➕ antwortet, kann eingeschaltet werden\n\n¹ Ob das Gerät die Leistungsbegrenzung tatsächlich einhält, ist noch nicht bestätigt. Taste für Notbetrieb, experimentelle Register und die Statistiken werden nicht geprüft.\n\nLetzte Prüfung: {checked}",
         "menu_options": {
           "options": "Optionen (Abfrageintervall, optionale Register)",
@@ -149,7 +149,7 @@
         }
       },
       "options": {
-        "title": "LG ThermaV R290 — Optionen",
+        "title": "LG Therma V R290 — Optionen",
         "description": "| Option | An | Gerät antwortet |\n|---|:-:|:-:|\n| Energieregister | {energy_registers_on} | {energy_registers} |\n| Begrenzung der Verdichtermodulation | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Leistungsbegrenzung ¹ | {power_limit_on} | {power_limit} |\n| Taste für Notbetrieb | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimentelle Register | {experimental_registers_on} | {experimental_registers} |\n| Verdichterstatistik | {compressor_statistics_on} | {compressor_statistics} |\n| Abfragestatistik | {poll_statistics_on} | {poll_statistics} |\n\n✓ antwortet · ✗ keine Antwort · – nicht geprüft · ➕ antwortet, kann eingeschaltet werden\n\n¹ Ob das Gerät die Leistungsbegrenzung tatsächlich einhält, ist noch nicht bestätigt. Taste für Notbetrieb, experimentelle Register und die Statistiken werden nicht geprüft.\n\nLetzte Prüfung: {checked}",
         "data": {
           "scan_interval": "Abfrageintervall (Sekunden)"

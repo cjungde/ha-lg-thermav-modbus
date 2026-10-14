@@ -12,12 +12,12 @@ import sys
 import types
 
 COMPONENT = (
-    Path(__file__).resolve().parent.parent / "custom_components" / "lg_thermav_r290"
+    Path(__file__).resolve().parent.parent / "custom_components" / "lg_therma_v_r290"
 )
 
 
 def _load(module_name: str):
-    package = "lg_thermav_r290_under_test"
+    package = "lg_therma_v_r290_under_test"
     if package not in sys.modules:
         stub = types.ModuleType(package)
         stub.__path__ = [str(COMPONENT)]
@@ -37,6 +37,7 @@ def _load(module_name: str):
 cs = _load("compressor_stats")
 
 yt = _load("yaml_takeover")
+PREFIX = "lg_therma_v_r290"  # the device name "LG Therma V R290" as an id
 
 # Every entity with a unique_id in modbus_lg_heatpump.yaml (isarrider/
 # homeassistant_lg_therma_v_modbus, a37a8af): (platform, unique_id, domain).
@@ -129,14 +130,14 @@ def test_every_yaml_entity_is_handled_exactly_once() -> None:
 
 
 def test_no_two_yaml_entities_continue_in_one() -> None:
-    targets = [t.target_entity_id() for t in yt.TAKEOVERS]
+    targets = [t.target_entity_id(PREFIX) for t in yt.TAKEOVERS]
     assert len(targets) == len(set(targets))
 
 
 def test_targets_keep_the_domain() -> None:
     """The registry cannot move an entity id to another entity type."""
     for takeover in yt.TAKEOVERS:
-        assert takeover.target_entity_id().split(".")[0] == takeover.domain
+        assert takeover.target_entity_id(PREFIX).split(".")[0] == takeover.domain
 
 
 def _entries(*items):
@@ -154,10 +155,11 @@ def test_plan_finds_orphans_and_skips_live_and_taken() -> None:
     found, left = yt.plan(
         entries,
         live_entity_ids={"sensor.hp_outlet_temp"},
-        taken_entity_ids={"sensor.lg_thermav_r290_outdoor_temperature"},
+        taken_entity_ids={"sensor.lg_therma_v_r290_outdoor_temperature"},
+        prefix=PREFIX,
     )
     assert [(f.old_entity_id, f.new_entity_id) for f in found] == [
-        ("sensor.hp_inlet_temp", "sensor.lg_thermav_r290_inlet_temperature")
+        ("sensor.hp_inlet_temp", "sensor.lg_therma_v_r290_inlet_temperature")
     ]
     assert sorted(left) == [
         ("sensor.hp_outlet_temp", "still_loaded"),
@@ -167,4 +169,4 @@ def test_plan_finds_orphans_and_skips_live_and_taken() -> None:
 
 
 def test_plan_without_yaml_entities_finds_nothing() -> None:
-    assert yt.plan([], set(), set()) == ([], [])
+    assert yt.plan([], set(), set(), PREFIX) == ([], [])

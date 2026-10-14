@@ -12,9 +12,9 @@ from pytest_homeassistant_custom_component.common import (
 
 from .test_config_flow import DOMAIN, RTU
 
-STARTS = "sensor.lg_thermav_r290_compressor_starts"
-RUN_TIME = "sensor.lg_thermav_r290_compressor_run_time"
-SPEED = "sensor.lg_thermav_r290_compressor_average_speed"
+STARTS = "sensor.lg_therma_v_r290_compressor_starts"
+RUN_TIME = "sensor.lg_therma_v_r290_compressor_run_time"
+SPEED = "sensor.lg_therma_v_r290_compressor_average_speed"
 
 
 class Compressor:
@@ -59,7 +59,7 @@ async def test_counts_from_polls(hass, unit) -> None:
     compressor = Compressor(unit)
     clock = iter(float(t) for t in range(0, 10_000, 60))
     with patch(
-        "custom_components.lg_thermav_r290.coordinator._monotonic",
+        "custom_components.lg_therma_v_r290.coordinator._monotonic",
         side_effect=lambda: next(clock),
     ):
         entry = await _set_up(hass)  # poll at t=0: off

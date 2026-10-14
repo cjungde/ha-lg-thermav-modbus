@@ -10,7 +10,7 @@ That is what these two files are for.
 ## What the shadow is
 
 `make_shadow.py` copies the integration into a second domain,
-`lg_thermav_r290_test`, which Home Assistant then treats as an unrelated
+`lg_therma_v_r290_test`, which Home Assistant then treats as an unrelated
 integration: its own config entry, its own device, its own entities. The live
 entry cannot see it and nothing that feeds off the live entry — the COP chain,
 the DHW automations, the adaptive control in pyscript — can reach it.
@@ -25,9 +25,9 @@ a meter: a duplicated DHW-target `number` or a second "start disinfection"
 button would be a live control onto real hardware.
 
 **Its entities do not share the production prefix.** The device is named
-`ThermaV Testkopie`, so the entities are `sensor.thermav_testkopie_*`. This is
+`Therma V Testkopie`, so the entities are `sensor.therma_v_testkopie_*`. This is
 not cosmetic. `/config/influxdb.yaml` selects what to export with the glob
-`sensor.lg_thermav_r290*`; a shadow named "… Test" would match it and write a
+`sensor.lg_therma_v_r290*`; a shadow named "… Test" would match it and write a
 second, five-minute-stale copy of every reading into the time series database.
 Renaming out of the prefix also protects against any future pattern written
 against the production name.
@@ -44,7 +44,7 @@ requests queue behind that connection's lock.
 python3 tools/make_shadow.py /config/custom_components
 ```
 
-Then restart Home Assistant and add **LG ThermaV R290 (Testkopie, nur lesend)**
+Then restart Home Assistant and add **LG Therma V R290 (Testkopie, nur lesend)**
 from Settings → Devices & Services, with the same host, port and slave id as
 the live entry.
 
@@ -67,11 +67,11 @@ differ from the 300 s sampling skew alone but the slow ones still may not.
 Nothing about the shadow is load-bearing, and removing it is three steps:
 
 1. **Delete the config entry.** Settings → Devices & Services →
-   "LG ThermaV R290 (Testkopie, nur lesend)" → ⋮ → Delete. Home Assistant
+   "LG Therma V R290 (Testkopie, nur lesend)" → ⋮ → Delete. Home Assistant
    removes the device and all its entities with it.
 2. **Delete the files.**
    ```bash
-   rm -rf /config/custom_components/lg_thermav_r290_test
+   rm -rf /config/custom_components/lg_therma_v_r290_test
    ```
 3. **Restart Home Assistant.**
 

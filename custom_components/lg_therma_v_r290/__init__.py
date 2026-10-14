@@ -1,4 +1,4 @@
-"""LG ThermaV R290 Modbus integration."""
+"""LG Therma V R290 Modbus integration."""
 
 from __future__ import annotations
 

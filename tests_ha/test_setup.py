@@ -33,25 +33,25 @@ def _entities(hass, entry) -> dict[str, er.RegistryEntry]:
 async def test_entities_without_options(hass, unit) -> None:
     entry = await _set_up(hass)
     entities = _entities(hass, entry)
-    assert "sensor.lg_thermav_r290_outdoor_temperature" in entities
-    assert "switch.lg_thermav_r290_heating_cooling" in entities
-    assert "button.lg_thermav_r290_start_disinfection" in entities
+    assert "sensor.lg_therma_v_r290_outdoor_temperature" in entities
+    assert "switch.lg_therma_v_r290_heating_cooling" in entities
+    assert "button.lg_therma_v_r290_start_disinfection" in entities
     # Option-gated entities are not created.
     for entity_id in (
-        "sensor.lg_thermav_r290_electrical_power_heat_pump",
-        "number.lg_thermav_r290_max_compressor_modulation",
-        "number.lg_thermav_r290_max_electrical_power",
-        "switch.lg_thermav_r290_power_limit",
-        "button.lg_thermav_r290_start_emergency_operation",
-        "sensor.lg_thermav_r290_experimental_input_30015",
-        "sensor.lg_thermav_r290_poll_duration",
-        "sensor.lg_thermav_r290_bus_load",
+        "sensor.lg_therma_v_r290_electrical_power_heat_pump",
+        "number.lg_therma_v_r290_max_compressor_modulation",
+        "number.lg_therma_v_r290_max_electrical_power",
+        "switch.lg_therma_v_r290_power_limit",
+        "button.lg_therma_v_r290_start_emergency_operation",
+        "sensor.lg_therma_v_r290_experimental_input_30015",
+        "sensor.lg_therma_v_r290_poll_duration",
+        "sensor.lg_therma_v_r290_bus_load",
     ):
         assert entity_id not in entities, entity_id
     # Every unique id is <entry id>_<key>.
     for entity in entities.values():
         assert entity.unique_id.startswith(f"{entry.entry_id}_")
-    state = hass.states.get("sensor.lg_thermav_r290_outdoor_temperature")
+    state = hass.states.get("sensor.lg_therma_v_r290_outdoor_temperature")
     assert state.state == "0.0"
 
 
@@ -68,15 +68,15 @@ async def test_all_options_create_their_entities(hass, unit) -> None:
     entry = await _set_up(hass, options)
     entities = _entities(hass, entry)
     for entity_id in (
-        "sensor.lg_thermav_r290_electrical_power_heat_pump",
-        "sensor.lg_thermav_r290_cop_reported",
-        "number.lg_thermav_r290_max_compressor_modulation",
-        "number.lg_thermav_r290_max_electrical_power",
-        "switch.lg_thermav_r290_power_limit",
-        "button.lg_thermav_r290_start_emergency_operation",
-        "sensor.lg_thermav_r290_experimental_input_30015",
-        "sensor.lg_thermav_r290_poll_duration",
-        "sensor.lg_thermav_r290_bus_load",
+        "sensor.lg_therma_v_r290_electrical_power_heat_pump",
+        "sensor.lg_therma_v_r290_cop_reported",
+        "number.lg_therma_v_r290_max_compressor_modulation",
+        "number.lg_therma_v_r290_max_electrical_power",
+        "switch.lg_therma_v_r290_power_limit",
+        "button.lg_therma_v_r290_start_emergency_operation",
+        "sensor.lg_therma_v_r290_experimental_input_30015",
+        "sensor.lg_therma_v_r290_poll_duration",
+        "sensor.lg_therma_v_r290_bus_load",
     ):
         assert entity_id in entities, entity_id
     assert len(entities) == 112
@@ -87,13 +87,13 @@ async def test_writes_reach_the_unit(hass, unit) -> None:
     await hass.services.async_call(
         "switch",
         "turn_on",
-        {"entity_id": "switch.lg_thermav_r290_heating_cooling"},
+        {"entity_id": "switch.lg_therma_v_r290_heating_cooling"},
         blocking=True,
     )
     await hass.services.async_call(
         "number",
         "set_value",
-        {"entity_id": "number.lg_thermav_r290_max_electrical_power", "value": 2.0},
+        {"entity_id": "number.lg_therma_v_r290_max_electrical_power", "value": 2.0},
         blocking=True,
     )
     assert ("coil", 0, True) in unit.writes
@@ -111,10 +111,10 @@ async def test_migration_keeps_entity_ids(hass, unit) -> None:
     entry.add_to_hass(hass)
     registry = er.async_get(hass)
     old = {
-        ("switch", "hauptschalter"): "switch.lg_thermav_r290_heat_pump",
-        ("sensor", "outside_temp"): "sensor.lg_thermav_r290_outdoor_temperature",
+        ("switch", "hauptschalter"): "switch.lg_therma_v_r290_heat_pump",
+        ("sensor", "outside_temp"): "sensor.lg_therma_v_r290_outdoor_temperature",
         ("sensor", "room_air_temp_circuit1_hold"): (
-            "sensor.lg_thermav_r290_room_air_temperature_circuit_1_holding"
+            "sensor.lg_therma_v_r290_room_air_temperature_circuit_1_holding"
         ),
     }
     for (domain, key), entity_id in old.items():
@@ -131,9 +131,9 @@ async def test_migration_keeps_entity_ids(hass, unit) -> None:
 
     assert entry.minor_version == 4
     expected = {
-        "switch.lg_thermav_r290_heat_pump": "heating_cooling",
-        "sensor.lg_thermav_r290_outdoor_temperature": "outdoor_temperature",
-        "sensor.lg_thermav_r290_room_air_temperature_circuit_1_holding": (
+        "switch.lg_therma_v_r290_heat_pump": "heating_cooling",
+        "sensor.lg_therma_v_r290_outdoor_temperature": "outdoor_temperature",
+        "sensor.lg_therma_v_r290_room_air_temperature_circuit_1_holding": (
             "target_room_air_temperature_circuit_1"
         ),
     }
@@ -142,4 +142,4 @@ async def test_migration_keeps_entity_ids(hass, unit) -> None:
         assert entity is not None, entity_id
         assert entity.unique_id == f"{entry.entry_id}_{key}"
     # The kept entity id still has a state.
-    assert hass.states.get("switch.lg_thermav_r290_heat_pump") is not None
+    assert hass.states.get("switch.lg_therma_v_r290_heat_pump") is not None
