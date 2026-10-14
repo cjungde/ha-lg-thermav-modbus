@@ -99,10 +99,10 @@ SUBSTITUTIONS: tuple[tuple[str, str, str], ...] = (
     ),
     # The entities set _attr_has_entity_name, so the device name is what the
     # entity ids are derived from. The shadow deliberately does NOT keep the
-    # production prefix: /config/influxdb.yaml selects what to export with the
-    # glob 'sensor.lg_therma_v_r290*', and a shadow named "LG Therma V R290 Test"
-    # would match it and start writing a second, five-minute-stale copy of every
-    # reading into the time series database. Renaming the device out of the
+    # production prefix: an export filter written against it -- e.g. an
+    # InfluxDB entity_globs entry 'sensor.lg_therma_v_r290*' -- would also match
+    # a shadow named "LG Therma V R290 Test" and start writing a second,
+    # five-minute-stale copy of every reading into the time series database. Renaming the device out of the
     # prefix is a surer fix than adding an exclusion, because it also protects
     # against any future pattern written against the production name. All
     # entities take their device info from entity.py, so one change covers them.
