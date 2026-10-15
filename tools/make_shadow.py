@@ -51,19 +51,19 @@ from pathlib import Path
 import shutil
 import sys
 
-SOURCE_DOMAIN = "lg_thermav_r290"
-SHADOW_DOMAIN = "lg_thermav_r290_test"
+SOURCE_DOMAIN = "lg_therma_v_r290"
+SHADOW_DOMAIN = "lg_therma_v_r290_test"
 
 # Everything that can write to the heat pump. Deleted, not disabled.
 WRITING_PLATFORMS = ("switch.py", "button.py", "number.py", "select.py")
 
 READ_ONLY_PLATFORMS = '["sensor", "binary_sensor"]'
 
-# The device name, and with it the entity id prefix: sensor.thermav_testkopie_*.
+# The device name, and with it the entity id prefix: sensor.therma_v_testkopie_*.
 # Chosen so that no existing glob written against the production entities can
 # match the shadow -- see the note on the substitutions below.
-SHADOW_DEVICE_NAME = "ThermaV Testkopie"
-SHADOW_ENTITY_PREFIX = "thermav_testkopie"
+SHADOW_DEVICE_NAME = "Therma V Testkopie"
+SHADOW_ENTITY_PREFIX = "therma_v_testkopie"
 
 # (relative path, exact text to find, replacement). Every one of these must
 # match exactly once; a miss means the component moved on and this script is
@@ -77,8 +77,8 @@ SUBSTITUTIONS: tuple[tuple[str, str, str], ...] = (
     ),
     (
         "manifest.json",
-        '"name": "LG ThermaV R290"',
-        '"name": "LG ThermaV R290 (Testkopie, nur lesend)"',
+        '"name": "LG Therma V R290"',
+        '"name": "LG Therma V R290 (Testkopie, nur lesend)"',
     ),
     (
         "const.py",
@@ -89,7 +89,7 @@ SUBSTITUTIONS: tuple[tuple[str, str, str], ...] = (
     # every request the shadow skips is one the live entry does not queue behind.
     (
         "const.py",
-        "DEFAULT_SCAN_INTERVAL = 30",
+        "DEFAULT_SCAN_INTERVAL = 10",
         "DEFAULT_SCAN_INTERVAL = 300",
     ),
     (
@@ -99,21 +99,25 @@ SUBSTITUTIONS: tuple[tuple[str, str, str], ...] = (
     ),
     # The entities set _attr_has_entity_name, so the device name is what the
     # entity ids are derived from. The shadow deliberately does NOT keep the
-    # production prefix: /config/influxdb.yaml selects what to export with the
-    # glob 'sensor.lg_thermav_r290*', and a shadow named "LG ThermaV R290 Test"
-    # would match it and start writing a second, five-minute-stale copy of every
-    # reading into the time series database. Renaming the device out of the
+    # production prefix: an export filter written against it -- e.g. an
+    # InfluxDB entity_globs entry 'sensor.lg_therma_v_r290*' -- would also match
+    # a shadow named "LG Therma V R290 Test" and start writing a second,
+    # five-minute-stale copy of every reading into the time series database. Renaming the device out of the
     # prefix is a surer fix than adding an exclusion, because it also protects
-    # against any future pattern written against the production name.
+    # against any future pattern written against the production name. All
+    # entities take their device info from entity.py, so one change covers them.
     (
-        "sensor.py",
-        'name="LG ThermaV R290",',
-        f'name="{SHADOW_DEVICE_NAME}",',
+        "entity.py",
+        'DEVICE_NAME = "LG Therma V R290"',
+        f'DEVICE_NAME = "{SHADOW_DEVICE_NAME}"',
     ),
+    # The setup offers to take over the history of orphaned YAML entities
+    # (yaml_takeover.py). A test copy must never do that: it would move the
+    # YAML history onto entities that are about to be thrown away.
     (
-        "binary_sensor.py",
-        'name="LG ThermaV R290",',
-        f'name="{SHADOW_DEVICE_NAME}",',
+        "config_flow.py",
+        "self._takeover, self._left = _plan_yaml_takeover(self.hass)",
+        "self._takeover, self._left = [], []  # shadow: never takes over YAML history",
     ),
 )
 
@@ -198,7 +202,9 @@ def main() -> int:
 
     target = build(source, args.target)
     print(f"shadow written to {target}")
-    print("Restart Home Assistant, then add 'LG ThermaV R290 (Testkopie, nur lesend)'.")
+    print(
+        "Restart Home Assistant, then add 'LG Therma V R290 (Testkopie, nur lesend)'."
+    )
     print(f"Entities appear as sensor.{SHADOW_ENTITY_PREFIX}_* and")
     print(f"binary_sensor.{SHADOW_ENTITY_PREFIX}_*, polled every 300 s.")
     print("No switch, button, number or select entity is created.")

@@ -1,0 +1,17 @@
+{
+  "domain": "lg_therma_v_r290",
+  "name": "LG Therma V R290",
+  "codeowners": [
+    "@cjungde"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "modbus"
+  ],
+  "documentation": "https://github.com/cjungde/ha-lg-thermav-modbus",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/isarrider/ha-lg-therma-v-modbus/issues",
+  "requirements": [],
+  "version": "2.0.0"
+}

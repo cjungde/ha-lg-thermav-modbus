@@ -1,6 +1,6 @@
 # Register scan of the R290
 
-A read-only scan of the Modbus address space of a LG ThermaV R290 9 kW (HN1639HC NK0, slave 33, Modbus TCP via gateway), 2026-10-03. One request per address, one connection per request, 1 s timeout. Nothing was written.
+A read-only scan of the Modbus address space of a LG Therma V R290 9 kW (HN1639HC NK0, slave 33, Modbus TCP via gateway), 2026-10-03. One request per address, one connection per request, 1 s timeout. Nothing was written.
 
 An address that the device does not serve is not answered at all (timeout) instead of getting a Modbus exception. A block read that contains such an address is dropped as a whole, which is why input register 15 breaks a bulk read.
 
@@ -48,7 +48,9 @@ The optional *Experimental registers* setting of the integration records these o
 
 ## Does not answer
 
-Holding 24 (40025, "power limit" in basti242's YAML) and coil 6 (00007, "active power limitation") get no answer. Neither is in the manual.
+Holding 24 (40025, "power limit" in basti242's YAML) and coil 6 (00007, "active power limitation") get no answer on this unit.
+
+They are documented, though not in the manual this scan was checked against: the installation manual of a 12 kW unit lists coil **00007** *Wirkleistungsbegrenzung* — *0: nicht verwendet / 1: Leistung gemäß 40025 begrenzen* — so 40025 holds the power limit and 00007 switches it on. Whether a 12 kW unit answers on them, and whether the limit takes effect, has not been tested yet. The integration reads and writes them only behind the *Power limit* option (off by default).
 
 ## Sources checked
 

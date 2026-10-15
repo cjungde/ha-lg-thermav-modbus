@@ -1,0 +1,64 @@
+"""Every entity in docs/dashboard.md exists, with all options on."""
+
+from __future__ import annotations
+
+from pathlib import Path
+import re
+
+from homeassistant.helpers import entity_registry as er
+from pytest_homeassistant_custom_component.common import MockConfigEntry
+import yaml
+
+from .test_config_flow import DOMAIN, RTU
+
+DASHBOARD = Path(__file__).resolve().parent.parent / "docs" / "dashboard.md"
+
+
+def _entity_ids() -> set[str]:
+    text = DASHBOARD.read_text()
+    config = yaml.safe_load(re.search(r"```yaml\n(.*?)```", text, re.S).group(1))
+    found: set[str] = set()
+
+    def walk(node) -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key == "entity":
+                    found.add(value)
+                walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                walk(value)
+
+    walk(config)
+    return found
+
+
+async def test_every_dashboard_entity_exists(hass, unit) -> None:
+    hass.states.async_set("sensor.meter_power", "1", {"unit_of_measurement": "kW"})
+    hass.states.async_set("sensor.meter_energy", "1", {"unit_of_measurement": "kWh"})
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={"connection_type": "rtu", **RTU},
+        options={
+            "energy_registers": True,
+            "compressor_modulation_limit": True,
+            "power_limit": True,
+            "emergency_operation_button": True,
+            "experimental_registers": True,
+            "compressor_statistics": True,
+            "poll_statistics": True,
+            "external_power_sensor": "sensor.meter_power",
+            "external_energy_sensor": "sensor.meter_energy",
+        },
+        version=1,
+        minor_version=4,
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    registry = er.async_get(hass)
+    ids = _entity_ids()
+    assert len(ids) > 20
+    missing = sorted(i for i in ids if registry.async_get(i) is None)
+    assert missing == []
