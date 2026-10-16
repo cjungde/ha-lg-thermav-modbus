@@ -52,9 +52,17 @@ Please tell me what you see, in particular if the values move with the compresso
 
 ## Requirements
 
-**Home Assistant 2026.9.0 or newer.** From version 1.0.0 the integration no
+**Home Assistant 2026.10.0 or newer.** From version 1.0.0 the integration no
 longer speaks to the bus itself. It asks Home Assistant's `modbus` component
 for a unit on a *shared* connection, which means:
+
+The floor is **2026.10**, not the 2026.9 that first shipped `async_get_unit`.
+One call decides it: the coordinator asks its unit for a 20-second timeout
+floor through `require_timeout`, and that method does not exist in the
+`modbus-connection` 4.10.0 which the whole 2026.9 line pins — it arrived in
+4.12.3, and 2026.10 pins 4.12.4. Without the floor a shared connection keeps
+the library default of 10 s, which is too tight once several consumers
+serialize behind one lock.
 
 - Every integration pointing at the same gateway with the same link settings
   ends up on one connection, and their requests serialize behind its lock.

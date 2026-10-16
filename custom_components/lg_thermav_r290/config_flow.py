@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from homeassistant import config_entries
@@ -99,6 +100,14 @@ def _schema_rtu(defaults: dict) -> vol.Schema:
     )
 
 
+#: How long the form waits for the probe. The link's own timeout is no help
+#: here: the borrowed unit may land on an EXISTING connection whose timeout
+#: another entry has already raised (the coordinator asks for 20 s), and the
+#: probe would then inherit that wait. A config form has to answer sooner than
+#: that, so the wait is bounded here instead of relying on the transport.
+_PROBE_TIMEOUT = 10  # seconds
+
+
 async def _test_connection(hass: HomeAssistant, data: dict) -> str | None:
     """Try to read one input register. Returns an error key or None.
 
@@ -109,11 +118,14 @@ async def _test_connection(hass: HomeAssistant, data: dict) -> str | None:
     closed again on the way out.
     """
     try:
-        async with async_get_temporary_unit(
-            hass,
-            params_from_entry_data(data),
-            int(data[CONF_SLAVE_ID]),
-        ) as unit:
+        async with (
+            asyncio.timeout(_PROBE_TIMEOUT),
+            async_get_temporary_unit(
+                hass,
+                params_from_entry_data(data),
+                int(data[CONF_SLAVE_ID]),
+            ) as unit,
+        ):
             await unit.read_input_registers(0, 1)
     except HomeAssistantError as exc:
         # The endpoint is already held with link settings that cannot be
@@ -126,7 +138,9 @@ async def _test_connection(hass: HomeAssistant, data: dict) -> str | None:
         # Something answered but refused the request, which for register 0 of
         # a ThermaV means we are talking to the wrong unit.
         return "invalid_slave_id"
-    except ModbusError:
+    except (ModbusError, TimeoutError):
+        # A queued probe that ran out of time is indistinguishable, from the
+        # form's side, from a device that never answered.
         return "cannot_connect"
     except Exception:
         _LOGGER.exception("Unexpected error testing LG ThermaV connection")
