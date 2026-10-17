@@ -107,6 +107,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         self._fingerprint = definitions_fingerprint()
         self._capabilities_saved: dict[str, bool] | None = None
+        self._capabilities_restored = False
 
         scan_interval = entry.options.get(
             CONF_SCAN_INTERVAL,
@@ -154,6 +155,11 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         # Everything above answered, so the link is demonstrably alive. Only
         # now may a silent address be read as "this unit does not serve it".
+        if not self._capabilities_restored:
+            # The identity is known from this poll, so the stored result can
+            # now be judged. Before this point it could not.
+            self._restore_capabilities()
+            self._capabilities_restored = True
         await self._async_detect_capabilities()
         optional = await self._async_read_optional()
 
@@ -282,27 +288,36 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return values
 
     async def async_load_capabilities(self) -> None:
-        """Read the remembered capabilities before the first poll.
+        """Read the stored file, nothing more.
 
-        Called from `async_setup_entry` ahead of the first refresh so that a
-        known device needs no probe at all and its entities exist from the
-        first second.
+        Deciding what of it may be believed needs the device's identity, and
+        that is only known once the first poll has read registers 9997/9998 --
+        so the decision happens there, in `_restore_capabilities`.
+
+        Getting this order wrong is not a cosmetic mistake: restoring against
+        an identity of `{}` means every negative is discarded as unconfirmed,
+        and the installation re-probes all three addresses on every single
+        start. That is exactly what happened on 2026-10-18 before this was
+        split in two, and the Optional Registers sensor reported
+        `source: positive_only` where it should have said `hit`.
         """
         await self._capability_store.async_load()
+
+    def _restore_capabilities(self) -> None:
+        """Decide what the stored file is worth, now that the device is known."""
         identity = identity_of(*(self._identity or (None, None)))
         support, reason = self._capability_store.restore(
             self._device_key, self._fingerprint, identity
         )
-        self.capabilities = dict(support)
+        self.capabilities = {**support, **self.capabilities}
         self.capability_reason = reason
         self._capabilities_saved = dict(support)
-        if reason != "hit":
-            _LOGGER.debug(
-                "Capability cache: %s (%d of %d features known)",
-                reason,
-                len(support),
-                len(OPTIONAL_REGISTERS),
-            )
+        _LOGGER.debug(
+            "Capability cache: %s (%d of %d features known)",
+            reason,
+            len(self.capabilities),
+            len(OPTIONAL_REGISTERS),
+        )
 
     async def _async_detect_capabilities(self) -> None:
         """Ask the device once about each optional register.

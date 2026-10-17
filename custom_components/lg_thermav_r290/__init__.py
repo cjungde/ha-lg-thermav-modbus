@@ -13,8 +13,11 @@ PLATFORMS = ["sensor", "binary_sensor", "switch", "button", "number", "select"]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = LGThermaVCoordinator(hass, entry)
-    # Before the first poll: a device whose optional registers are already
-    # known needs no probe, and its entities exist from the first second.
+    # Read the stored capability file now; what of it may be believed is
+    # decided inside the first poll, once the device has said what it is.
+    # Both happen before the platforms are set up, so a device whose optional
+    # registers are already known needs no probe and its entities exist from
+    # the first second.
     await coordinator.async_load_capabilities()
     await coordinator.async_config_entry_first_refresh()
 
