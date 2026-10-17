@@ -239,3 +239,16 @@ def test_identity_leaves_out_what_the_device_did_not_say() -> None:
     assert capabilities.identity_of(None, None) == {}
     assert capabilities.identity_of(0, None) == {"device_group": 0}
     assert capabilities.identity_of(0, 8208) == IDENTITY
+
+
+def test_every_feature_carries_the_register_it_stands_for() -> None:
+    """The diagnostic sensor publishes these verbatim as `<key>_register`.
+
+    An empty one would leave a reader of the attributes guessing which address
+    a `false` refers to, which is the whole point of showing them.
+    """
+    for register in capabilities.OPTIONAL_REGISTERS:
+        assert register.description
+        assert str(40001 + register.address) in register.description or str(
+            1 + register.address
+        ) in register.description

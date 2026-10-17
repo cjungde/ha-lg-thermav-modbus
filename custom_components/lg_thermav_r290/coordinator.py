@@ -94,6 +94,11 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         #: happens inside the poll and not in a background task: an entity
         #: that appears only minutes later would miss its own history.
         self.capabilities: dict[str, bool] = {}
+        #: Why the cache answered the way it did, verbatim from
+        #: `capabilities.restore`. Carried so the diagnostic sensor can show
+        #: it: "positive_only" is the difference between "this unit has no
+        #: power limit" and "we could not confirm it is the same unit".
+        self.capability_reason: str = "not_loaded"
         self._capability_store = CapabilityStore(hass, entry.entry_id)
         self._device_key = device_key(
             entry.data.get("host", ""),
@@ -289,6 +294,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._device_key, self._fingerprint, identity
         )
         self.capabilities = dict(support)
+        self.capability_reason = reason
         self._capabilities_saved = dict(support)
         if reason != "hit":
             _LOGGER.debug(

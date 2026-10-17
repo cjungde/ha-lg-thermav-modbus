@@ -19,6 +19,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from .capabilities import OPTIONAL_REGISTERS
 from .const import (
     CONF_EXPERIMENTAL,
     CONTROL_METHOD_FROM_VALUE,
@@ -319,6 +320,7 @@ async def async_setup_entry(
         )
     else:
         _remove_experimental_entities(hass, entry)
+    entities.append(LGOptionalRegisterSensor(coordinator, entry))
     async_add_entities(entities)
 
 
@@ -489,3 +491,57 @@ class LGThermalPowerSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity
         flow_ls = float(flow) / 60.0  # l/min → l/s
         power_w = flow_ls * delta_t * self._CP_WATER
         return max(0, int(round(power_w)))
+
+
+class LGOptionalRegisterSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
+    """Which of the optional registers this unit serves, and on what grounds.
+
+    Three addresses from the manual are served by some units and not others
+    (see capabilities.py). Whether an entity for them exists is decided per
+    device, which makes their absence indistinguishable from a bug unless the
+    decision itself is visible somewhere. It used to be visible only at INFO
+    level and in the storage file -- that is, not at all on an installation
+    running the default WARNING.
+
+    The state is how many of them answered. The attributes carry each one's
+    verdict and, more importantly, `source`:
+
+    * `hit` -- read from the cache, device confirmed as the same one
+    * `positive_only` -- the unit does not say what it is, so a stored "no"
+      was discarded and will be probed again. A `false` seen here is this
+      session's own measurement, not a remembered one.
+    * `miss`, `definitions_changed`, `identity_changed` -- nothing was
+      believed; everything was probed in this session
+    """
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:format-list-checks"
+    # No state class on purpose: this is a property of the hardware, not a
+    # measurement, and averaging it over time would mean nothing.
+
+    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
+        self._attr_name = "Optional Registers"
+        self._attr_unique_id = f"{entry.entry_id}_optional_registers"
+        self._attr_device_info = _device_info(entry)
+
+    @property
+    def native_value(self) -> int:
+        return sum(1 for value in self.coordinator.capabilities.values() if value)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        known = self.coordinator.capabilities
+        attributes: dict[str, Any] = {
+            "source": self.coordinator.capability_reason,
+            "pending": [
+                register.key
+                for register in OPTIONAL_REGISTERS
+                if register.key not in known
+            ],
+        }
+        for register in OPTIONAL_REGISTERS:
+            attributes[register.key] = known.get(register.key)
+            attributes[f"{register.key}_register"] = register.description
+        return attributes

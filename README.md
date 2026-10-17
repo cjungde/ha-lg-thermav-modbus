@@ -42,11 +42,69 @@ Nothing in the manual or in the community projects I could find explains them. T
 
 Switch it on under *Settings → Devices & Services → LG ThermaV R290 → Configure → Experimental registers*. This adds 18 diagnostic sensors named `Experimental Input 30015`, `Experimental Holding 40011`, … They carry the raw, unscaled 16-bit value and have long-term statistics, so they can be compared with compressor speed, temperatures and defrost cycles. Switching the option off removes them again.
 
-**They are read-only.** The integration only ever writes a fixed list of known addresses (holding 0, 1, 2, 4, 5, 7, 8 and coils 0–4); every other write is refused before it reaches the bus, so none of these registers can be written by the integration, whichever entity or service asks. A register that stops answering leaves its sensor empty and does not affect the other values.
+**They are read-only.** The integration only ever writes a fixed list of known addresses (holding 0, 1, 2, 4, 5, 7, 8, 23, 24 and coils 0–4 and 6 — the last of each being the optional limits below); every other write is refused before it reaches the bus, so none of these registers can be written by the integration, whichever entity or service asks. A register that stops answering leaves its sensor empty and does not affect the other values.
 
 The full result of the scan, what the manual lists and what it does not, is in [docs/register-scan.md](docs/register-scan.md).
 
 Please tell me what you see, in particular if the values move with the compressor. A first reading from my unit: input 30015 reads 64887 (−64.9 °C as a signed tenth, the pattern of a temperature channel without a sensor), input 30018 reads 12000, and all of holding 40011–40023 read 0.
+
+---
+
+## Optional limits — detected per device
+
+Three addresses from the manual are served by some units and not by others:
+
+| Entity | Address | Range |
+|---|---|---|
+| `number.lg_thermav_r290_max_compressor_modulation` | Holding 23 (40024) | 0–100 %, 0 = no limit |
+| `number.lg_thermav_r290_power_limit` | Holding 24 (40025) | 0.1–25.0 kW |
+| `switch.lg_thermav_r290_power_limit_enable` | Coil 6 (00007) | whether the unit obeys the power limit |
+
+No two of the units reported so far agree. A 12 kW unit serves holding 23; the
+manual of an HM071HF UB40 lists coil 6 and holding 24 but not holding 23; and on
+the HN1639HC NK0 this integration was written against, all three stay silent
+(measured 2026-10-03 and again 2026-10-17, with holding 22 and coil 5 answering
+in the same second as a control).
+
+So the integration asks the device instead of assuming. **An entity exists only
+where the unit answered** — a slider that can never show a value and whose write
+goes nowhere is worse than an absent one. Nothing has to be configured.
+
+What was found is shown by the diagnostic sensor **Optional Registers**: its
+state is how many of the three answered, and its attributes give each one's
+verdict plus `source`, which says where that verdict came from:
+
+| `source` | Meaning |
+|---|---|
+| `hit` | read from the stored result; the device confirmed it is the same one |
+| `positive_only` | the unit does not report its identity (input 9997/9998 are optional too), so a stored "not served" was discarded and asked again. A `false` here is this session's own measurement |
+| `miss`, `definitions_changed`, `identity_changed` | nothing was believed; all three were asked in this session |
+
+### Why the result is stored
+
+An address this device family does not serve is not refused — it is **not
+answered at all**. Every probe therefore costs a full request timeout, which
+this integration raises to 20 s because it shares its Modbus connection. The
+result is written to Home Assistant storage, keyed by host, port and slave id,
+and read back on every later start, so the cost arises once per installation.
+
+Two safeguards come with that:
+
+- A probe runs **only right after a complete, successful poll**. A dead gateway
+  times out exactly like an unserved address, and that poll is the witness that
+  the link was alive. Without it an unplugged cable would be remembered as
+  missing hardware.
+- At most **one probe per cycle**. A unit serving none of the three would
+  otherwise stall the bus for a full minute in a single poll — and everything
+  else on that bus with it.
+
+If a unit gains the feature through a firmware update, delete and re-add the
+integration, or remove the `*.lg_thermav_r290_capabilities` file from
+`.storage`; the next start asks again.
+
+> **Coil 5 (00006) is deliberately left out.** It triggers emergency operation,
+> which runs the machine outside its normal control. The write guard refuses it,
+> and that is documented in the code so it is not mistaken for an oversight.
 
 ---
 
@@ -201,6 +259,7 @@ The config flow asks for connection type first, then connection-specific paramet
 | `switch.lg_thermav_r290_dhw` | Coil 1 |
 | `switch.lg_thermav_r290_silent_mode` | Coil 2 |
 | `switch.lg_thermav_r290_emergency_stop` | Coil 4 |
+| `switch.lg_thermav_r290_power_limit_enable` | Coil 6 — only where the unit serves it, see *Optional limits* |
 
 ### Buttons
 
@@ -227,6 +286,8 @@ see whether the operation actually started.
 | `number.lg_thermav_r290_dhw_target_temperature` | 35–60 °C | 8 (×0.1) |
 | `number.lg_thermav_r290_setpoint_shift_circuit_1` | −5…+5 K | 4 (signed) |
 | `number.lg_thermav_r290_setpoint_shift_circuit_2` | −5…+5 K | 7 (signed) |
+| `number.lg_thermav_r290_max_compressor_modulation` | 0–100 % | 23 — only where the unit serves it |
+| `number.lg_thermav_r290_power_limit` | 0.1–25.0 kW | 24 (×0.1) — only where the unit serves it |
 
 ### Select inputs
 
