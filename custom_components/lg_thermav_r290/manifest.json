@@ -15,5 +15,5 @@
   "requirements": [
     "modbus-connection>=4.12.3"
   ],
-  "version": "1.1.0"
+  "version": "1.2.0"
 }
