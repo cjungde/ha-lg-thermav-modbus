@@ -13,6 +13,14 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from modbus_connection.exceptions import ModbusError, ModbusExceptionError
 
+from .capabilities import (
+    OPTIONAL_REGISTERS,
+    CapabilityStore,
+    definitions_fingerprint,
+    device_key,
+    identity_of,
+    pending_probes,
+)
 from .connection import params_from_entry_data
 from .const import (
     CONF_EXPERIMENTAL,
@@ -79,6 +87,22 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         self._experimental = bool(entry.options.get(CONF_EXPERIMENTAL, False))
 
+        #: What this unit served, as far as we know. Empty until the cache is
+        #: read and, for anything the cache could not answer for, until the
+        #: first successful poll has witnessed a probe. The platforms read it
+        #: after `async_config_entry_first_refresh`, which is why detection
+        #: happens inside the poll and not in a background task: an entity
+        #: that appears only minutes later would miss its own history.
+        self.capabilities: dict[str, bool] = {}
+        self._capability_store = CapabilityStore(hass, entry.entry_id)
+        self._device_key = device_key(
+            entry.data.get("host", ""),
+            int(entry.data.get("port", 0)),
+            int(entry.data[CONF_SLAVE_ID]),
+        )
+        self._fingerprint = definitions_fingerprint()
+        self._capabilities_saved: dict[str, bool] | None = None
+
         scan_interval = entry.options.get(
             CONF_SCAN_INTERVAL,
             entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
@@ -123,10 +147,16 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except ModbusError as exc:
             raise UpdateFailed(f"Modbus communication error: {exc}") from exc
 
+        # Everything above answered, so the link is demonstrably alive. Only
+        # now may a silent address be read as "this unit does not serve it".
+        await self._async_detect_capabilities()
+        optional = await self._async_read_optional()
+
         experimental = await self._async_read_experimental(inp_hi)
 
         return {
             **experimental,
+            **optional,
             # Input registers (raw × scale)
             # inp_lo[n] = register n  (0-13)
             # inp_hi[n] = register 16+n (16-24)
@@ -244,6 +274,107 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 registers = [None] * count
             for offset, value in enumerate(registers):
                 values[register_key(kind, start + offset)] = value
+        return values
+
+    async def async_load_capabilities(self) -> None:
+        """Read the remembered capabilities before the first poll.
+
+        Called from `async_setup_entry` ahead of the first refresh so that a
+        known device needs no probe at all and its entities exist from the
+        first second.
+        """
+        await self._capability_store.async_load()
+        identity = identity_of(*(self._identity or (None, None)))
+        support, reason = self._capability_store.restore(
+            self._device_key, self._fingerprint, identity
+        )
+        self.capabilities = dict(support)
+        self._capabilities_saved = dict(support)
+        if reason != "hit":
+            _LOGGER.debug(
+                "Capability cache: %s (%d of %d features known)",
+                reason,
+                len(support),
+                len(OPTIONAL_REGISTERS),
+            )
+
+    async def _async_detect_capabilities(self) -> None:
+        """Ask the device once about each optional register.
+
+        Runs only after a complete poll, which is the witness that a silence
+        means "not served" rather than "cable unplugged". Each feature is asked
+        separately: a block read spanning two neighbouring addresses would be
+        dropped as a whole by a unit that serves only one of them.
+
+        A probe for a feature the device lacks costs one request timeout, and
+        on a shared connection that is 20 s. It is paid once per installation:
+        the result is written to storage and read back on every later start.
+
+        ONE PROBE PER CYCLE, deliberately. A unit that serves none of the
+        three would otherwise stall the bus for a full minute in a single
+        poll, and everything else on that bus with it -- on this installation
+        an energy meter polling every 5 s. Three cycles with one 20 s stall
+        each are survivable; one cycle with three is not. The cost arises once
+        per installation either way.
+        """
+        pending = pending_probes(self.capabilities)
+        if not pending:
+            return
+
+        for register in pending[:1]:
+            try:
+                if register.kind == "coil":
+                    await self.unit.read_coils(register.address, register.probe_count)
+                else:
+                    await self.unit.read_holding_registers(
+                        register.address, register.probe_count
+                    )
+            except ModbusError as exc:
+                self.capabilities[register.key] = False
+                _LOGGER.info(
+                    "This unit does not serve %s (%s): %s",
+                    register.key,
+                    register.description,
+                    exc,
+                )
+            else:
+                self.capabilities[register.key] = True
+                _LOGGER.info(
+                    "This unit serves %s (%s)", register.key, register.description
+                )
+
+        if self.capabilities != self._capabilities_saved:
+            await self._capability_store.async_update(
+                self._device_key,
+                self._fingerprint,
+                identity_of(*(self._identity or (None, None))),
+                self.capabilities,
+            )
+            self._capabilities_saved = dict(self.capabilities)
+
+    async def _async_read_optional(self) -> dict[str, Any]:
+        """Read the optional registers this unit actually serves.
+
+        A read that fails here leaves the value empty instead of failing the
+        poll: the mandatory blocks are what the heat pump is watched by, and a
+        limit setting is not worth taking the rest down for.
+        """
+        values: dict[str, Any] = {}
+        for register in OPTIONAL_REGISTERS:
+            if not self.capabilities.get(register.key):
+                continue
+            try:
+                if register.kind == "coil":
+                    bits = await self.unit.read_coils(register.address, 1)
+                    values[register.key] = bool(bits[0])
+                else:
+                    registers = await self.unit.read_holding_registers(
+                        register.address, 1
+                    )
+                    values[register.key] = registers[0]
+            except ModbusError as exc:
+                _LOGGER.debug("Optional register %s not read: %s", register.key, exc)
+                values[register.key] = None
         return values
 
     async def async_write_coil(self, address: int, value: bool) -> None:

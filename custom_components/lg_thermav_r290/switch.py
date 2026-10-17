@@ -27,6 +27,9 @@ from .coordinator import LGThermaVCoordinator
 class LGSwitchDescription(SwitchEntityDescription):
     data_key: str = ""
     coil_address: int = 0
+    # Capability key from capabilities.py, where the coil is served by some
+    # units only. The entity then exists only where the device answered.
+    capability: str | None = None
 
 
 _SWITCHES: tuple[LGSwitchDescription, ...] = (
@@ -62,6 +65,18 @@ _SWITCHES: tuple[LGSwitchDescription, ...] = (
         device_class=SwitchDeviceClass.SWITCH,
         icon="mdi:stop-circle",
     ),
+    # --- optional, see capabilities.py -----------------------------------
+    LGSwitchDescription(
+        key="power_limit_enable",
+        data_key="power_limit_enable",
+        coil_address=6,
+        capability="power_limit_enable",
+        name="Power Limit Enable",
+        # On its own this changes nothing: it decides whether the unit obeys
+        # the Power Limit number. Off means the machine runs unrestricted.
+        device_class=SwitchDeviceClass.SWITCH,
+        icon="mdi:flash-off",
+    ),
 )
 
 
@@ -71,7 +86,11 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: LGThermaVCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(LGSwitch(coordinator, entry, desc) for desc in _SWITCHES)
+    async_add_entities(
+        LGSwitch(coordinator, entry, desc)
+        for desc in _SWITCHES
+        if desc.capability is None or coordinator.capabilities.get(desc.capability)
+    )
 
 
 def _device_info(entry: ConfigEntry) -> DeviceInfo:

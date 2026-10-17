@@ -11,7 +11,7 @@ from homeassistant.components.number import (
     NumberMode,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfTemperature
+from homeassistant.const import PERCENTAGE, UnitOfPower, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -30,6 +30,9 @@ class LGNumberDescription(NumberEntityDescription):
     # Factor applied to display value when writing (display × write_scale = raw)
     write_scale: float = 1.0
     signed: bool = False
+    # Capability key from capabilities.py. Set where the register is served by
+    # some units only; the entity then exists only where the device answered.
+    capability: str | None = None
 
 
 _NUMBERS: tuple[LGNumberDescription, ...] = (
@@ -123,6 +126,43 @@ _NUMBERS: tuple[LGNumberDescription, ...] = (
         signed=True,
         icon="mdi:thermometer-auto",
     ),
+    # --- optional, see capabilities.py -----------------------------------
+    LGNumberDescription(
+        key="compressor_modulation_limit",
+        data_key="compressor_modulation_limit",
+        register_address=23,
+        capability="compressor_modulation_limit",
+        name="Max Compressor Modulation",
+        # The manual gives 40-100 %, with 0 meaning "no limit". Both ends are
+        # offered because switching the limit off has to stay possible, and
+        # the slider is the only control there is; 1-39 is not a valid setting
+        # and this device family clamps silently rather than refusing, so the
+        # step stops at neither end on the device's behalf.
+        native_min_value=0,
+        native_max_value=100,
+        native_step=1,
+        native_unit_of_measurement=PERCENTAGE,
+        mode=NumberMode.SLIDER,
+        icon="mdi:speedometer-slow",
+    ),
+    LGNumberDescription(
+        key="power_limit",
+        data_key="power_limit",
+        register_address=24,
+        capability="power_limit",
+        name="Power Limit",
+        # Raw value counts in 0.1 kW. Takes effect only while the enable coil
+        # is on -- see the Power Limit Enable switch.
+        native_min_value=0.1,
+        native_max_value=25.0,
+        native_step=0.1,
+        native_unit_of_measurement=UnitOfPower.KILO_WATT,
+        device_class=NumberDeviceClass.POWER,
+        mode=NumberMode.BOX,
+        read_scale=0.1,
+        write_scale=10.0,
+        icon="mdi:flash-alert",
+    ),
 )
 
 
@@ -132,7 +172,14 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: LGThermaVCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(LGNumber(coordinator, entry, desc) for desc in _NUMBERS)
+    async_add_entities(
+        LGNumber(coordinator, entry, desc)
+        for desc in _NUMBERS
+        # An optional register the device stayed silent on gets no entity: a
+        # slider that can never show a value and whose write goes nowhere is
+        # worse than an absent one.
+        if desc.capability is None or coordinator.capabilities.get(desc.capability)
+    )
 
 
 def _device_info(entry: ConfigEntry) -> DeviceInfo:

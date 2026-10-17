@@ -64,6 +64,15 @@ ENERGY_STATE_LABELS = {
 # The only addresses the integration ever writes. A write to anything else is
 # refused before it reaches the bus, whoever asks: the undocumented registers
 # found by scanning (see experimental.py) must stay read-only, and coil 5 is a
-# trigger for emergency operation that no entity should reach.
-WRITABLE_HOLDING_REGISTERS = frozenset({0, 1, 2, 4, 5, 7, 8})
-WRITABLE_COILS = frozenset({0, 1, 2, 3, 4})
+# trigger for emergency operation that no entity should reach. That exclusion
+# is deliberate and stays: the manual's "start emergency operation" runs the
+# machine outside its normal control, and nothing in this integration has a
+# reason to reach for it. It is left here as a documented omission so the next
+# reader does not take it for an oversight.
+#
+# 23, 24 and coil 6 are the optional limits from capabilities.py. They are
+# listed here because they are documented device functions rather than scan
+# finds; whether they are reachable is decided per device at setup, and an
+# entity for them only exists where the device answered.
+WRITABLE_HOLDING_REGISTERS = frozenset({0, 1, 2, 4, 5, 7, 8, 23, 24})
+WRITABLE_COILS = frozenset({0, 1, 2, 3, 4, 6})

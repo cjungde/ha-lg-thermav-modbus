@@ -13,6 +13,9 @@ PLATFORMS = ["sensor", "binary_sensor", "switch", "button", "number", "select"]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = LGThermaVCoordinator(hass, entry)
+    # Before the first poll: a device whose optional registers are already
+    # known needs no probe, and its entities exist from the first second.
+    await coordinator.async_load_capabilities()
     await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator

@@ -101,7 +101,9 @@ def test_nothing_experimental_is_writable() -> None:
 
 
 def test_the_write_whitelist_is_the_set_the_entities_use() -> None:
-    assert {0, 1, 2, 4, 5, 7, 8} == const.WRITABLE_HOLDING_REGISTERS
-    assert {0, 1, 2, 3, 4} == const.WRITABLE_COILS
+    # The documented setpoints, plus the two optional limits from
+    # capabilities.py (holding 23/24, coil 6) which only some units serve.
+    assert {0, 1, 2, 4, 5, 7, 8, 23, 24} == const.WRITABLE_HOLDING_REGISTERS
+    assert {0, 1, 2, 3, 4, 6} == const.WRITABLE_COILS
     # Coil 5 triggers emergency operation; no entity may reach it.
     assert 5 not in const.WRITABLE_COILS
