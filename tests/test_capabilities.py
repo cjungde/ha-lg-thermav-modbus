@@ -249,6 +249,7 @@ def test_every_feature_carries_the_register_it_stands_for() -> None:
     """
     for register in capabilities.OPTIONAL_REGISTERS:
         assert register.description
-        assert str(40001 + register.address) in register.description or str(
-            1 + register.address
-        ) in register.description
+        assert (
+            str(40001 + register.address) in register.description
+            or str(1 + register.address) in register.description
+        )
