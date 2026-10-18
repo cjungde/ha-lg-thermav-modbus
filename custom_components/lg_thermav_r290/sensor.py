@@ -321,6 +321,8 @@ async def async_setup_entry(
     else:
         _remove_experimental_entities(hass, entry)
     entities.append(LGOptionalRegisterSensor(coordinator, entry))
+    entities.append(LGFlushPulseRuntimeSensor(coordinator, entry))
+    entities.append(LGFlushPulseExpectedSensor(coordinator, entry))
     async_add_entities(entities)
 
 
@@ -545,3 +547,68 @@ class LGOptionalRegisterSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEn
             attributes[register.key] = known.get(register.key)
             attributes[f"{register.key}_register"] = register.description
         return attributes
+
+
+class LGFlushPulseRuntimeSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
+    """Uninterrupted running time at or below 25 Hz, in minutes.
+
+    This is the unit's own count-down towards the oil-return flush pulse, read
+    from the outside. It reaches about 60.5 minutes and then the pulse comes.
+    Empty whenever the clock is not running -- the compressor is stopped or out
+    of the band -- rather than showing a stale number.
+    """
+
+    _attr_has_entity_name = True
+    _attr_name = "Flush Pulse Runtime"
+    _attr_native_unit_of_measurement = "min"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:timer-outline"
+
+    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_flush_pulse_runtime"
+        self._attr_device_info = _device_info(entry)
+
+    @property
+    def native_value(self) -> float | None:
+        runtime = self.coordinator.flush_pulse.runtime_minutes
+        return round(runtime, 1) if runtime is not None else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        tracker = self.coordinator.flush_pulse
+        remaining = tracker.minutes_remaining()
+        return {
+            "minutes_remaining": round(remaining, 1) if remaining is not None else None,
+            "trigger_minutes": tracker.config.trigger_minutes,
+            "low_load_rpm": tracker.config.low_load_rpm,
+        }
+
+
+class LGFlushPulseExpectedSensor(CoordinatorEntity[LGThermaVCoordinator], SensorEntity):
+    """When the next flush pulse is expected.
+
+    Derived from the clock above plus the measured 60.5 minutes, so it is only
+    as good as that figure -- which held for 29 of 29 pulses within half a
+    minute. Empty while the clock is not running, because there is then nothing
+    to predict: a compressor stop resets the count rather than pausing it.
+
+    After a Home Assistant restart the clock starts from zero while the unit's
+    own timer keeps running, so the first prediction after a restart can be
+    late. The runtime attribute of the recorded pulse is `null` in that case
+    instead of a wrong number.
+    """
+
+    _attr_has_entity_name = True
+    _attr_name = "Flush Pulse Expected"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:clock-alert-outline"
+
+    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_flush_pulse_expected"
+        self._attr_device_info = _device_info(entry)
+
+    @property
+    def native_value(self):
+        return self.coordinator.flush_pulse.expected_at()

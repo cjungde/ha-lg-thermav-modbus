@@ -10,7 +10,9 @@ from homeassistant.components.modbus import async_get_unit
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 from modbus_connection.exceptions import ModbusError, ModbusExceptionError
 
 from .capabilities import (
@@ -24,14 +26,23 @@ from .capabilities import (
 from .connection import params_from_entry_data
 from .const import (
     CONF_EXPERIMENTAL,
+    CONF_FLUSH_PULSE_LEAD,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE_ID,
+    DEFAULT_FLUSH_PULSE_LEAD,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    EVENT_FLUSH_PULSE,
     WRITABLE_COILS,
     WRITABLE_HOLDING_REGISTERS,
 )
 from .experimental import EXPERIMENTAL_BLOCKS, INPUT_FROM_MAIN_READ, register_key
+from .flush_pulse import (
+    EVENT_FINISHED,
+    EVENT_IMMINENT,
+    FlushPulseConfig,
+    FlushPulseTracker,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -77,6 +88,8 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         That serialization is also why the timeout needs raising; see
         `_REQUEST_TIMEOUT`.
         """
+        self._entry = entry
+        self._device_id: str | None = None
         self.unit = async_get_unit(
             hass,
             entry,
@@ -108,6 +121,17 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._fingerprint = definitions_fingerprint()
         self._capabilities_saved: dict[str, bool] | None = None
         self._capabilities_restored = False
+
+        #: Follows the oil-return flush pulse. Fed from every poll, so its
+        #: resolution is the scan interval -- 10 s here, which is the same
+        #: grid the trigger itself was measured on.
+        self.flush_pulse = FlushPulseTracker(
+            config=FlushPulseConfig(
+                lead_seconds=int(
+                    entry.options.get(CONF_FLUSH_PULSE_LEAD, DEFAULT_FLUSH_PULSE_LEAD)
+                )
+            )
+        )
 
         scan_interval = entry.options.get(
             CONF_SCAN_INTERVAL,
@@ -165,7 +189,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         experimental = await self._async_read_experimental(inp_hi)
 
-        return {
+        data = {
             **experimental,
             **optional,
             # Input registers (raw × scale)
@@ -250,6 +274,67 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "di_emergency_dhw": di[15],
             "di_mix_pump": di[16],
         }
+
+        self._track_flush_pulse(data)
+        return data
+
+    def _track_flush_pulse(self, data: dict[str, Any]) -> None:
+        """Feed the tracker and fire what the poll caused.
+
+        The events go out before the entities see the new data, which is the
+        order an automation wants: `flush_pulse_imminent` is only useful if it
+        arrives while there is still time to act, and the whole point of the
+        three-minute lead is that the ramp is too short to react to.
+        """
+        events = self.flush_pulse.update(
+            dt_util.utcnow(),
+            data.get("compressor_rpm"),
+            defrosting=bool(data.get("di_defrosting")),
+            dhw_heating=bool(data.get("di_dhw_heating")),
+        )
+        for event_type in events:
+            self.hass.bus.async_fire(
+                EVENT_FLUSH_PULSE,
+                {
+                    "type": event_type,
+                    "device_id": self._async_device_id(),
+                    "entry_id": self._entry.entry_id,
+                    "runtime_minutes": self.flush_pulse.pulse_runtime_minutes
+                    if event_type != EVENT_IMMINENT
+                    else self.flush_pulse.runtime_minutes,
+                    "expected_at": expected.isoformat()
+                    if (expected := self.flush_pulse.expected_at())
+                    else None,
+                    "peak_rpm": self.flush_pulse.last_pulse.peak_rpm
+                    if event_type == EVENT_FINISHED and self.flush_pulse.last_pulse
+                    else None,
+                    "duration_seconds": round(
+                        self.flush_pulse.last_pulse.duration_seconds, 1
+                    )
+                    if event_type == EVENT_FINISHED and self.flush_pulse.last_pulse
+                    else None,
+                },
+            )
+            _LOGGER.info(
+                "Flush pulse: %s (runtime %s min)",
+                event_type,
+                self.flush_pulse.runtime_minutes,
+            )
+
+    def _async_device_id(self) -> str | None:
+        """The device registry id, resolved once and kept.
+
+        Device triggers filter on it, and the registry entry cannot be looked
+        up before the device exists -- which is why this is lazy rather than
+        done in the constructor.
+        """
+        if self._device_id is None:
+            device = dr.async_get(self.hass).async_get_device(
+                identifiers={(DOMAIN, self._entry.entry_id)}
+            )
+            if device is not None:
+                self._device_id = device.id
+        return self._device_id
 
     async def _async_read_experimental(
         self, inp_hi: list[int]

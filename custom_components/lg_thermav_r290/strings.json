@@ -51,12 +51,20 @@
         "title": "LG ThermaV R290 — Options",
         "data": {
           "scan_interval": "Polling interval (seconds)",
-          "experimental_registers": "Experimental registers"
+          "experimental_registers": "Experimental registers",
+          "flush_pulse_lead_seconds": "Flush pulse warning (seconds)"
         },
         "data_description": {
-          "experimental_registers": "Adds read-only sensors for 18 registers the device answers on but the manual does not document. Nothing is ever written to them. Meant for collecting data over time."
+          "experimental_registers": "Adds read-only sensors for 18 registers the device answers on but the manual does not document. Nothing is ever written to them. Meant for collecting data over time.",
+          "flush_pulse_lead_seconds": "How early the “before a flush pulse” trigger fires. The unit ramps up over about 50 seconds, which is too short to react to — the default of 180 s leaves time to write to the machine first."
         }
       }
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "flush_pulse_imminent": "Before a flush pulse",
+      "flush_pulse_finished": "After a flush pulse"
     }
   }
 }

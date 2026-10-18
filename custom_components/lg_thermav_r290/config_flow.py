@@ -23,6 +23,7 @@ from .const import (
     CONF_BAUDRATE,
     CONF_CONNECTION_TYPE,
     CONF_EXPERIMENTAL,
+    CONF_FLUSH_PULSE_LEAD,
     CONF_PARITY,
     CONF_SCAN_INTERVAL,
     CONF_SERIAL_PORT,
@@ -32,6 +33,7 @@ from .const import (
     CONNECTION_TCP,
     CONNECTION_TCP_RTU,
     DEFAULT_BAUDRATE,
+    DEFAULT_FLUSH_PULSE_LEAD,
     DEFAULT_PARITY,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
@@ -283,6 +285,14 @@ class LGThermaVOptionsFlow(config_entries.OptionsFlow):
                     CONF_EXPERIMENTAL,
                     default=self._entry.options.get(CONF_EXPERIMENTAL, False),
                 ): bool,
+                # Lower bound 60 s, not less: the ramp alone is about 50 s, so
+                # a shorter lead would land inside the pulse it announces.
+                vol.Required(
+                    CONF_FLUSH_PULSE_LEAD,
+                    default=self._entry.options.get(
+                        CONF_FLUSH_PULSE_LEAD, DEFAULT_FLUSH_PULSE_LEAD
+                    ),
+                ): vol.All(int, vol.Range(min=60, max=1800)),
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

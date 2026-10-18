@@ -154,6 +154,8 @@ async def async_setup_entry(
         LGEnergyStateBinarySensor(coordinator, entry, key, name, value)
         for key, name, value in _ENERGY_STATE_BINARY_SENSORS
     )
+    entities.append(LGFlushPulseActive(coordinator, entry))
+    entities.append(LGFlushPulseLowLoad(coordinator, entry))
     async_add_entities(entities)
 
 
@@ -220,3 +222,67 @@ class LGEnergyStateBinarySensor(
         if raw is None:
             return None
         return int(raw) == self._match_value
+
+
+class LGFlushPulseActive(CoordinatorEntity[LGThermaVCoordinator], BinarySensorEntity):
+    """On while the unit is running its oil-return flush pulse.
+
+    Not derived from compressor speed alone: a defrost ramps up the same way,
+    and distinguishing them is what `flush_pulse.py` is for.
+    """
+
+    _attr_has_entity_name = True
+    _attr_name = "Flush Pulse"
+    _attr_device_class = BinarySensorDeviceClass.RUNNING
+    _attr_icon = "mdi:oil"
+
+    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_flush_pulse_active"
+        self._attr_device_info = _device_info(entry)
+
+    @property
+    def is_on(self) -> bool:
+        return self.coordinator.flush_pulse.pulse_active
+
+    @property
+    def extra_state_attributes(self) -> dict[str, object]:
+        """What the last completed pulse looked like.
+
+        Peak and duration are the two signals that separate a flush from a
+        defrost: a flush peaks at exactly 3600 rpm and runs 40-60 s, a defrost
+        reaches 4020-4080 and takes about 90 s. `runtime_minutes` is the one
+        number that says whether the 60.5-minute mechanism still holds.
+        """
+        pulse = self.coordinator.flush_pulse.last_pulse
+        if pulse is None:
+            return {}
+        return {
+            "last_started": pulse.started.isoformat(),
+            "last_duration_seconds": round(pulse.duration_seconds, 1),
+            "last_peak_rpm": pulse.peak_rpm,
+            "last_runtime_minutes": round(pulse.runtime_minutes, 1)
+            if pulse.runtime_minutes is not None
+            else None,
+        }
+
+
+class LGFlushPulseLowLoad(CoordinatorEntity[LGThermaVCoordinator], BinarySensorEntity):
+    """On while the clock towards the next flush pulse is running.
+
+    That is: the compressor is running at or below 25 Hz without interruption.
+    A stop resets it; so does leaving the band.
+    """
+
+    _attr_has_entity_name = True
+    _attr_name = "Flush Pulse Clock"
+    _attr_icon = "mdi:timer-sand"
+
+    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_flush_pulse_low_load"
+        self._attr_device_info = _device_info(entry)
+
+    @property
+    def is_on(self) -> bool:
+        return self.coordinator.flush_pulse.low_load

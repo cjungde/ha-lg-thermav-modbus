@@ -51,12 +51,20 @@
         "title": "LG ThermaV R290 — Optionen",
         "data": {
           "scan_interval": "Abfrageintervall (Sekunden)",
-          "experimental_registers": "Experimentelle Register"
+          "experimental_registers": "Experimentelle Register",
+          "flush_pulse_lead_seconds": "Vorwarnzeit Spülpuls (Sekunden)"
         },
         "data_description": {
-          "experimental_registers": "Legt schreibgeschützte Sensoren für 18 Register an, die das Gerät beantwortet, die aber nicht im Handbuch stehen. Es wird nie darauf geschrieben. Gedacht zum Sammeln von Daten über längere Zeit."
+          "experimental_registers": "Legt schreibgeschützte Sensoren für 18 Register an, die das Gerät beantwortet, die aber nicht im Handbuch stehen. Es wird nie darauf geschrieben. Gedacht zum Sammeln von Daten über längere Zeit.",
+          "flush_pulse_lead_seconds": "Wie früh der Trigger „vor Spülpuls“ auslöst. Die Anlage fährt in etwa 50 Sekunden hoch, darauf lässt sich nicht mehr reagieren — die voreingestellten 180 s lassen Zeit, vorher auf die Maschine zu schreiben."
         }
       }
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "flush_pulse_imminent": "Vor Spülpuls",
+      "flush_pulse_finished": "Nach Spülpuls"
     }
   }
 }

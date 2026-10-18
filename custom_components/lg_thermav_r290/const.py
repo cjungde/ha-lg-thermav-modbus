@@ -76,3 +76,14 @@ ENERGY_STATE_LABELS = {
 # entity for them only exists where the device answered.
 WRITABLE_HOLDING_REGISTERS = frozenset({0, 1, 2, 4, 5, 7, 8, 23, 24})
 WRITABLE_COILS = frozenset({0, 1, 2, 3, 4, 6})
+
+# --- flush pulse ---------------------------------------------------------
+# How early `flush_pulse_imminent` fires, in seconds. The ramp alone is about
+# 50 s, which is too late for an automation that has to write to the machine
+# before the pulse: a Modbus write plus the unit's reaction does not fit in it.
+CONF_FLUSH_PULSE_LEAD = "flush_pulse_lead_seconds"
+DEFAULT_FLUSH_PULSE_LEAD = 180
+
+# One event type, distinguished by its `type` field -- the shape Home
+# Assistant's device triggers are built on.
+EVENT_FLUSH_PULSE = "lg_thermav_r290_event"
