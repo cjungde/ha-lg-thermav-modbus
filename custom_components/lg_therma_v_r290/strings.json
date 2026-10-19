@@ -131,7 +131,7 @@
       "reconfigure_successful": "Re-configuration was successful"
     },
     "progress": {
-      "detect": "Checking which optional registers this unit answers on. A unit that does not serve a group stays silent, so this can take up to about 30 seconds."
+      "detect": "Checking which optional registers this unit answers on. A unit that does not serve a group stays silent, so this can take up to about a minute."
     }
   },
   "options": {
@@ -145,7 +145,7 @@
         },
         "menu_option_descriptions": {
           "options": "Poll interval and the optional register groups.",
-          "detect": "Asks the unit which optional registers it answers on (up to about 30 seconds), then opens the options with what answered ticked. Nothing is switched off."
+          "detect": "Asks the unit which optional registers it answers on (up to about a minute), then opens the options with what answered ticked. Nothing is switched off."
         }
       },
       "options": {
@@ -241,7 +241,7 @@
       }
     },
     "progress": {
-      "detect": "Checking which optional registers this unit answers on. A unit that does not serve a group stays silent, so this can take up to about 30 seconds."
+      "detect": "Checking which optional registers this unit answers on. A unit that does not serve a group stays silent, so this can take up to about a minute."
     }
   },
   "entity": {

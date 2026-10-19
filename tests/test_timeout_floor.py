@@ -10,7 +10,7 @@ has no such method and would only fail with an ``AttributeError`` at setup.
 No Home Assistant install is needed. ``coordinator.py`` imports Home Assistant,
 so the call itself is read out of the syntax tree rather than executed; the
 behaviour it relies on is pinned against the library's own mock unit. The
-bound on the setup dialog's probes is read the same way from
+bound on the setup dialog's connection test is read the same way from
 ``config_flow.py``.
 """
 
@@ -86,9 +86,9 @@ def test_the_floor_is_the_documented_twenty_seconds() -> None:
     assert _constant(_tree(COORDINATOR), "_REQUEST_TIMEOUT") == EXPECTED_TIMEOUT
 
 
-def test_the_dialogs_wait_less_than_the_floor() -> None:
-    """The setup and options probes are bounded below the link timeout, or a
-    dialog on a shared link would inherit the 20 s per check."""
+def test_the_connection_test_waits_less_than_the_floor() -> None:
+    """The setup dialog's connection test is bounded below the link timeout, or
+    a form on a shared link would inherit the 20 s."""
     assert _constant(_tree(CONFIG_FLOW), "_PROBE_TIMEOUT") < EXPECTED_TIMEOUT
 
 

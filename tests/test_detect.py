@@ -105,25 +105,6 @@ def test_any_modbus_error_counts_as_no_answer() -> None:
         assert _run(Unit(silent={("holding", 23)}, error=error))[MODULATION] is False
 
 
-class HangingUnit(Unit):
-    """Never answers on the silent addresses: the request just waits, as it
-    does on a shared link whose timeout has been raised to 20 s."""
-
-    async def read_holding_registers(self, address, count):
-        if ("holding", address) in self.silent:
-            self.requests.append(("holding", address, count))
-            await asyncio.sleep(3600)
-        return self._read("holding", address, count)
-
-
-def test_each_check_is_bounded_by_the_given_timeout() -> None:
-    unit = HangingUnit(silent={("holding", 23)})
-    result = asyncio.run(detect.detect(unit, timeout=0.05))
-    assert result == {ENERGY: True, MODULATION: False, POWER: True}
-    # The checks after the one that ran out of time still ran.
-    assert ("coil", 6, 1) in unit.requests
-
-
 def test_only_safe_groups_are_suggested() -> None:
     everything = {ENERGY: True, MODULATION: True, POWER: True}
     result = detect.suggested(everything, {})

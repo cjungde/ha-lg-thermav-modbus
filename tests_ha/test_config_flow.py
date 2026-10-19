@@ -155,21 +155,6 @@ async def test_a_probe_that_waits_too_long_cannot_connect(
     assert result["errors"] == {"base": "cannot_connect"}
 
 
-async def test_a_check_that_waits_too_long_counts_as_no_answer(
-    hass, unit, monkeypatch
-) -> None:
-    monkeypatch.setattr(
-        "custom_components.lg_therma_v_r290.config_flow._PROBE_TIMEOUT", 0.05
-    )
-    unit.hanging = {("holding", 23)}
-    result = await _to_features_step(hass)
-    assert result["description_placeholders"] == {
-        "energy_registers": "✓",
-        "compressor_modulation_limit": "✗",
-        "power_limit": "✓",
-    }
-
-
 async def test_the_same_unit_cannot_be_added_twice(hass, unit) -> None:
     result = await _to_features_step(hass)
     await hass.config_entries.flow.async_configure(

@@ -131,7 +131,7 @@
       "reconfigure_successful": "Konfiguration erfolgreich aktualisiert"
     },
     "progress": {
-      "detect": "Prüfe, auf welche optionalen Register dieses Gerät antwortet. Ein Gerät, das eine Gruppe nicht liefert, antwortet gar nicht; das kann bis zu etwa 30 Sekunden dauern."
+      "detect": "Prüfe, auf welche optionalen Register dieses Gerät antwortet. Ein Gerät, das eine Gruppe nicht liefert, antwortet gar nicht; das kann bis zu etwa einer Minute dauern."
     }
   },
   "options": {
@@ -145,7 +145,7 @@
         },
         "menu_option_descriptions": {
           "options": "Abfrageintervall und die optionalen Registergruppen.",
-          "detect": "Fragt das Gerät, auf welche optionalen Register es antwortet (bis zu etwa 30 Sekunden), und öffnet dann die Optionen; was antwortet, ist angehakt. Es wird nichts ausgeschaltet."
+          "detect": "Fragt das Gerät, auf welche optionalen Register es antwortet (bis zu etwa einer Minute), und öffnet dann die Optionen; was antwortet, ist angehakt. Es wird nichts ausgeschaltet."
         }
       },
       "options": {
@@ -241,7 +241,7 @@
       }
     },
     "progress": {
-      "detect": "Prüfe, auf welche optionalen Register dieses Gerät antwortet. Ein Gerät, das eine Gruppe nicht liefert, antwortet gar nicht; das kann bis zu etwa 30 Sekunden dauern."
+      "detect": "Prüfe, auf welche optionalen Register dieses Gerät antwortet. Ein Gerät, das eine Gruppe nicht liefert, antwortet gar nicht; das kann bis zu etwa einer Minute dauern."
     }
   },
   "entity": {

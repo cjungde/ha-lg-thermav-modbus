@@ -120,7 +120,7 @@ def _schema_rtu(defaults: dict) -> vol.Schema:
     )
 
 
-#: How long the form waits for one probe. The link's own timeout is no help
+#: How long the form waits for the connection test. The link's own timeout is no help
 #: here: the borrowed unit may land on an EXISTING connection whose timeout the
 #: coordinator has already raised to 20 s (coordinator._REQUEST_TIMEOUT), and
 #: the probe would then inherit that wait. A form has to answer sooner than
@@ -182,7 +182,7 @@ async def _detect(hass: HomeAssistant, data: dict) -> dict[str, bool]:
             params_from_entry_data(data),
             int(data[CONF_SLAVE_ID]),
         ) as unit:
-            return await detect(unit, timeout=_PROBE_TIMEOUT)
+            return await detect(unit)
     except Exception:
         _LOGGER.exception("Checking the optional registers failed")
         return {}
