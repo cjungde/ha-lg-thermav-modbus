@@ -82,6 +82,7 @@ def test_a_unit_that_answers_everywhere() -> None:
     unit = Unit()
     assert _run(unit) == {ENERGY: True, MODULATION: True, POWER: True}
     assert unit.requests == [
+        ("input", 0, 1),  # the witness: the link is up
         ("input", 34, 18),
         ("holding", 23, 1),
         ("coil", 6, 1),
@@ -95,6 +96,44 @@ def test_a_unit_like_the_scanned_9_kw() -> None:
     unit = Unit(silent={("input", 34), ("holding", 23), ("coil", 6)})
     assert _run(unit) == {ENERGY: False, MODULATION: False, POWER: False}
     assert ("holding", 24, 1) not in unit.requests
+
+
+def test_a_unit_like_the_scanned_9_kw_is_witnessed_twice() -> None:
+    """Silences only count with the link shown up before and after."""
+    unit = Unit(silent={("input", 34), ("holding", 23), ("coil", 6)})
+    _run(unit)
+    witness = [r for r in unit.requests if r == ("input", 0, 1)]
+    assert len(witness) == 2
+    assert unit.requests[0] == unit.requests[-1] == ("input", 0, 1)
+
+
+def test_a_dead_link_proves_nothing() -> None:
+    """Behind a dead gateway every register is silent, the ones the unit
+    serves included; that must not be recorded as missing hardware."""
+    unit = Unit(silent={("input", 0), ("input", 34), ("holding", 23), ("coil", 6)})
+    assert _run(unit) is None
+    # Nothing else is asked once the witness stays silent.
+    assert unit.requests == [("input", 0, 1)]
+
+
+class DroppingUnit(Unit):
+    """The link goes down after the first request: answers the witness
+    once, then nothing."""
+
+    def _read(self, kind: str, address: int, count: int):
+        if self.requests:
+            self.silent.add((kind, address))
+        return super()._read(kind, address, count)
+
+
+def test_a_link_that_drops_during_the_check_proves_nothing() -> None:
+    assert _run(DroppingUnit()) is None
+
+
+def test_no_second_witness_when_everything_answered() -> None:
+    unit = Unit()
+    _run(unit)
+    assert unit.requests.count(("input", 0, 1)) == 1
 
 
 def test_power_limit_needs_both_addresses() -> None:
