@@ -163,7 +163,7 @@ The config flow asks for connection type first, then connection-specific paramet
 
 ### Which options the unit supports
 
-After the connection test, the setup asks the unit once which optional register groups it answers on, and shows the result (✓ answers, ✗ no answer) as a table on a last step with the options:
+After the connection test, the setup asks whether to check the unit now: which optional register groups it answers on. Which groups a unit serves only changes with a firmware update, so one check is enough. If you run it, the result (✓ answers, ✗ no answer) is shown as a table on a last step with the options; if you skip it, the table shows – (not checked), nothing is ticked, and the check can be run any time under **Configure**:
 
 | Option | Checked | Ticked when the unit answers |
 |---|---|---|
@@ -175,7 +175,7 @@ After the connection test, the setup asks the unit once which optional register 
 | Compressor statistics | — | never: nothing to check on the unit |
 | Poll statistics | — | never: nothing to check on the unit |
 
-Answering only proves the register exists, not that writing it has an effect. A unit that does not serve a group stays silent, so each missing group waits for a request timeout (20 seconds, see [Requirements](#requirements)): on a unit that has none of them, the check takes up to about a minute, shown as progress. It runs only then, never while polling.
+Answering only proves the register exists, not that writing it has an effect. A unit that does not serve a group stays silent, so each missing group waits for a request timeout (20 seconds, see [Requirements](#requirements)): on a unit that has none of them, the check takes up to about a minute, shown as progress, and on a shared connection everything else on it waits too. That is why the setup asks first. The check runs only when asked for, never while polling.
 
 <p>
 <img src="docs/images/setup-progress.png" alt="Setup: progress while the optional registers are checked" width="400"><br>
