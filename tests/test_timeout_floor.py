@@ -29,6 +29,8 @@ COORDINATOR = (
     / "coordinator.py"
 )
 
+CONFIG_FLOW = COORDINATOR.parent / "config_flow.py"
+
 #: Mirrors ``coordinator._REQUEST_TIMEOUT``. Duplicated on purpose: the point of
 #: these tests is to notice when that value changes, which a shared import would
 #: defeat.
@@ -86,6 +88,21 @@ def test_the_coordinator_asks_for_the_floor(tree: ast.Module) -> None:
 
 def test_the_floor_is_the_documented_twenty_seconds(tree: ast.Module) -> None:
     assert _constant(tree, "_REQUEST_TIMEOUT") == EXPECTED_TIMEOUT
+
+
+def test_the_connection_test_stays_below_the_floor() -> None:
+    """The config form's own bound has to be shorter than the link's timeout.
+
+    Taken over from isarrider's adoption of this change, which had the test and
+    this repository did not. Without the relation the bound is decoration: the
+    borrowed unit may land on a connection whose timeout the coordinator has
+    already raised, and a form bounded at or above that value would sit there
+    for the full wait anyway.
+    """
+    probe = _constant(
+        ast.parse(CONFIG_FLOW.read_text(encoding="utf-8")), "_PROBE_TIMEOUT"
+    )
+    assert 0 < probe < EXPECTED_TIMEOUT
 
 
 def test_the_floor_is_recorded_by_the_unit(unit: MockModbusUnit) -> None:
