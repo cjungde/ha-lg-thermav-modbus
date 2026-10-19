@@ -179,11 +179,12 @@ After the connection test, the setup asks whether to check the unit now: which o
 Answering only proves the register exists, not that writing it has an effect. A unit that does not serve a group stays silent, so each missing group waits for a request timeout (20 seconds, see [Requirements](#requirements)): on a unit that has none of them, the check takes up to about a minute, shown as progress, and on a shared connection everything else on it waits too. That is why the setup asks first. The check runs only when asked for, never while polling. Because a register the unit lacks is silent just like any register behind a dead gateway, a ✗ only counts when the link is shown to be up: the unit has to answer a register it always serves before the check, and again after it if anything stayed silent. If it does not, nothing is recorded and the dialog says the check proved nothing.
 
 <p>
+<img src="docs/images/setup-check.png" alt="Setup: after the connection test, the question whether to check the optional registers now or skip the check" width="400"><br>
 <img src="docs/images/setup-progress.png" alt="Setup: progress while the optional registers are checked" width="400"><br>
 <img src="docs/images/setup-features.png" alt="Setup, last step: the check result and the optional register groups, energy registers and compressor modulation limit ticked" width="400">
 </p>
 
-*Illustrations of a 12 kW unit that answers on all three groups; Home Assistant's own dialogs look slightly different.*
+*Illustrations of a 12 kW unit that answers on all three groups, drawn from the integration's own texts by [tools/render_dialogs.py](tools/render_dialogs.py); Home Assistant's own dialogs look slightly different.*
 
 **Configure** opens a menu. At the top, a table shows per optional group whether it is on, what the unit answered on the last check (➕ marks a group the unit answers on but that is off, i.e. what could be switched on), and what its reads have done since the integration started (see below). Below it:
 
@@ -192,7 +193,7 @@ Answering only proves the register exists, not that writing it has an effect. A 
 
 **Reconfigure** (⋮ next to the entry) changes the connection settings without removing the integration. If the new settings point at a different unit (another address, port, serial port or slave ID), the last check belonged to the old one and is cleared; the options themselves stay as they are. A different framing on the same address (TCP ↔ TCP-RTU) keeps it. Moving the same unit to another path, e.g. from a USB adapter to a gateway, cannot be told apart from another unit and clears it too; the check is one click away.
 
-<img src="docs/images/setup-menu.png" alt="Configure: a table of the optional groups with the columns On and Unit answers (now: Last check and Since start), and the menu entries Options and Check the optional registers" width="400"><br>
+<img src="docs/images/setup-menu.png" alt="Configure: a table of the optional groups with the columns On, Last check and Since start, and the menu entries Options and Check the optional registers" width="400"><br>
 <img src="docs/images/setup-options.png" alt="Configure, Options: the same table, the poll interval and the optional groups" width="400">
 
 
@@ -202,6 +203,8 @@ The energy registers, the compressor modulation limit and the power limit are re
 
 - **Never answered:** the unit most likely does not serve it, and that only changes with a firmware update. The read is **given up** until the integration is reloaded or Home Assistant restarts, and a notice appears under **Settings → Repairs**. Its button switches the option off, which removes the option's entities. If the unit does serve the registers after all, close the notice and reload the integration, or run *Check the optional registers* under Configure.
 - **Answered before:** most likely a hiccup on the bus. The read **pauses** for 20 polls and is then tried again, so it heals by itself. No notice.
+
+<img src="docs/images/repairs-never-answered.png" alt="Settings, Repairs: the notice for energy registers that never answered, with the button that switches the option off" width="400">
 
 Four places show the state:
 

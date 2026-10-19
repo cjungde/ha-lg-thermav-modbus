@@ -51,7 +51,7 @@
         "sections": {
           "energy_registers": {
             "name": "Energy registers",
-            "description": "Adds read-only sensors for electrical power, cumulative energy, demand vs. supply and thermal power from input registers 34-51 (32-bit values). Not every unit serves them: a unit that does not answer simply leaves the sensors without a value, and is asked again only every few polls.",
+            "description": "Adds read-only sensors for electrical power, cumulative energy, demand vs. supply and thermal power from input registers 34-51 (32-bit values). Not every unit serves them: a unit that does not answer leaves the sensors without a value, and if they never answer, the read is given up and a notice appears under Settings → Repairs.",
             "data": {
               "energy_registers": "Switch on"
             },
@@ -171,7 +171,7 @@
         "sections": {
           "energy_registers": {
             "name": "Energy registers",
-            "description": "Adds read-only sensors for electrical power, cumulative energy, demand vs. supply and thermal power from input registers 34-51 (32-bit values). Not every unit serves them: a unit that does not answer simply leaves the sensors without a value, and is asked again only every few polls.",
+            "description": "Adds read-only sensors for electrical power, cumulative energy, demand vs. supply and thermal power from input registers 34-51 (32-bit values). Not every unit serves them: a unit that does not answer leaves the sensors without a value, and if they never answer, the read is given up and a notice appears under Settings → Repairs.",
             "data": {
               "energy_registers": "Switch on"
             },

@@ -82,3 +82,19 @@ entries with no matching entity and can be deleted there in one pass.
 
 The live integration is untouched by all of this. It kept its own domain, its
 own entities and its own pymodbus connection throughout.
+
+# Dialog illustrations
+
+`render_dialogs.py` draws the setup, Configure and Repairs dialogs shown in
+the README (`docs/images/*.png`). The texts come straight from
+`strings.json`, so after changing a dialog's wording, run it again rather
+than editing the pictures:
+
+```bash
+pip install playwright markdown
+python tools/render_dialogs.py
+```
+
+It needs a Chromium for Playwright and, for the intended look, the Inter font.
+The pictures are illustrations; Home Assistant's own dialogs look slightly
+different.
