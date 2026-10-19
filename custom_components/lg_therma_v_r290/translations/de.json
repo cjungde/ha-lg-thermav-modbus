@@ -51,7 +51,7 @@
         "sections": {
           "energy_registers": {
             "name": "Energieregister",
-            "description": "Legt schreibgeschützte Sensoren für elektrische Leistung, kumulierte Energie, Bedarf vs. Versorgung und thermische Leistung aus den Input-Registern 34-51 an (32-Bit-Werte). Nicht jedes Gerät liefert sie: Antwortet das Gerät nicht, bleiben die Sensoren ohne Wert und es wird nur alle paar Abfragen erneut versucht.",
+            "description": "Legt schreibgeschützte Sensoren für elektrische Leistung, kumulierte Energie, Bedarf vs. Versorgung und thermische Leistung aus den Input-Registern 34-51 an (32-Bit-Werte). Nicht jedes Gerät liefert sie: Antwortet das Gerät nicht, bleiben die Sensoren ohne Wert; antworten sie nie, wird das Lesen aufgegeben und unter Einstellungen → Reparaturen erscheint ein Hinweis.",
             "data": {
               "energy_registers": "Einschalten"
             },
@@ -171,7 +171,7 @@
         "sections": {
           "energy_registers": {
             "name": "Energieregister",
-            "description": "Legt schreibgeschützte Sensoren für elektrische Leistung, kumulierte Energie, Bedarf vs. Versorgung und thermische Leistung aus den Input-Registern 34-51 an (32-Bit-Werte). Nicht jedes Gerät liefert sie: Antwortet das Gerät nicht, bleiben die Sensoren ohne Wert und es wird nur alle paar Abfragen erneut versucht.",
+            "description": "Legt schreibgeschützte Sensoren für elektrische Leistung, kumulierte Energie, Bedarf vs. Versorgung und thermische Leistung aus den Input-Registern 34-51 an (32-Bit-Werte). Nicht jedes Gerät liefert sie: Antwortet das Gerät nicht, bleiben die Sensoren ohne Wert; antworten sie nie, wird das Lesen aufgegeben und unter Einstellungen → Reparaturen erscheint ein Hinweis.",
             "data": {
               "energy_registers": "Einschalten"
             },
