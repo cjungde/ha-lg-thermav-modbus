@@ -129,6 +129,34 @@ def _schema_rtu(defaults: dict) -> vol.Schema:
 _PROBE_TIMEOUT = 10  # seconds
 
 
+def _device_key(data: dict) -> str:
+    """The entry's unique id: address (or serial port) and slave id.
+
+    Kept exactly as setup has always written it -- the form hands the slave
+    id over as a float, so existing entries carry e.g. "…:1.0" -- because
+    duplicate detection compares it with the ids already in place. TCP and
+    TCP-RTU on one host share it: two framings for the same unit.
+    """
+    if data[CONF_CONNECTION_TYPE] == CONNECTION_RTU:
+        return f"{data[CONF_SERIAL_PORT]}:{data[CONF_SLAVE_ID]}"
+    return f"{data['host']}:{data['port']}:{data[CONF_SLAVE_ID]}"
+
+
+def _same_unit(old: dict, new: dict) -> bool:
+    """Whether two sets of link settings point at the same unit.
+
+    Compared as values, not as unique id strings: a slave id stored as 1 and
+    one typed as 1.0 are the same unit.
+    """
+
+    def where(data: dict) -> tuple:
+        if data[CONF_CONNECTION_TYPE] == CONNECTION_RTU:
+            return ("serial", data[CONF_SERIAL_PORT], int(data[CONF_SLAVE_ID]))
+        return ("tcp", data["host"], int(data["port"]), int(data[CONF_SLAVE_ID]))
+
+    return where(old) == where(new)
+
+
 async def _test_connection(hass: HomeAssistant, data: dict) -> str | None:
     """Try to read one input register. Returns an error key or None.
 
@@ -373,6 +401,36 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await self.hass.config_entries.async_setup(entry.entry_id)
         return error
 
+    def _finish_reconfigure(self, data: dict, title: str) -> FlowResult:
+        """Save new link settings and reload the entry.
+
+        When they point at a different unit -- another address, port, serial
+        port or slave id (_same_unit) -- the stored result of the optional
+        register check belongs to the old unit and is cleared, and the unique
+        id follows the new address. A change of framing on the same address
+        (TCP <-> TCP-RTU) keeps both. From the address alone a move of the
+        same unit to another path (USB adapter -> gateway) cannot be told
+        apart from another unit, so it clears the result too: the cheap
+        mistake, since the check is one click under Configure.
+        """
+        entry = self._reconfigure_entry
+        if _same_unit(dict(entry.data), data):
+            return self.async_update_reload_and_abort(entry, title=title, data=data)
+        new_key = _device_key(data)
+        for other in self.hass.config_entries.async_entries(DOMAIN):
+            if other.entry_id != entry.entry_id and (
+                other.unique_id == new_key or _same_unit(dict(other.data), data)
+            ):
+                return self.async_abort(reason="already_configured")
+        return self.async_update_reload_and_abort(
+            entry,
+            unique_id=new_key,
+            title=title,
+            data=data,
+            options={**entry.options, CONF_DETECTED: None, CONF_DETECTED_AT: None},
+            reason="reconfigure_successful_check_cleared",
+        )
+
     async def async_step_tcp(self, user_input=None) -> FlowResult:
         errors: dict[str, str] = {}
         defaults = self._reconfigure_entry.data if self._reconfigure_entry else {}
@@ -381,14 +439,8 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             error = await self._test(data)
             if error is None:
                 if self._reconfigure_entry:
-                    return self.async_update_reload_and_abort(
-                        self._reconfigure_entry,
-                        title=f"LG Therma V {data['host']}",
-                        data=data,
-                    )
-                await self.async_set_unique_id(
-                    f"{data['host']}:{data['port']}:{data[CONF_SLAVE_ID]}"
-                )
+                    return self._finish_reconfigure(data, f"LG Therma V {data['host']}")
+                await self.async_set_unique_id(_device_key(data))
                 self._abort_if_unique_id_configured()
                 self._data = data
                 self._title = f"LG Therma V {data['host']}"
@@ -409,14 +461,10 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             error = await self._test(data)
             if error is None:
                 if self._reconfigure_entry:
-                    return self.async_update_reload_and_abort(
-                        self._reconfigure_entry,
-                        title=f"LG Therma V {data[CONF_SERIAL_PORT]}",
-                        data=data,
+                    return self._finish_reconfigure(
+                        data, f"LG Therma V {data[CONF_SERIAL_PORT]}"
                     )
-                await self.async_set_unique_id(
-                    f"{data[CONF_SERIAL_PORT]}:{data[CONF_SLAVE_ID]}"
-                )
+                await self.async_set_unique_id(_device_key(data))
                 self._abort_if_unique_id_configured()
                 self._data = data
                 self._title = f"LG Therma V {data[CONF_SERIAL_PORT]}"

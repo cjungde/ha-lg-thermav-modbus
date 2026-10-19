@@ -190,6 +190,8 @@ Answering only proves the register exists, not that writing it has an effect. A 
 - **Options**: the poll interval and the optional groups, with the same table above them. Each option is a section you can expand: it says what the option is for and lists every entity it adds (name, unit, register). Sections of options that are on open expanded; the others stay collapsed.
 - **Check the optional registers**: asks the unit again (up to about a minute), then opens the options with the groups that answered ticked, as at setup. Nothing is switched off. Useful on an installation set up before 1.5.0 (the table shows – until then) or after a firmware update.
 
+**Reconfigure** (⋮ next to the entry) changes the connection settings without removing the integration. If the new settings point at a different unit (another address, port, serial port or slave ID), the last check belonged to the old one and is cleared; the options themselves stay as they are. A different framing on the same address (TCP ↔ TCP-RTU) keeps it. Moving the same unit to another path, e.g. from a USB adapter to a gateway, cannot be told apart from another unit and clears it too; the check is one click away.
+
 <img src="docs/images/setup-menu.png" alt="Configure: a table of the optional groups with the columns On and Unit answers (now: Last check and Since start), and the menu entries Options and Check the optional registers" width="400"><br>
 <img src="docs/images/setup-options.png" alt="Configure, Options: the same table, the poll interval and the optional groups" width="400">
 

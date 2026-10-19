@@ -141,7 +141,8 @@
     },
     "abort": {
       "already_configured": "Device is already configured",
-      "reconfigure_successful": "Re-configuration was successful"
+      "reconfigure_successful": "Re-configuration was successful",
+      "reconfigure_successful_check_cleared": "Re-configuration was successful. The new settings point at a different unit (address or slave ID), so the last check of the optional registers was cleared; run it again under Configure → Check the optional registers. The options themselves are unchanged."
     },
     "progress": {
       "detect": "Checking which optional registers this unit answers on. A unit that does not serve a group stays silent, so this can take up to about a minute."

@@ -141,7 +141,8 @@
     },
     "abort": {
       "already_configured": "Gerät ist bereits konfiguriert",
-      "reconfigure_successful": "Konfiguration erfolgreich aktualisiert"
+      "reconfigure_successful": "Konfiguration erfolgreich aktualisiert",
+      "reconfigure_successful_check_cleared": "Konfiguration erfolgreich aktualisiert. Die neuen Einstellungen zeigen auf ein anderes Gerät (Adresse oder Slave-ID), deshalb wurde die letzte Prüfung der optionalen Register gelöscht; führe sie unter Konfigurieren → Optionale Register prüfen erneut aus. Die Optionen selbst bleiben unverändert."
     },
     "progress": {
       "detect": "Prüfe, auf welche optionalen Register dieses Gerät antwortet. Ein Gerät, das eine Gruppe nicht liefert, antwortet gar nicht; das kann bis zu etwa einer Minute dauern."
