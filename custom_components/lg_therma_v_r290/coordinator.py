@@ -38,6 +38,8 @@ from .const import (
 from .energy import (
     ENERGY_BLOCK_COUNT,
     ENERGY_BLOCK_START,
+    EVENT_GAVE_UP,
+    EVENT_PAUSED,
     RetryBackoff,
     decode_block,
 )
@@ -47,6 +49,7 @@ from .experimental import (
     BlockGate,
     data_key,
 )
+from .issues import raise_never_answered
 from .limits import DATA_KEY_MAX_COMPRESSOR_MODULATION, MODULATION_LIMIT_REGISTER
 from .pollstats import CountingUnit, stats
 from .power_limit import (
@@ -55,6 +58,11 @@ from .power_limit import (
     POWER_LIMIT_COIL,
     POWER_LIMIT_REGISTER,
 )
+from .register_status import EXPERIMENTAL_GIVEN_UP
+
+#: Coordinator data key of the optional-register snapshot (see
+#: LGThermaVCoordinator.optional_snapshot), read by the diagnostic sensor.
+DATA_KEY_OPTIONAL_REGISTERS = "optional_registers"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -130,6 +138,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._modulation_backoff = RetryBackoff()
         self._power_limit = bool(entry.options.get(CONF_POWER_LIMIT, False))
         self._power_limit_backoff = RetryBackoff()
+        self._entry = entry
         # Holding 23, holding 24 and coils 5 and 6 join the write whitelists
         # only while their option is on; with the option off the integration
         # cannot write them at all.
@@ -221,6 +230,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             **energy,
             **modulation_limit,
             **power_limit,
+            DATA_KEY_OPTIONAL_REGISTERS: self.optional_snapshot(),
             # Input registers (raw × scale)
             # inp_lo[n] = register n  (0-13)
             # inp_hi[n] = register 16+n (16-24)
@@ -393,99 +403,130 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 values[data_key(kind, start + offset)] = value
         return values
 
-    async def _async_read_energy(self) -> dict[str, int]:
-        """Read the electrical power / energy block, when the option asks for it.
+    def optional_snapshot(self) -> dict[str, Any]:
+        """What each optional read has done since start (register_status.py).
 
-        Like the experimental registers this never fails the update: not every
-        unit serves input 34-51, and one that does not leaves the sensors
-        without a value while the documented data stays intact. A unit that
-        keeps not answering is asked again only every few polls (see
-        RetryBackoff), because each unanswered request is a timeout on a bus
-        that other integrations share.
+        Per group its RetryBackoff status, or None while the option is off;
+        the experimental registers as on/off plus the blocks given up.
         """
-        if not self._energy or not self._energy_backoff.should_try():
+        return {
+            CONF_ENERGY_REGISTERS: (
+                self._energy_backoff.status() if self._energy else None
+            ),
+            CONF_MODULATION_LIMIT: (
+                self._modulation_backoff.status() if self._modulation_limit else None
+            ),
+            CONF_POWER_LIMIT: (
+                self._power_limit_backoff.status() if self._power_limit else None
+            ),
+            CONF_EXPERIMENTAL: self._experimental,
+            EXPERIMENTAL_GIVEN_UP: sorted(
+                f"{kind} {start}" for kind, start in self._experimental_gate.given_up
+            ),
+        }
+
+    async def _async_read_optional(
+        self, group: str, backoff: RetryBackoff, what: str, read
+    ) -> dict[str, int]:
+        """One optional read under its RetryBackoff.
+
+        Never fails the update: not every unit serves the optional registers,
+        and one that does not leaves their entities without a value while the
+        documented data stays intact. Each unanswered request is a timeout on
+        a bus that other integrations share, so after a few misses in a row
+        the read stops: for good (until a reload) if it never answered since
+        start, with a Repairs notice offering to switch the option off;
+        for a while if it did, since that is most likely a hiccup.
+        """
+        if not backoff.should_try():
             return {}
         try:
+            result = await read()
+        except ModbusError as exc:
+            event = backoff.record(False)
+            if event == EVENT_GAVE_UP:
+                _LOGGER.warning(
+                    "%s never answered since the integration started; not "
+                    "asking again until it is reloaded. This unit most likely "
+                    "does not serve it - see Settings > Repairs (%s)",
+                    what,
+                    exc,
+                )
+                raise_never_answered(self.hass, self._entry, group)
+            elif event == EVENT_PAUSED:
+                _LOGGER.warning(
+                    "%s did not answer a few times in a row; pausing the read "
+                    "for a while (%s)",
+                    what,
+                    exc,
+                )
+            else:
+                _LOGGER.debug("%s not read: %s", what, exc)
+            return {}
+        backoff.record(True)
+        return result
+
+    async def _async_read_energy(self) -> dict[str, int]:
+        """Read the electrical power / energy block, when the option asks for it."""
+        if not self._energy:
+            return {}
+
+        async def read() -> dict[str, int]:
             registers = await self.unit.read_input_registers(
                 ENERGY_BLOCK_START, ENERGY_BLOCK_COUNT
             )
-        except ModbusError as exc:
-            if self._energy_backoff.record(False):
-                _LOGGER.warning(
-                    "Energy registers %d-%d did not answer; pausing the read "
-                    "for a while. This unit may not serve them - switch the "
-                    "option off in the integration's options if so (%s)",
-                    ENERGY_BLOCK_START,
-                    ENERGY_BLOCK_START + ENERGY_BLOCK_COUNT - 1,
-                    exc,
-                )
-            else:
-                _LOGGER.debug("Energy registers not read: %s", exc)
-            return {}
-        self._energy_backoff.record(True)
-        return decode_block(registers)
+            return decode_block(registers)
+
+        return await self._async_read_optional(
+            CONF_ENERGY_REGISTERS,
+            self._energy_backoff,
+            f"Energy registers {ENERGY_BLOCK_START}-"
+            f"{ENERGY_BLOCK_START + ENERGY_BLOCK_COUNT - 1}",
+            read,
+        )
 
     async def _async_read_modulation_limit(self) -> dict[str, int]:
-        """Read the compressor modulation limit, when the option asks for it.
-
-        Same rules as the energy block: a unit that does not serve holding 23
-        leaves the entity unavailable without failing the update, and is asked
-        again only every few polls.
-        """
-        if not self._modulation_limit or not self._modulation_backoff.should_try():
+        """Read the compressor modulation limit, when the option asks for it."""
+        if not self._modulation_limit:
             return {}
-        try:
+
+        async def read() -> dict[str, int]:
             registers = await self.unit.read_holding_registers(
                 MODULATION_LIMIT_REGISTER, 1
             )
-        except ModbusError as exc:
-            if self._modulation_backoff.record(False):
-                _LOGGER.warning(
-                    "Compressor modulation limit (holding %d) did not answer; "
-                    "pausing the read for a while. This unit may not serve "
-                    "it - switch the option off in the integration's options "
-                    "if so (%s)",
-                    MODULATION_LIMIT_REGISTER,
-                    exc,
-                )
-            else:
-                _LOGGER.debug("Compressor modulation limit not read: %s", exc)
-            return {}
-        self._modulation_backoff.record(True)
-        return {DATA_KEY_MAX_COMPRESSOR_MODULATION: registers[0]}
+            return {DATA_KEY_MAX_COMPRESSOR_MODULATION: registers[0]}
+
+        return await self._async_read_optional(
+            CONF_MODULATION_LIMIT,
+            self._modulation_backoff,
+            f"Compressor modulation limit (holding {MODULATION_LIMIT_REGISTER})",
+            read,
+        )
 
     async def _async_read_power_limit(self) -> dict[str, int]:
         """Read the power limit (coil 6 and holding 24), when the option asks.
 
         Each address in its own request: a coil that does not answer must not
-        take the main coil read with it. Same rules as the other optional
-        reads otherwise: the pair counts as one feature, a unit that does not
-        serve it leaves both entities unavailable without failing the update,
-        and is asked again only every few polls.
+        take the main coil read with it. The pair counts as one feature; when
+        the coil does not answer, the register is not asked in that poll.
         """
-        if not self._power_limit or not self._power_limit_backoff.should_try():
+        if not self._power_limit:
             return {}
-        try:
+
+        async def read() -> dict[str, int]:
             coils = await self.unit.read_coils(POWER_LIMIT_COIL, 1)
             registers = await self.unit.read_holding_registers(POWER_LIMIT_REGISTER, 1)
-        except ModbusError as exc:
-            if self._power_limit_backoff.record(False):
-                _LOGGER.warning(
-                    "Power limit (coil %d / holding %d) did not answer; pausing "
-                    "the read for a while. This unit may not serve it - switch "
-                    "the option off in the integration's options if so (%s)",
-                    POWER_LIMIT_COIL,
-                    POWER_LIMIT_REGISTER,
-                    exc,
-                )
-            else:
-                _LOGGER.debug("Power limit not read: %s", exc)
-            return {}
-        self._power_limit_backoff.record(True)
-        return {
-            DATA_KEY_POWER_LIMIT: int(bool(coils[0])),
-            DATA_KEY_MAX_ELECTRICAL_POWER: registers[0],
-        }
+            return {
+                DATA_KEY_POWER_LIMIT: int(bool(coils[0])),
+                DATA_KEY_MAX_ELECTRICAL_POWER: registers[0],
+            }
+
+        return await self._async_read_optional(
+            CONF_POWER_LIMIT,
+            self._power_limit_backoff,
+            f"Power limit (coil {POWER_LIMIT_COIL} / holding {POWER_LIMIT_REGISTER})",
+            read,
+        )
 
     async def async_write_coil(self, address: int, value: bool) -> None:
         """Write a single coil register (FC05).

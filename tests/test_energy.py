@@ -133,21 +133,46 @@ def test_nothing_in_the_block_is_writable() -> None:
     assert not block & const.WRITABLE_HOLDING_REGISTERS
 
 
-def test_backoff_tries_until_the_threshold_then_pauses() -> None:
+def test_backoff_gives_up_on_a_block_that_never_answered() -> None:
+    """Three misses without a single answer since start: the unit most likely
+    does not serve the block, so it is not asked again until a reload."""
+    backoff = energy.RetryBackoff(failures_before_pause=3, pause_polls=4)
+    assert backoff.status() == energy.STATUS_NOT_READ
+    assert backoff.should_try()
+    assert backoff.record(False) is None
+    assert backoff.status() == energy.STATUS_MISSING
+    assert backoff.should_try()
+    assert backoff.record(False) is None
+    assert backoff.should_try()
+    assert backoff.record(False) == energy.EVENT_GAVE_UP
+    assert backoff.status() == energy.STATUS_GIVEN_UP
+    assert not any(backoff.should_try() for _ in range(100))
+    assert backoff.state()["ever_answered"] is False
+
+
+def test_backoff_pauses_a_block_that_answered_before() -> None:
+    """Misses after an answer are most likely a hiccup: rest, then try again."""
     backoff = energy.RetryBackoff(failures_before_pause=3, pause_polls=4)
     assert backoff.should_try()
-    assert not backoff.record(False)
+    assert backoff.record(True) is None
+    assert backoff.status() == energy.STATUS_ANSWERING
+    for _ in range(2):
+        assert backoff.should_try()
+        assert backoff.record(False) is None
     assert backoff.should_try()
-    assert not backoff.record(False)
-    assert backoff.should_try()
-    assert backoff.record(False)  # third miss starts the pause
+    assert backoff.record(False) == energy.EVENT_PAUSED
+    assert backoff.status() == energy.STATUS_PAUSED
     # Four skipped polls, then one more attempt.
     assert [backoff.should_try() for _ in range(4)] == [False] * 4
     assert backoff.should_try()
+    assert backoff.record(True) is None
+    assert backoff.status() == energy.STATUS_ANSWERING
 
 
 def test_a_success_resets_the_count() -> None:
     backoff = energy.RetryBackoff(failures_before_pause=3, pause_polls=4)
+    backoff.should_try()
+    backoff.record(True)
     for _ in range(2):
         backoff.should_try()
         backoff.record(False)

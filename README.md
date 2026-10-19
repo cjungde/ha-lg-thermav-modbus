@@ -19,6 +19,7 @@ Replaces a hand-crafted YAML Modbus configuration with native HA entities: senso
   - [Manual installation](#manual-installation)
 - [Configuration](#configuration)
   - [Which options the unit supports](#which-options-the-unit-supports)
+  - [When optional registers do not answer](#when-optional-registers-do-not-answer)
 - [Entities](#entities)
   - [Sensors](#sensors)
     - [COP with your own meter (option)](#cop-with-your-own-meter-option)
@@ -184,13 +185,30 @@ Answering only proves the register exists, not that writing it has an effect. A 
 
 *Illustrations of a 12 kW unit that answers on all three groups; Home Assistant's own dialogs look slightly different.*
 
-**Configure** opens a menu. At the top, a table shows per optional group whether it is on and what the unit answered on the last check; ➕ marks a group the unit answers on but that is off, i.e. what could be switched on. Below it:
+**Configure** opens a menu. At the top, a table shows per optional group whether it is on, what the unit answered on the last check (➕ marks a group the unit answers on but that is off, i.e. what could be switched on), and what its reads have done since the integration started (see below). Below it:
 
 - **Options**: the poll interval and the optional groups, with the same table above them. Each option is a section you can expand: it says what the option is for and lists every entity it adds (name, unit, register). Sections of options that are on open expanded; the others stay collapsed.
 - **Check the optional registers**: asks the unit again (up to about a minute), then opens the options with the groups that answered ticked, as at setup. Nothing is switched off. Useful on an installation set up before 1.5.0 (the table shows – until then) or after a firmware update.
 
-<img src="docs/images/setup-menu.png" alt="Configure: a table of the optional groups with the columns On and Unit answers, and the menu entries Options and Check the optional registers" width="400"><br>
+<img src="docs/images/setup-menu.png" alt="Configure: a table of the optional groups with the columns On and Unit answers (now: Last check and Since start), and the menu entries Options and Check the optional registers" width="400"><br>
 <img src="docs/images/setup-options.png" alt="Configure, Options: the same table, the poll interval and the optional groups" width="400">
+
+
+### When optional registers do not answer
+
+The energy registers, the compressor modulation limit and the power limit are read on every poll while their option is on. A unit that does not serve them stays silent, and each silent request holds the shared bus for a whole request timeout (20 seconds). So after three misses in a row the read stops, and what happens next depends on whether the group has answered since the integration started:
+
+- **Never answered:** the unit most likely does not serve it, and that only changes with a firmware update. The read is **given up** until the integration is reloaded or Home Assistant restarts, and a notice appears under **Settings → Repairs**. Its button switches the option off, which removes the option's entities. If the unit does serve the registers after all, close the notice and reload the integration, or run *Check the optional registers* under Configure.
+- **Answered before:** most likely a hiccup on the bus. The read **pauses** for 20 polls and is then tried again, so it heals by itself. No notice.
+
+Four places show the state:
+
+| Where | What |
+|---|---|
+| Settings → Repairs | A notice per group that was given up, with the button to switch it off. It goes away when the option is switched off or the integration reloads. |
+| Configure → the table's *Since start* column | ✓ answers · ⚠ missed recently · ⏸ pausing (answered before) · ⛔ given up (never answered) · – off or not read yet. For the experimental registers: ⛔ and the number of blocks given up. |
+| `sensor.lg_therma_v_r290_optional_registers` (diagnostic) | *OK*, *Paused*, *Given up* (the worst of the groups that are on) or *Not used*. The attributes have each group's status since start and the last check's result. A single miss does not change the state, so an automation on it does not fire on every hiccup. |
+| Diagnostics download | Per group `status`, `ever_answered`, `misses_in_a_row` and `paused_polls_left`; the experimental blocks given up. |
 
 ---
 
@@ -217,6 +235,7 @@ A ready-to-paste dashboard with temperatures, compressor, COP, controls and per-
 | `sensor.lg_therma_v_r290_compressor_speed` | Compressor speed | rpm |
 | `sensor.lg_therma_v_r290_error_code` | Error code | — |
 | `sensor.lg_therma_v_r290_operation_state_odu` | Outdoor unit cycle as text: Standby/Off, Cooling, Heating (input 30002; raw value in *Operation Cycle (ODU)*) | — |
+| `sensor.lg_therma_v_r290_optional_registers` | Diagnostic: *OK*, *Paused*, *Given up* or *Not used*, what the optional reads have done since start; see [When optional registers do not answer](#when-optional-registers-do-not-answer) | — |
 | `sensor.lg_therma_v_r290_thermal_power_calculated` | Thermal power, calculated from flow rate × ΔT | W |
 | `sensor.lg_therma_v_r290_thermal_power_heating_circuit_calculated` | Same, while not heating DHW (0 otherwise) | W |
 | `sensor.lg_therma_v_r290_thermal_power_dhw_calculated` | Same, while heating DHW (0 otherwise) | W |
@@ -278,7 +297,7 @@ Switch on **Energy registers** in the integration's options. These are 32-bit va
 | `sensor.lg_therma_v_r290_thermal_power_reported` | 48–49 | W |
 | `sensor.lg_therma_v_r290_thermal_energy_space_heating` | 50–51 | Wh (shown as kWh) |
 
-The block is read in one request, high word first. A unit that does not answer leaves the sensors without a value and does not affect the other entities; after three misses in a row the read is skipped for 20 polls before it is tried again, so a unit that does not serve the block costs a few timeouts, not one per poll. Registers 52–55 (cumulative thermal yield for cooling and DHW) are not read; they do not answer on a 12 kW unit. Switching the option off removes the sensors again.
+The block is read in one request, high word first. A unit that does not answer leaves the sensors without a value and does not affect the other entities; after three misses in a row the read stops (see [When optional registers do not answer](#when-optional-registers-do-not-answer)), so a unit that does not serve the block costs a few timeouts, not one per poll. Registers 52–55 (cumulative thermal yield for cooling and DHW) are not read; they do not answer on a 12 kW unit. Switching the option off removes the sensors again.
 
 The option also adds `sensor.lg_therma_v_r290_cop_heating_cumulative`: thermal energy for space heating (input 50) divided by electrical energy for space heating (input 40). Both are counters since the unit's counters were last reset, so this is a long-term average (closer to a seasonal performance factor), not the COP of the moment. It has no value until electrical energy has been counted.
 

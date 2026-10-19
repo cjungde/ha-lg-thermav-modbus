@@ -273,7 +273,7 @@ Which of the two follows SG-Ready on a 12 kW has not been checked yet; compare b
 ### Polling and failures
 
 - **One poll cycle reads everything.** The YAML schedules each entity separately. If a documented block fails, the whole update fails and all entities go unavailable together, rather than single sensors going stale.
-- **Optional registers never fail the update.** If the energy block, holding 23 or the power limit (coil 6 / holding 24) stop answering, only their entities lose their value; after three misses in a row that read pauses for 20 polls.
+- **Optional registers never fail the update.** If the energy block, holding 23 or the power limit (coil 6 / holding 24) stop answering, only their entities lose their value. After three misses in a row the read is given up until a reload if it never answered since start (with a notice under Settings → Repairs), or pauses for 20 polls if it did.
 
 ---
 
