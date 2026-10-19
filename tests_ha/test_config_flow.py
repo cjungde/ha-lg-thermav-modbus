@@ -137,6 +137,24 @@ async def test_a_unit_like_the_scanned_9_kw(hass, unit) -> None:
     assert ("holding", 24) not in unit.requests
 
 
+async def test_a_probe_that_waits_too_long_cannot_connect(
+    hass, unit, monkeypatch
+) -> None:
+    """On a link whose timeout has been raised, the form still answers."""
+    monkeypatch.setattr(
+        "custom_components.lg_therma_v_r290.config_flow._PROBE_TIMEOUT", 0.05
+    )
+    unit.hanging = {("input", 0)}
+    flow = hass.config_entries.flow
+    result = await flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    result = await flow.async_configure(result["flow_id"], {"connection_type": "rtu"})
+    result = await flow.async_configure(result["flow_id"], RTU)
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "cannot_connect"}
+
+
 async def test_the_same_unit_cannot_be_added_twice(hass, unit) -> None:
     result = await _to_features_step(hass)
     await hass.config_entries.flow.async_configure(

@@ -97,7 +97,18 @@ for a unit on a *shared* connection, which means:
   *both* of them.
 - The Modbus stack is Home Assistant's own (`modbus-connection` on the tmodbus
   backend), so nothing is installed into the container on our behalf. The
-  `requirements` list in the manifest is empty.
+  manifest only declares `modbus-connection>=4.12.3`, which Home Assistant
+  2026.10 already ships: the integration imports it directly, and needs its
+  `require_timeout` (see below).
+- Because requests serialize, a request may wait behind someone else's
+  conversation. The integration therefore asks the shared connection for a
+  request timeout of at least **20 seconds** instead of the library's 10. It
+  is a floor, not a setting: it never shortens the timeout another
+  integration on the same link has asked for. An answer that arrives after
+  the client gave up would otherwise be read as the reply to the next request
+  (`Received unexpected response with Transaction ID`) and drop the link.
+  The connection test in the setup dialog waits at most 10 seconds, so the
+  form answers even on a link whose timeout has been raised.
 - The same device may not be claimed twice with different link settings —
   plain TCP and RTU-over-TCP on one socket, say. The config flow reports that
   as an error rather than silently reframing.
@@ -164,7 +175,7 @@ After the connection test, the setup asks the unit once which optional register 
 | Compressor statistics | — | never: nothing to check on the unit |
 | Poll statistics | — | never: nothing to check on the unit |
 
-Answering only proves the register exists, not that writing it has an effect. A unit that does not serve a group stays silent, so each missing group waits for a request timeout: on a unit that has none of them, the check takes up to about 30 seconds, shown as progress. It runs only then, never while polling.
+Answering only proves the register exists, not that writing it has an effect. A unit that does not serve a group stays silent, so each missing group waits for a request timeout (20 seconds, see [Requirements](#requirements)): on a unit that has none of them, the check takes up to about a minute, shown as progress. It runs only then, never while polling.
 
 <p>
 <img src="docs/images/setup-progress.png" alt="Setup: progress while the optional registers are checked" width="400"><br>
@@ -176,7 +187,7 @@ Answering only proves the register exists, not that writing it has an effect. A 
 **Configure** opens a menu. At the top, a table shows per optional group whether it is on and what the unit answered on the last check; ➕ marks a group the unit answers on but that is off, i.e. what could be switched on. Below it:
 
 - **Options**: the poll interval and the optional groups, with the same table above them. Each option is a section you can expand: it says what the option is for and lists every entity it adds (name, unit, register). Sections of options that are on open expanded; the others stay collapsed.
-- **Check the optional registers**: asks the unit again (up to about 30 seconds), then opens the options with the groups that answered ticked, as at setup. Nothing is switched off. Useful on an installation set up before 1.5.0 (the table shows – until then) or after a firmware update.
+- **Check the optional registers**: asks the unit again (up to about a minute), then opens the options with the groups that answered ticked, as at setup. Nothing is switched off. Useful on an installation set up before 1.5.0 (the table shows – until then) or after a firmware update.
 
 <img src="docs/images/setup-menu.png" alt="Configure: a table of the optional groups with the columns On and Unit answers, and the menu entries Options and Check the optional registers" width="400"><br>
 <img src="docs/images/setup-options.png" alt="Configure, Options: the same table, the poll interval and the optional groups" width="400">

@@ -55,6 +55,12 @@ async def test_entities_without_options(hass, unit) -> None:
     assert state.state == "0.0"
 
 
+async def test_asks_the_shared_link_for_a_timeout_floor(hass, unit) -> None:
+    """20 s rather than the library's 10, through the poll-counting wrapper."""
+    await _set_up(hass)
+    assert unit.required_timeout == 20.0
+
+
 async def test_all_options_create_their_entities(hass, unit) -> None:
     options = {
         "energy_registers": True,
