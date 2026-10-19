@@ -150,7 +150,7 @@
     "step": {
       "init": {
         "title": "LG Therma V R290 — Configure",
-        "description": "| Option | On | Unit answers |\n|---|:-:|:-:|\n| Energy registers | {energy_registers_on} | {energy_registers} |\n| Compressor modulation limit | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Power limit ¹ | {power_limit_on} | {power_limit} |\n| Emergency operation button | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimental registers | {experimental_registers_on} | {experimental_registers} |\n| Compressor statistics | {compressor_statistics_on} | {compressor_statistics} |\n| Poll statistics | {poll_statistics_on} | {poll_statistics} |\n\n✓ answers · ✗ no answer · – not checked · ➕ answers, can be switched on\n\n¹ Whether the unit really keeps to the power limit is not confirmed yet. The emergency operation button, the experimental registers and the statistics are not checked.\n\nLast check: {checked}",
+        "description": "| Option | On | Last check | Since start |\n|---|:-:|:-:|:-:|\n| Energy registers | {energy_registers_on} | {energy_registers} | {energy_registers_now} |\n| Compressor modulation limit | {compressor_modulation_limit_on} | {compressor_modulation_limit} | {compressor_modulation_limit_now} |\n| Power limit ¹ | {power_limit_on} | {power_limit} | {power_limit_now} |\n| Emergency operation button | {emergency_operation_button_on} | {emergency_operation_button} | {emergency_operation_button_now} |\n| Experimental registers | {experimental_registers_on} | {experimental_registers} | {experimental_registers_now} |\n| Compressor statistics | {compressor_statistics_on} | {compressor_statistics} | {compressor_statistics_now} |\n| Poll statistics | {poll_statistics_on} | {poll_statistics} | {poll_statistics_now} |\n\nLast check: ✓ answers · ✗ no answer · – not checked · ➕ answers, can be switched on\n\nSince start (while polling): ✓ answers · ⚠ missed recently · ⏸ resting after a few misses, answered before · ⛔ given up, never answered (see Settings → Repairs; for the experimental registers: blocks given up) · – off or not read yet\n\n¹ Whether the unit really keeps to the power limit is not confirmed yet. The emergency operation button, the experimental registers and the statistics are not checked.\n\nLast check: {checked}",
         "menu_options": {
           "options": "Options (poll interval, optional registers)",
           "detect": "Check the optional registers"
@@ -162,7 +162,7 @@
       },
       "options": {
         "title": "LG Therma V R290 — Options",
-        "description": "| Option | On | Unit answers |\n|---|:-:|:-:|\n| Energy registers | {energy_registers_on} | {energy_registers} |\n| Compressor modulation limit | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Power limit ¹ | {power_limit_on} | {power_limit} |\n| Emergency operation button | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimental registers | {experimental_registers_on} | {experimental_registers} |\n| Compressor statistics | {compressor_statistics_on} | {compressor_statistics} |\n| Poll statistics | {poll_statistics_on} | {poll_statistics} |\n\n✓ answers · ✗ no answer · – not checked · ➕ answers, can be switched on\n\n¹ Whether the unit really keeps to the power limit is not confirmed yet. The emergency operation button, the experimental registers and the statistics are not checked.\n\nLast check: {checked}",
+        "description": "| Option | On | Last check | Since start |\n|---|:-:|:-:|:-:|\n| Energy registers | {energy_registers_on} | {energy_registers} | {energy_registers_now} |\n| Compressor modulation limit | {compressor_modulation_limit_on} | {compressor_modulation_limit} | {compressor_modulation_limit_now} |\n| Power limit ¹ | {power_limit_on} | {power_limit} | {power_limit_now} |\n| Emergency operation button | {emergency_operation_button_on} | {emergency_operation_button} | {emergency_operation_button_now} |\n| Experimental registers | {experimental_registers_on} | {experimental_registers} | {experimental_registers_now} |\n| Compressor statistics | {compressor_statistics_on} | {compressor_statistics} | {compressor_statistics_now} |\n| Poll statistics | {poll_statistics_on} | {poll_statistics} | {poll_statistics_now} |\n\nLast check: ✓ answers · ✗ no answer · – not checked · ➕ answers, can be switched on\n\nSince start (while polling): ✓ answers · ⚠ missed recently · ⏸ resting after a few misses, answered before · ⛔ given up, never answered (see Settings → Repairs; for the experimental registers: blocks given up) · – off or not read yet\n\n¹ Whether the unit really keeps to the power limit is not confirmed yet. The emergency operation button, the experimental registers and the statistics are not checked.\n\nLast check: {checked}",
         "data": {
           "scan_interval": "Polling interval (seconds)"
         },
@@ -547,6 +547,15 @@
       },
       "experimental_holding": {
         "name": "Experimental Holding {register}"
+      },
+      "optional_registers": {
+        "name": "Optional Registers",
+        "state": {
+          "ok": "OK",
+          "paused": "Paused",
+          "given_up": "Given up",
+          "not_used": "Not used"
+        }
       }
     },
     "switch": {
@@ -564,6 +573,50 @@
       },
       "power_limit": {
         "name": "Power Limit"
+      }
+    }
+  },
+  "issues": {
+    "energy_registers_never_answered": {
+      "title": "Energy registers never answered",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Switch Energy registers off",
+            "description": "The option **Energy registers** is on, but the unit ({entry}) has not answered these registers once since the integration started. The read has been given up until the integration is reloaded, so it no longer holds up the bus. This unit most likely does not serve them; which registers a unit serves only changes with a firmware update.\n\n**Submit** switches the option off: the integration reloads and the option's entities are removed. It can be switched on again any time under Configure.\n\nIf you think the unit does serve them, close this instead and reload the integration, or run *Check the optional registers* under Configure."
+          }
+        },
+        "abort": {
+          "entry_removed": "The integration entry no longer exists."
+        }
+      }
+    },
+    "compressor_modulation_limit_never_answered": {
+      "title": "Compressor modulation limit never answered",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Switch Compressor modulation limit off",
+            "description": "The option **Compressor modulation limit** is on, but the unit ({entry}) has not answered these registers once since the integration started. The read has been given up until the integration is reloaded, so it no longer holds up the bus. This unit most likely does not serve them; which registers a unit serves only changes with a firmware update.\n\n**Submit** switches the option off: the integration reloads and the option's entities are removed. It can be switched on again any time under Configure.\n\nIf you think the unit does serve them, close this instead and reload the integration, or run *Check the optional registers* under Configure."
+          }
+        },
+        "abort": {
+          "entry_removed": "The integration entry no longer exists."
+        }
+      }
+    },
+    "power_limit_never_answered": {
+      "title": "Power limit never answered",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Switch Power limit off",
+            "description": "The option **Power limit** is on, but the unit ({entry}) has not answered these registers once since the integration started. The read has been given up until the integration is reloaded, so it no longer holds up the bus. This unit most likely does not serve them; which registers a unit serves only changes with a firmware update.\n\n**Submit** switches the option off: the integration reloads and the option's entities are removed. It can be switched on again any time under Configure.\n\nIf you think the unit does serve them, close this instead and reload the integration, or run *Check the optional registers* under Configure."
+          }
+        },
+        "abort": {
+          "entry_removed": "The integration entry no longer exists."
+        }
       }
     }
   }

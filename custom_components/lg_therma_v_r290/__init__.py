@@ -10,6 +10,7 @@ from homeassistant.helpers import entity_registry as er
 
 from .const import DOMAIN
 from .coordinator import LGThermaVCoordinator
+from .issues import clear_never_answered
 from .migration import MIGRATION_STEPS, UNIQUE_ID_MINOR_VERSION, renamed_unique_id
 
 _LOGGER = logging.getLogger(__name__)
@@ -80,6 +81,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # The shared connection closes itself when its last unit holder unloads,
         # so there is no client of our own left to close here.
         hass.data[DOMAIN].pop(entry.entry_id)
+        # A "never answered" notice belongs to the run that raised it: after a
+        # reload the reads start over, and the notice comes back only if the
+        # unit still does not answer (issues.py).
+        clear_never_answered(hass, entry.entry_id)
     return unloaded
 
 

@@ -42,6 +42,7 @@ def _load(module_name: str):
 
 
 detect = _load("detect")
+register_status = _load("register_status")
 const = _load("const")
 
 ENERGY = const.CONF_ENERGY_REGISTERS
@@ -161,7 +162,11 @@ def test_every_placeholder_is_in_the_texts() -> None:
     import json
     import re
 
-    status = set(detect.status_placeholders(None, {})) | {"checked"}
+    status = (
+        set(detect.status_placeholders(None, {}))
+        | set(register_status.since_start_placeholders(None, detect.GROUPS))
+        | {"checked"}
+    )
     setup = set(detect.placeholders(None))
     for name in ("strings.json", "translations/en.json", "translations/de.json"):
         texts = json.loads((COMPONENT / name).read_text())

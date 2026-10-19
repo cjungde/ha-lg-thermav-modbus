@@ -58,6 +58,7 @@ from .detect import (
 )
 from .entity import DEVICE_NAME
 from .migration import UNIQUE_ID_MINOR_VERSION
+from .register_status import since_start_placeholders
 from .yaml_takeover import UNIT_SPELLING, Found, plan
 
 _LOGGER = logging.getLogger(__name__)
@@ -570,8 +571,13 @@ class LGThermaVOptionsFlow(config_entries.OptionsFlow):
         }
 
     def _placeholders(self, options: dict[str, Any]) -> dict[str, str]:
+        # What the reads did since start, from the running coordinator; None
+        # (every row –) while the entry is not loaded.
+        coordinator = self.hass.data.get(DOMAIN, {}).get(self._entry.entry_id)
+        snapshot = None if coordinator is None else coordinator.optional_snapshot()
         return {
             **status_placeholders(self._detected, options),
+            **since_start_placeholders(snapshot, GROUPS),
             "checked": _checked_at(self._detected_at),
         }
 

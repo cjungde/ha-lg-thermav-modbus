@@ -47,7 +47,7 @@ from homeassistant.helpers.restore_state import ExtraStoredData, RestoreEntity
 from homeassistant.util import dt as dt_util
 from homeassistant.util.unit_conversion import EnergyConverter, PowerConverter
 
-from . import compressor_stats, cop, external_meter, pollstats
+from . import compressor_stats, cop, external_meter, pollstats, register_status
 from .const import (
     CONF_COMPRESSOR_STATISTICS,
     CONF_ENERGY_REGISTERS,
@@ -61,7 +61,7 @@ from .const import (
     ODU_OPERATION_CYCLE_LABELS,
     OPERATION_MODE_FROM_VALUE,
 )
-from .coordinator import LGThermaVCoordinator
+from .coordinator import DATA_KEY_OPTIONAL_REGISTERS, LGThermaVCoordinator
 from .energy import (
     DATA_KEY_ELECTRICAL_ENERGY_SPACE_HEATING,
     DATA_KEY_ELECTRICAL_POWER_HEAT_PUMP,
@@ -470,6 +470,7 @@ async def async_setup_entry(
         *(LGSensor(coordinator, entry, d) for d in _SENSORS),
         *(LGLabelSensor(coordinator, entry, d) for d in _LABEL_SENSORS),
         *(LGCalculatedSensor(coordinator, entry, d) for d in _THERMAL_POWER_SENSORS),
+        LGOptionalRegistersSensor(coordinator, entry),
     ]
     if entry.options.get(CONF_ENERGY_REGISTERS, False):
         entities.extend(LGEnergySensor(coordinator, entry, r) for r in ENERGY_REGISTERS)
@@ -653,6 +654,38 @@ class LGExperimentalSensor(LGEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         return self._data(self._data_key)
+
+
+class LGOptionalRegistersSensor(LGEntity, SensorEntity):
+    """What the optional reads have done since start (register_status.py).
+
+    The state is the worst of the optional groups that are on: ok, paused
+    (answered before, resting after a few misses) or given up (never
+    answered; see Settings > Repairs), or not used when none is on. The
+    attributes have each group's status since start and what the last check
+    under Configure found, so it is visible why an entity is unavailable.
+    """
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = register_status.STATES
+    _attr_icon = "mdi:format-list-checks"
+
+    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator, entry, "optional_registers")
+        self._entry = entry
+
+    @property
+    def native_value(self) -> str | None:
+        snapshot = self._data(DATA_KEY_OPTIONAL_REGISTERS)
+        if snapshot is None:
+            return None
+        return register_status.overall_state(snapshot)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        snapshot = self._data(DATA_KEY_OPTIONAL_REGISTERS) or {}
+        return register_status.attributes(snapshot, dict(self._entry.options))
 
 
 class LGPollSensor(LGSensor):

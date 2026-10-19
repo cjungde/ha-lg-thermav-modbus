@@ -85,7 +85,7 @@ async def test_all_options_create_their_entities(hass, unit) -> None:
         "sensor.lg_therma_v_r290_bus_load",
     ):
         assert entity_id in entities, entity_id
-    assert len(entities) == 112
+    assert len(entities) == 113
 
 
 async def test_writes_reach_the_unit(hass, unit) -> None:

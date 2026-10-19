@@ -64,7 +64,7 @@ async def test_names_and_entity_ids(hass, unit, language) -> None:
     english = _names("en")
     registry = er.async_get(hass)
     entities = er.async_entries_for_config_entry(registry, entry.entry_id)
-    assert len(entities) == 115
+    assert len(entities) == 116
     for entity in entities:
         assert entity.translation_key, entity.entity_id
         key = entity.unique_id.removeprefix(f"{entry.entry_id}_")

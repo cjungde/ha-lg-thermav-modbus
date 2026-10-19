@@ -150,7 +150,7 @@
     "step": {
       "init": {
         "title": "LG Therma V R290 — Konfigurieren",
-        "description": "| Option | An | Gerät antwortet |\n|---|:-:|:-:|\n| Energieregister | {energy_registers_on} | {energy_registers} |\n| Begrenzung der Verdichtermodulation | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Leistungsbegrenzung ¹ | {power_limit_on} | {power_limit} |\n| Taste für Notbetrieb | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimentelle Register | {experimental_registers_on} | {experimental_registers} |\n| Verdichterstatistik | {compressor_statistics_on} | {compressor_statistics} |\n| Abfragestatistik | {poll_statistics_on} | {poll_statistics} |\n\n✓ antwortet · ✗ keine Antwort · – nicht geprüft · ➕ antwortet, kann eingeschaltet werden\n\n¹ Ob das Gerät die Leistungsbegrenzung tatsächlich einhält, ist noch nicht bestätigt. Taste für Notbetrieb, experimentelle Register und die Statistiken werden nicht geprüft.\n\nLetzte Prüfung: {checked}",
+        "description": "| Option | An | Letzte Prüfung | Seit Start |\n|---|:-:|:-:|:-:|\n| Energieregister | {energy_registers_on} | {energy_registers} | {energy_registers_now} |\n| Begrenzung der Verdichtermodulation | {compressor_modulation_limit_on} | {compressor_modulation_limit} | {compressor_modulation_limit_now} |\n| Leistungsbegrenzung ¹ | {power_limit_on} | {power_limit} | {power_limit_now} |\n| Taste für Notbetrieb | {emergency_operation_button_on} | {emergency_operation_button} | {emergency_operation_button_now} |\n| Experimentelle Register | {experimental_registers_on} | {experimental_registers} | {experimental_registers_now} |\n| Verdichterstatistik | {compressor_statistics_on} | {compressor_statistics} | {compressor_statistics_now} |\n| Abfragestatistik | {poll_statistics_on} | {poll_statistics} | {poll_statistics_now} |\n\nLetzte Prüfung: ✓ antwortet · ✗ keine Antwort · – nicht geprüft · ➕ antwortet, kann eingeschaltet werden\n\nSeit Start (beim Abfragen): ✓ antwortet · ⚠ zuletzt keine Antwort · ⏸ Pause nach einigen Fehlversuchen, hat vorher geantwortet · ⛔ aufgegeben, hat nie geantwortet (siehe Einstellungen → Reparaturen; bei den experimentellen Registern: aufgegebene Blöcke) · – aus oder noch nicht gelesen\n\n¹ Ob das Gerät die Leistungsbegrenzung tatsächlich einhält, ist noch nicht bestätigt. Taste für Notbetrieb, experimentelle Register und die Statistiken werden nicht geprüft.\n\nLetzte Prüfung: {checked}",
         "menu_options": {
           "options": "Optionen (Abfrageintervall, optionale Register)",
           "detect": "Optionale Register prüfen"
@@ -162,7 +162,7 @@
       },
       "options": {
         "title": "LG Therma V R290 — Optionen",
-        "description": "| Option | An | Gerät antwortet |\n|---|:-:|:-:|\n| Energieregister | {energy_registers_on} | {energy_registers} |\n| Begrenzung der Verdichtermodulation | {compressor_modulation_limit_on} | {compressor_modulation_limit} |\n| Leistungsbegrenzung ¹ | {power_limit_on} | {power_limit} |\n| Taste für Notbetrieb | {emergency_operation_button_on} | {emergency_operation_button} |\n| Experimentelle Register | {experimental_registers_on} | {experimental_registers} |\n| Verdichterstatistik | {compressor_statistics_on} | {compressor_statistics} |\n| Abfragestatistik | {poll_statistics_on} | {poll_statistics} |\n\n✓ antwortet · ✗ keine Antwort · – nicht geprüft · ➕ antwortet, kann eingeschaltet werden\n\n¹ Ob das Gerät die Leistungsbegrenzung tatsächlich einhält, ist noch nicht bestätigt. Taste für Notbetrieb, experimentelle Register und die Statistiken werden nicht geprüft.\n\nLetzte Prüfung: {checked}",
+        "description": "| Option | An | Letzte Prüfung | Seit Start |\n|---|:-:|:-:|:-:|\n| Energieregister | {energy_registers_on} | {energy_registers} | {energy_registers_now} |\n| Begrenzung der Verdichtermodulation | {compressor_modulation_limit_on} | {compressor_modulation_limit} | {compressor_modulation_limit_now} |\n| Leistungsbegrenzung ¹ | {power_limit_on} | {power_limit} | {power_limit_now} |\n| Taste für Notbetrieb | {emergency_operation_button_on} | {emergency_operation_button} | {emergency_operation_button_now} |\n| Experimentelle Register | {experimental_registers_on} | {experimental_registers} | {experimental_registers_now} |\n| Verdichterstatistik | {compressor_statistics_on} | {compressor_statistics} | {compressor_statistics_now} |\n| Abfragestatistik | {poll_statistics_on} | {poll_statistics} | {poll_statistics_now} |\n\nLetzte Prüfung: ✓ antwortet · ✗ keine Antwort · – nicht geprüft · ➕ antwortet, kann eingeschaltet werden\n\nSeit Start (beim Abfragen): ✓ antwortet · ⚠ zuletzt keine Antwort · ⏸ Pause nach einigen Fehlversuchen, hat vorher geantwortet · ⛔ aufgegeben, hat nie geantwortet (siehe Einstellungen → Reparaturen; bei den experimentellen Registern: aufgegebene Blöcke) · – aus oder noch nicht gelesen\n\n¹ Ob das Gerät die Leistungsbegrenzung tatsächlich einhält, ist noch nicht bestätigt. Taste für Notbetrieb, experimentelle Register und die Statistiken werden nicht geprüft.\n\nLetzte Prüfung: {checked}",
         "data": {
           "scan_interval": "Abfrageintervall (Sekunden)"
         },
@@ -547,6 +547,15 @@
       },
       "experimental_holding": {
         "name": "Experimentelles Holding-Register {register}"
+      },
+      "optional_registers": {
+        "name": "Optionale Register",
+        "state": {
+          "ok": "OK",
+          "paused": "Pausiert",
+          "given_up": "Aufgegeben",
+          "not_used": "Nicht genutzt"
+        }
       }
     },
     "switch": {
@@ -564,6 +573,50 @@
       },
       "power_limit": {
         "name": "Leistungsbegrenzung"
+      }
+    }
+  },
+  "issues": {
+    "energy_registers_never_answered": {
+      "title": "Energieregister: keine Antwort",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Energieregister ausschalten",
+            "description": "Die Option **Energieregister** ist eingeschaltet, aber das Gerät ({entry}) hat seit dem Start der Integration kein einziges Mal auf diese Register geantwortet. Das Lesen wurde bis zum Neuladen der Integration aufgegeben, damit es den Bus nicht weiter aufhält. Dieses Gerät liefert sie sehr wahrscheinlich nicht; welche Register ein Gerät liefert, ändert sich nur mit einem Firmware-Update.\n\n**Absenden** schaltet die Option aus: Die Integration wird neu geladen, und die Entitäten der Option werden entfernt. Unter Konfigurieren lässt sie sich jederzeit wieder einschalten.\n\nWenn das Gerät sie deiner Meinung nach doch liefert, schließe dies stattdessen und lade die Integration neu, oder führe unter Konfigurieren *Optionale Register prüfen* aus."
+          }
+        },
+        "abort": {
+          "entry_removed": "Den Eintrag der Integration gibt es nicht mehr."
+        }
+      }
+    },
+    "compressor_modulation_limit_never_answered": {
+      "title": "Begrenzung der Verdichtermodulation: keine Antwort",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Begrenzung der Verdichtermodulation ausschalten",
+            "description": "Die Option **Begrenzung der Verdichtermodulation** ist eingeschaltet, aber das Gerät ({entry}) hat seit dem Start der Integration kein einziges Mal auf diese Register geantwortet. Das Lesen wurde bis zum Neuladen der Integration aufgegeben, damit es den Bus nicht weiter aufhält. Dieses Gerät liefert sie sehr wahrscheinlich nicht; welche Register ein Gerät liefert, ändert sich nur mit einem Firmware-Update.\n\n**Absenden** schaltet die Option aus: Die Integration wird neu geladen, und die Entitäten der Option werden entfernt. Unter Konfigurieren lässt sie sich jederzeit wieder einschalten.\n\nWenn das Gerät sie deiner Meinung nach doch liefert, schließe dies stattdessen und lade die Integration neu, oder führe unter Konfigurieren *Optionale Register prüfen* aus."
+          }
+        },
+        "abort": {
+          "entry_removed": "Den Eintrag der Integration gibt es nicht mehr."
+        }
+      }
+    },
+    "power_limit_never_answered": {
+      "title": "Leistungsbegrenzung: keine Antwort",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Leistungsbegrenzung ausschalten",
+            "description": "Die Option **Leistungsbegrenzung** ist eingeschaltet, aber das Gerät ({entry}) hat seit dem Start der Integration kein einziges Mal auf diese Register geantwortet. Das Lesen wurde bis zum Neuladen der Integration aufgegeben, damit es den Bus nicht weiter aufhält. Dieses Gerät liefert sie sehr wahrscheinlich nicht; welche Register ein Gerät liefert, ändert sich nur mit einem Firmware-Update.\n\n**Absenden** schaltet die Option aus: Die Integration wird neu geladen, und die Entitäten der Option werden entfernt. Unter Konfigurieren lässt sie sich jederzeit wieder einschalten.\n\nWenn das Gerät sie deiner Meinung nach doch liefert, schließe dies stattdessen und lade die Integration neu, oder führe unter Konfigurieren *Optionale Register prüfen* aus."
+          }
+        },
+        "abort": {
+          "entry_removed": "Den Eintrag der Integration gibt es nicht mehr."
+        }
       }
     }
   }

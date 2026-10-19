@@ -49,6 +49,8 @@ async def test_diagnostics(hass, unit) -> None:
     assert reads["identity_registers"] == {"39998": 0, "39999": 0}
     assert reads["energy_registers"] == {
         "enabled": True,
+        "status": "answering",
+        "ever_answered": True,
         "misses_in_a_row": 0,
         "paused_polls_left": 0,
     }

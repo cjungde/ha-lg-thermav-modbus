@@ -124,15 +124,34 @@ def decode_block(registers: list[int]) -> dict[str, int]:
     return values
 
 
+#: What an optional read has done since the integration started, as
+#: RetryBackoff.status() reports it.
+STATUS_NOT_READ = "not_read"  # no attempt yet
+STATUS_ANSWERING = "answering"  # the last attempt answered
+STATUS_MISSING = "missing"  # missed, but not often enough to pause yet
+STATUS_PAUSED = "paused"  # answered before; resting after missing a few times
+STATUS_GIVEN_UP = "given_up"  # never answered; not asked again until a reload
+
+#: What RetryBackoff.record() reports when a miss changes what happens next.
+EVENT_PAUSED = "paused"
+EVENT_GAVE_UP = "gave_up"
+
+
 class RetryBackoff:
-    """Stop asking a unit that does not answer, but ask again later.
+    """Stop asking a unit that does not answer; ask again later only if it ever did.
 
     A unit that does not serve the block never answers it (a timeout, not an
     exception), and every timeout holds the shared bus for its whole length.
-    After a few misses in a row the read is skipped for a number of polls, so
-    an option switched on by mistake costs a few timeouts, not one per poll —
-    while a transient bus problem on a unit that does serve the block heals
-    itself on the next attempt.
+    After a few misses in a row the read stops, and what happens next depends
+    on whether the block has ever answered since the integration started:
+
+    * **Never answered:** the unit most likely does not serve it, and a
+      register a unit lacks does not appear without a firmware update. The
+      read is given up until the integration is reloaded or Home Assistant
+      restarts, so an option switched on by mistake costs one round of
+      timeouts, not one every few minutes for good.
+    * **Answered before:** most likely a hiccup on the bus. The read is skipped
+      for a number of polls and then tried again, so it heals by itself.
     """
 
     def __init__(self, failures_before_pause: int = 3, pause_polls: int = 20) -> None:
@@ -140,26 +159,54 @@ class RetryBackoff:
         self._pause_polls = pause_polls
         self._failures = 0
         self._pause = 0
+        self._attempted = False
+        self._ever_answered = False
+        self._given_up = False
 
     def should_try(self) -> bool:
         """Whether this poll may read; a skipped poll counts the pause down."""
+        if self._given_up:
+            return False
         if self._pause > 0:
             self._pause -= 1
             return False
         return True
 
-    def state(self) -> dict[str, int]:
-        """Misses in a row and polls left in the current pause, for diagnostics."""
-        return {"misses_in_a_row": self._failures, "paused_polls_left": self._pause}
+    def status(self) -> str:
+        """One of the STATUS_* values above."""
+        if self._given_up:
+            return STATUS_GIVEN_UP
+        if self._pause > 0:
+            return STATUS_PAUSED
+        if not self._attempted:
+            return STATUS_NOT_READ
+        if self._failures:
+            return STATUS_MISSING
+        return STATUS_ANSWERING
 
-    def record(self, ok: bool) -> bool:
-        """Record an attempt; returns True when it starts a pause."""
+    def state(self) -> dict[str, int | bool | str]:
+        """The status with its counters, for diagnostics."""
+        return {
+            "status": self.status(),
+            "ever_answered": self._ever_answered,
+            "misses_in_a_row": self._failures,
+            "paused_polls_left": self._pause,
+        }
+
+    def record(self, ok: bool) -> str | None:
+        """Record an attempt; returns EVENT_PAUSED or EVENT_GAVE_UP when the
+        read stops, None otherwise."""
+        self._attempted = True
         if ok:
+            self._ever_answered = True
             self._failures = 0
-            return False
+            return None
         self._failures += 1
-        if self._failures >= self._threshold:
-            self._failures = 0
-            self._pause = self._pause_polls
-            return True
-        return False
+        if self._failures < self._threshold:
+            return None
+        self._failures = 0
+        if not self._ever_answered:
+            self._given_up = True
+            return EVENT_GAVE_UP
+        self._pause = self._pause_polls
+        return EVENT_PAUSED
