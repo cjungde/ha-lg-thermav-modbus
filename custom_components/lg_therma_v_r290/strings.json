@@ -136,7 +136,8 @@
       "cannot_connect": "Connection failed",
       "invalid_slave_id": "Invalid slave ID",
       "link_settings_conflict": "The device is already in use with different link settings",
-      "unknown": "Unknown error"
+      "unknown": "Unknown error",
+      "check_inconclusive": "The check proved nothing: the unit did not answer even a register it always serves, so the link (gateway, cable) was most likely down. Nothing was recorded. Run it again under Configure → Check the optional registers once the connection works."
     },
     "abort": {
       "already_configured": "Device is already configured",
@@ -251,6 +252,9 @@
           }
         }
       }
+    },
+    "error": {
+      "check_inconclusive": "The check proved nothing: the unit did not answer even a register it always serves, so the link (gateway, cable) was most likely down. Nothing was recorded. Run it again under Configure → Check the optional registers once the connection works."
     },
     "progress": {
       "detect": "Checking which optional registers this unit answers on. A unit that does not serve a group stays silent, so this can take up to about a minute."

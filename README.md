@@ -176,7 +176,7 @@ After the connection test, the setup asks whether to check the unit now: which o
 | Compressor statistics | — | never: nothing to check on the unit |
 | Poll statistics | — | never: nothing to check on the unit |
 
-Answering only proves the register exists, not that writing it has an effect. A unit that does not serve a group stays silent, so each missing group waits for a request timeout (20 seconds, see [Requirements](#requirements)): on a unit that has none of them, the check takes up to about a minute, shown as progress, and on a shared connection everything else on it waits too. That is why the setup asks first. The check runs only when asked for, never while polling.
+Answering only proves the register exists, not that writing it has an effect. A unit that does not serve a group stays silent, so each missing group waits for a request timeout (20 seconds, see [Requirements](#requirements)): on a unit that has none of them, the check takes up to about a minute, shown as progress, and on a shared connection everything else on it waits too. That is why the setup asks first. The check runs only when asked for, never while polling. Because a register the unit lacks is silent just like any register behind a dead gateway, a ✗ only counts when the link is shown to be up: the unit has to answer a register it always serves before the check, and again after it if anything stayed silent. If it does not, nothing is recorded and the dialog says the check proved nothing.
 
 <p>
 <img src="docs/images/setup-progress.png" alt="Setup: progress while the optional registers are checked" width="400"><br>

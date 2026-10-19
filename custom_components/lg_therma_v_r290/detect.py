@@ -78,8 +78,27 @@ async def _answers(read) -> bool:
     return True
 
 
-async def detect(unit: Any) -> dict[str, bool]:
-    """Ask the unit for each optional group once; True where it answered."""
+#: A register every unit answers (the one the connection test reads). An
+#: answer on it is the witness that the link is up.
+_WITNESS = 0
+
+
+async def _link_is_up(unit: Any) -> bool:
+    return await _answers(lambda: unit.read_input_registers(_WITNESS, 1))
+
+
+async def detect(unit: Any) -> dict[str, bool] | None:
+    """Ask the unit for each optional group once; True where it answered.
+
+    None when the check proves nothing. A register the unit does not serve is
+    not refused, it is not answered at all -- exactly like any register behind
+    a dead gateway or an unplugged cable. So a "no answer" only counts when
+    the link is shown to be up: the unit has to answer a register it always
+    serves before the checks, and again after them if any group stayed
+    silent. Otherwise an outage would be recorded as missing hardware.
+    """
+    if not await _link_is_up(unit):
+        return None
     energy = await _answers(
         lambda: unit.read_input_registers(ENERGY_BLOCK_START, ENERGY_BLOCK_COUNT)
     )
@@ -91,11 +110,15 @@ async def detect(unit: Any) -> dict[str, bool]:
     power_limit = await _answers(
         lambda: unit.read_coils(POWER_LIMIT_COIL, 1)
     ) and await _answers(lambda: unit.read_holding_registers(POWER_LIMIT_REGISTER, 1))
-    return {
+    result = {
         CONF_ENERGY_REGISTERS: energy,
         CONF_MODULATION_LIMIT: modulation,
         CONF_POWER_LIMIT: power_limit,
     }
+    if not all(result.values()) and not await _link_is_up(unit):
+        # The link went down during the check: its silences prove nothing.
+        return None
+    return result
 
 
 def suggested(detected: dict[str, bool] | None, current: dict[str, Any]) -> dict:

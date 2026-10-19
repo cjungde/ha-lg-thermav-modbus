@@ -136,7 +136,8 @@
       "cannot_connect": "Verbindung fehlgeschlagen",
       "invalid_slave_id": "Ungültige Slave-ID",
       "link_settings_conflict": "Gerät wird bereits mit anderen Verbindungseinstellungen verwendet",
-      "unknown": "Unbekannter Fehler"
+      "unknown": "Unbekannter Fehler",
+      "check_inconclusive": "Die Prüfung hat nichts ergeben: Das Gerät hat nicht einmal auf ein Register geantwortet, das es immer liefert, die Verbindung (Gateway, Kabel) war also sehr wahrscheinlich unterbrochen. Es wurde nichts gespeichert. Führe sie erneut unter Konfigurieren → Optionale Register prüfen aus, sobald die Verbindung steht."
     },
     "abort": {
       "already_configured": "Gerät ist bereits konfiguriert",
@@ -251,6 +252,9 @@
           }
         }
       }
+    },
+    "error": {
+      "check_inconclusive": "Die Prüfung hat nichts ergeben: Das Gerät hat nicht einmal auf ein Register geantwortet, das es immer liefert, die Verbindung (Gateway, Kabel) war also sehr wahrscheinlich unterbrochen. Es wurde nichts gespeichert. Führe sie erneut unter Konfigurieren → Optionale Register prüfen aus, sobald die Verbindung steht."
     },
     "progress": {
       "detect": "Prüfe, auf welche optionalen Register dieses Gerät antwortet. Ein Gerät, das eine Gruppe nicht liefert, antwortet gar nicht; das kann bis zu etwa einer Minute dauern."

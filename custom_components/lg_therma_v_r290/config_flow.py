@@ -169,13 +169,14 @@ async def _test_connection(hass: HomeAssistant, data: dict) -> str | None:
     return None
 
 
-async def _detect(hass: HomeAssistant, data: dict) -> dict[str, bool]:
+async def _detect(hass: HomeAssistant, data: dict) -> dict[str, bool] | None:
     """Which optional register groups the unit answers on (see detect.py).
 
     Borrows a unit like _test_connection, so on a connection that is already
     held (the entry's own, in the options) the checks queue behind its
-    traffic. Never raises: a check that cannot run reports nothing, and the
-    form then simply suggests nothing.
+    traffic. Never raises: a check that cannot run, or whose link was not
+    shown to be up, returns None; nothing is recorded then, and the form
+    says so.
     """
     try:
         async with async_get_temporary_unit(
@@ -186,7 +187,7 @@ async def _detect(hass: HomeAssistant, data: dict) -> dict[str, bool]:
             return await detect(unit)
     except Exception:
         _LOGGER.exception("Checking the optional registers failed")
-        return {}
+        return None
 
 
 def _option_group_fields(defaults: dict[str, Any]) -> dict:
@@ -329,6 +330,9 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     _title: str
     _detect_task: asyncio.Task | None = None
     _detected: dict[str, bool] | None = None
+    # The check ran but proved nothing (the link was not up); the features
+    # step says so.
+    _check_failed = False
 
     async def async_step_user(self, user_input=None) -> FlowResult:
         if user_input is not None:
@@ -456,6 +460,7 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 progress_task=self._detect_task,
             )
         self._detected = self._detect_task.result()
+        self._check_failed = self._detected is None
         return self.async_show_progress_done(next_step_id="features")
 
     async def async_step_features(self, user_input=None) -> FlowResult:
@@ -478,6 +483,7 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="features",
             data_schema=vol.Schema(_option_group_fields(suggested(self._detected, {}))),
             description_placeholders=placeholders(self._detected),
+            errors={"base": "check_inconclusive"} if self._check_failed else None,
         )
 
     async def async_step_yaml_takeover(self, user_input=None) -> FlowResult:
@@ -560,6 +566,7 @@ class LGThermaVOptionsFlow(config_entries.OptionsFlow):
         # Option values to show after a check: the current ones plus what
         # answered.
         self._suggested: dict[str, Any] | None = None
+        self._check_failed = False
 
     def _current(self) -> dict[str, Any]:
         return {
@@ -613,6 +620,7 @@ class LGThermaVOptionsFlow(config_entries.OptionsFlow):
             step_id="options",
             data_schema=schema,
             description_placeholders=self._placeholders(self._current()),
+            errors={"base": "check_inconclusive"} if self._check_failed else None,
         )
 
     async def async_step_detect(self, user_input=None) -> FlowResult:
@@ -627,7 +635,14 @@ class LGThermaVOptionsFlow(config_entries.OptionsFlow):
                 progress_action="detect",
                 progress_task=self._detect_task,
             )
-        self._detected = self._detect_task.result()
-        self._detected_at = dt_util.utcnow().isoformat()
-        self._suggested = suggested(self._detected, self._current())
+        result = self._detect_task.result()
+        self._detect_task = None
+        if result is None:
+            # Proved nothing: keep the last result and say so on the form.
+            self._check_failed = True
+        else:
+            self._check_failed = False
+            self._detected = result
+            self._detected_at = dt_util.utcnow().isoformat()
+            self._suggested = suggested(self._detected, self._current())
         return self.async_show_progress_done(next_step_id="options")

@@ -88,3 +88,43 @@ async def test_check_ticks_what_answers_and_switches_nothing_off(hass, unit) -> 
     assert status["energy_registers"] == "✓"
     assert status["energy_registers_on"] == "✓"
     assert len(unit.requests) == asked
+
+
+async def test_a_check_behind_a_dead_link_keeps_the_last_result(hass, unit) -> None:
+    """Every register silent, the witness included: nothing is overwritten,
+    and the form says the check proved nothing."""
+    detected = {
+        "energy_registers": True,
+        "compressor_modulation_limit": True,
+        "power_limit": False,
+    }
+    entry = _entry(
+        hass,
+        {
+            "energy_registers": True,
+            "detected": detected,
+            "detected_at": "2026-10-01T10:00:00+00:00",
+        },
+    )
+    unit.silent = {("input", 0), ("input", 34), ("holding", 23), ("coil", 6)}
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "detect"}
+    )
+    await hass.async_block_till_done()
+    result = await hass.config_entries.options.async_configure(result["flow_id"])
+    assert result["step_id"] == "options"
+    assert result["errors"] == {"base": "check_inconclusive"}
+    # Only the witness was asked.
+    assert unit.requests == [("input", 0)]
+    status = result["description_placeholders"]
+    assert status["energy_registers"] == "✓"
+    assert status["compressor_modulation_limit"] == "✓ ➕"
+
+    values = defaults(result)
+    assert values["compressor_modulation_limit"] is False  # nothing suggested
+    await hass.config_entries.options.async_configure(
+        result["flow_id"], form_input(result, values)
+    )
+    assert entry.options["detected"] == detected
+    assert entry.options["detected_at"] == "2026-10-01T10:00:00+00:00"

@@ -187,6 +187,35 @@ async def test_the_check_can_be_skipped(hass, unit) -> None:
     assert options["detected_at"] is None
 
 
+async def test_a_check_that_proves_nothing_records_nothing(hass, unit) -> None:
+    """The link dropped during the check (detect.py returns None): the form
+    says so, nothing is ticked, and the entry records no check."""
+    unit.silent = {("input", 34), ("holding", 23), ("coil", 6)}
+    real_read = unit.read_input_registers
+    witnessed = []
+
+    async def read_input_registers(address, count):
+        # Answer the connection test and the first witness, then go silent.
+        if address == 0:
+            witnessed.append(address)
+            if len(witnessed) > 2:
+                unit.silent.add(("input", 0))
+        return await real_read(address, count)
+
+    unit.read_input_registers = read_input_registers
+    result = await _to_features_step(hass)
+    assert result["errors"] == {"base": "check_inconclusive"}
+    assert set(result["description_placeholders"].values()) == {"–"}
+    assert not any(defaults(result).values())
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], form_input(result, defaults(result))
+    )
+    await hass.async_block_till_done()
+    assert result["result"].options["detected"] is None
+    assert result["result"].options["detected_at"] is None
+
+
 async def test_the_same_unit_cannot_be_added_twice(hass, unit) -> None:
     result = await _to_features_step(hass)
     await hass.config_entries.flow.async_configure(
