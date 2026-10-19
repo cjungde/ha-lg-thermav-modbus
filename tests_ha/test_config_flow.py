@@ -79,6 +79,10 @@ async def _to_features_step(hass):
     result = await flow.async_configure(result["flow_id"], {"connection_type": "rtu"})
     assert result["step_id"] == "rtu"
     result = await flow.async_configure(result["flow_id"], RTU)
+    assert result["type"] is FlowResultType.MENU
+    assert result["step_id"] == "check"
+    assert result["menu_options"] == ["detect", "features"]
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "detect"})
     assert result["type"] is FlowResultType.SHOW_PROGRESS
     assert result["progress_action"] == "detect"
     await hass.async_block_till_done()
@@ -153,6 +157,34 @@ async def test_a_probe_that_waits_too_long_cannot_connect(
     result = await flow.async_configure(result["flow_id"], RTU)
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "cannot_connect"}
+
+
+async def test_the_check_can_be_skipped(hass, unit) -> None:
+    """Skipped, nothing is asked beyond the connection test, nothing is
+    ticked, and the entry records the check as never run."""
+    flow = hass.config_entries.flow
+    result = await flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    result = await flow.async_configure(result["flow_id"], {"connection_type": "rtu"})
+    result = await flow.async_configure(result["flow_id"], RTU)
+    assert result["step_id"] == "check"
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "features"})
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "features"
+    assert set(result["description_placeholders"].values()) == {"–"}
+    assert not any(defaults(result).values())
+    # Only the connection test reached the unit.
+    assert unit.requests == [("input", 0)]
+
+    result = await flow.async_configure(
+        result["flow_id"], form_input(result, defaults(result))
+    )
+    await hass.async_block_till_done()
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    options = result["result"].options
+    assert options["detected"] is None
+    assert options["detected_at"] is None
 
 
 async def test_the_same_unit_cannot_be_added_twice(hass, unit) -> None:

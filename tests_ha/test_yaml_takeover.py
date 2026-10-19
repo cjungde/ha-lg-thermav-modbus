@@ -110,8 +110,8 @@ async def _to_takeover_step(hass):
     )
     result = await flow.async_configure(result["flow_id"], {"connection_type": "rtu"})
     result = await flow.async_configure(result["flow_id"], RTU)
-    await hass.async_block_till_done()
-    result = await flow.async_configure(result["flow_id"])
+    assert result["step_id"] == "check"
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "features"})
     assert result["step_id"] == "features"
     return await flow.async_configure(
         result["flow_id"], form_input(result, defaults(result))

@@ -33,9 +33,21 @@
           "connection_type": "Verbindungsart"
         }
       },
+      "check": {
+        "title": "LG Therma V R290 — Optionale Register",
+        "description": "Die Verbindung steht. Nicht jedes Gerät liefert die optionalen Register (Energieregister, Begrenzung der Verdichtermodulation, Leistungsbegrenzung), und welche es liefert, ändert sich nur mit einem Firmware-Update – eine Prüfung genügt also.\n\nEin Gerät, das eine Gruppe nicht liefert, antwortet gar nicht; jede fehlende Gruppe wartet daher auf ein Zeitlimit, und auf einer geteilten Verbindung wartet alles andere darauf mit. Die Prüfung lässt sich auch überspringen und später unter Konfigurieren ausführen.",
+        "menu_options": {
+          "detect": "Optionale Register jetzt prüfen",
+          "features": "Prüfung überspringen"
+        },
+        "menu_option_descriptions": {
+          "detect": "Fragt das Gerät, auf welche optionalen Register es antwortet, und zeigt dann die Optionen; was antwortet und gefahrlos ist, ist angehakt.",
+          "features": "Zeigt die Optionen ohne Haken. Die Prüfung ist jederzeit unter Konfigurieren → Optionale Register prüfen verfügbar."
+        }
+      },
       "features": {
         "title": "LG Therma V R290 — Optionale Register",
-        "description": "| Optionale Register | Gerät antwortet |\n|---|:-:|\n| Energieregister | {energy_registers} |\n| Begrenzung der Verdichtermodulation | {compressor_modulation_limit} |\n| Leistungsbegrenzung | {power_limit} |\n\n✓ antwortet · ✗ keine Antwort\n\nGruppen, die antworten und gefahrlos eingeschaltet werden können, sind angehakt. Die Leistungsbegrenzung wird auch dann nicht angehakt, wenn sie antwortet: Ob das Gerät den Grenzwert tatsächlich einhält, ist noch nicht bestätigt. Die Taste für Notbetrieb und die experimentellen Register werden nie angehakt. Alles lässt sich später unter Konfigurieren ändern.",
+        "description": "| Optionale Register | Gerät antwortet |\n|---|:-:|\n| Energieregister | {energy_registers} |\n| Begrenzung der Verdichtermodulation | {compressor_modulation_limit} |\n| Leistungsbegrenzung | {power_limit} |\n\n✓ antwortet · ✗ keine Antwort · – nicht geprüft\n\nGruppen, die antworten und gefahrlos eingeschaltet werden können, sind angehakt. Die Leistungsbegrenzung wird auch dann nicht angehakt, wenn sie antwortet: Ob das Gerät den Grenzwert tatsächlich einhält, ist noch nicht bestätigt. Die Taste für Notbetrieb und die experimentellen Register werden nie angehakt. Alles lässt sich später unter Konfigurieren ändern; dort lässt sich auch die Prüfung (erneut) ausführen.",
         "sections": {
           "energy_registers": {
             "name": "Energieregister",

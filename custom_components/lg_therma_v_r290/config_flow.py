@@ -387,7 +387,7 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self._abort_if_unique_id_configured()
                 self._data = data
                 self._title = f"LG Therma V {data['host']}"
-                return await self.async_step_detect()
+                return await self.async_step_check()
             errors["base"] = error
 
         return self.async_show_form(
@@ -415,13 +415,27 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self._abort_if_unique_id_configured()
                 self._data = data
                 self._title = f"LG Therma V {data[CONF_SERIAL_PORT]}"
-                return await self.async_step_detect()
+                return await self.async_step_check()
             errors["base"] = error
 
         return self.async_show_form(
             step_id="rtu",
             data_schema=_schema_rtu(user_input or defaults),
             errors=errors,
+        )
+
+    async def async_step_check(self, user_input=None) -> FlowResult:
+        """Ask whether to check the optional registers now.
+
+        Which registers a unit serves only changes with its firmware, so the
+        check is worth running once, but not something to impose: on a unit
+        that serves none of the groups each of them waits for a request
+        timeout, and on a shared link that wait holds up everyone else on it.
+        Skipped, the options come up unticked and unchecked (–), and the check
+        is under Configure whenever it is wanted.
+        """
+        return self.async_show_menu(
+            step_id="check", menu_options=["detect", "features"]
         )
 
     async def async_step_detect(self, user_input=None) -> FlowResult:
@@ -449,7 +463,11 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._options = {
                 **_flatten_option_groups(user_input),
                 CONF_DETECTED: self._detected,
-                CONF_DETECTED_AT: dt_util.utcnow().isoformat(),
+                # No time without a result: the status table under Configure
+                # then shows the check as never run.
+                CONF_DETECTED_AT: (
+                    None if self._detected is None else dt_util.utcnow().isoformat()
+                ),
             }
             self._takeover, self._left = _plan_yaml_takeover(self.hass)
             if self._takeover:
