@@ -41,10 +41,19 @@ class FakeUnit:
         self.refused = set(refused)
         self.requests: list[tuple[str, int]] = []
         self.writes: list[tuple[str, int, object]] = []
+        # Reads on these addresses never return (a request waiting on a link
+        # whose timeout has been raised), until the caller gives up.
+        self.hanging: set[tuple[str, int]] = set()
+        self.required_timeout: float | None = None
+
+    def require_timeout(self, timeout: float | None) -> None:
+        self.required_timeout = timeout
 
     async def _read(self, kind: str, address: int, count: int):
         self.requests.append((kind, address))
         await asyncio.sleep(0)
+        if (kind, address) in self.hanging:
+            await asyncio.Event().wait()
         if (kind, address) in self.silent:
             raise ModbusTimeoutError(f"{kind} {address}: no answer")
         if (kind, address) in self.refused:

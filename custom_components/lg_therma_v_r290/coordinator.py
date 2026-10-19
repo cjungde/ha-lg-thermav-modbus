@@ -58,6 +58,25 @@ from .power_limit import (
 
 _LOGGER = logging.getLogger(__name__)
 
+#: Per-request timeout floor for this unit (taken over from cjungde's
+#: integration). `modbus_connection`'s own default is 10 s, which is not
+#: generous on a SHARED connection: requests from every consumer on the
+#: endpoint queue behind one lock, so waiting time adds up rather than
+#: overlapping. An answer that arrives after the client gave up on it does not
+#: vanish -- it is read as the reply to the NEXT request and shows up as
+#: `Received unexpected response with Transaction ID`, followed by a dropped
+#: link.
+#:
+#: `require_timeout` raises the timeout of the whole LINK to at least this
+#: value -- it resolves to the maximum over all units on it, so the call is a
+#: floor and not an assignment, and setting it here does not shorten anyone
+#: else's. Raising it drops the current connection so the new value takes
+#: effect at once, which is why this is called once at setup and never again.
+#:
+#: Needs `modbus-connection` 4.12.3 (Home Assistant 2026.10); the 4.10.0 that
+#: the 2026.9 line pins has no such method.
+_REQUEST_TIMEOUT = 20.0
+
 
 def _monotonic() -> float:
     """The clock the compressor statistics run on (replaced in tests)."""
@@ -82,6 +101,8 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         own, or reloads the entry by hand. The connection carries its own lock,
         so the reads below and the writes further down cannot interleave —
         neither with each other nor with another integration on the same bus.
+        That serialization is also why the timeout needs raising; see
+        `_REQUEST_TIMEOUT`.
         """
         # Counts the reads of each poll for the poll statistics (pollstats.py).
         self.unit = CountingUnit(
@@ -92,6 +113,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 int(entry.data[CONF_SLAVE_ID]),
             )
         )
+        self.unit.require_timeout(_REQUEST_TIMEOUT)
 
         self._experimental = bool(entry.options.get(CONF_EXPERIMENTAL, False))
         self._experimental_gate = BlockGate()

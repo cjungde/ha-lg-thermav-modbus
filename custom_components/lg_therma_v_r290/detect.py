@@ -20,6 +20,7 @@ Home Assistant install, like energy.py.
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 from modbus_connection.exceptions import ModbusError
@@ -70,27 +71,37 @@ OFF = "–"
 CAN_BE_SWITCHED_ON = "➕"
 
 
-async def _answers(read) -> bool:
+async def _answers(read, timeout: float | None) -> bool:
     try:
-        await read()
-    except ModbusError:
+        async with asyncio.timeout(timeout):
+            await read()
+    except (ModbusError, TimeoutError):
         return False
     return True
 
 
-async def detect(unit: Any) -> dict[str, bool]:
-    """Ask the unit for each optional group once; True where it answered."""
+async def detect(unit: Any, timeout: float | None = None) -> dict[str, bool]:
+    """Ask the unit for each optional group once; True where it answered.
+
+    ``timeout`` bounds each check. The link's own timeout is no help here: on a
+    connection the coordinator already holds it is raised to 20 s, so a unit
+    that serves none of the groups would keep the form waiting a minute. A
+    check that runs out of time counts as "does not answer".
+    """
     energy = await _answers(
-        lambda: unit.read_input_registers(ENERGY_BLOCK_START, ENERGY_BLOCK_COUNT)
+        lambda: unit.read_input_registers(ENERGY_BLOCK_START, ENERGY_BLOCK_COUNT),
+        timeout,
     )
     modulation = await _answers(
-        lambda: unit.read_holding_registers(MODULATION_LIMIT_REGISTER, 1)
+        lambda: unit.read_holding_registers(MODULATION_LIMIT_REGISTER, 1), timeout
     )
     # The coordinator needs both addresses; when the coil does not answer, the
     # register is not asked as well, which saves one more timeout.
     power_limit = await _answers(
-        lambda: unit.read_coils(POWER_LIMIT_COIL, 1)
-    ) and await _answers(lambda: unit.read_holding_registers(POWER_LIMIT_REGISTER, 1))
+        lambda: unit.read_coils(POWER_LIMIT_COIL, 1), timeout
+    ) and await _answers(
+        lambda: unit.read_holding_registers(POWER_LIMIT_REGISTER, 1), timeout
+    )
     return {
         CONF_ENERGY_REGISTERS: energy,
         CONF_MODULATION_LIMIT: modulation,

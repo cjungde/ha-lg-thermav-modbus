@@ -97,7 +97,18 @@ for a unit on a *shared* connection, which means:
   *both* of them.
 - The Modbus stack is Home Assistant's own (`modbus-connection` on the tmodbus
   backend), so nothing is installed into the container on our behalf. The
-  `requirements` list in the manifest is empty.
+  manifest only declares `modbus-connection>=4.12.3`, which Home Assistant
+  2026.10 already ships: the integration imports it directly, and needs its
+  `require_timeout` (see below).
+- Because requests serialize, a request may wait behind someone else's
+  conversation. The integration therefore asks the shared connection for a
+  request timeout of at least **20 seconds** instead of the library's 10. It
+  is a floor, not a setting: it never shortens the timeout another
+  integration on the same link has asked for. An answer that arrives after
+  the client gave up would otherwise be read as the reply to the next request
+  (`Received unexpected response with Transaction ID`) and drop the link.
+  The setup and options dialogs wait at most 10 seconds per check, so they
+  stay responsive on a link whose timeout has been raised.
 - The same device may not be claimed twice with different link settings —
   plain TCP and RTU-over-TCP on one socket, say. The config flow reports that
   as an error rather than silently reframing.
