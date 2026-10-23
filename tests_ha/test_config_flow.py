@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResultType, section
 
@@ -157,6 +159,55 @@ async def test_a_probe_that_waits_too_long_cannot_connect(
     result = await flow.async_configure(result["flow_id"], RTU)
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "cannot_connect"}
+
+
+async def _submit_rtu(hass):
+    flow = hass.config_entries.flow
+    result = await flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    result = await flow.async_configure(result["flow_id"], {"connection_type": "rtu"})
+    return await flow.async_configure(result["flow_id"], RTU)
+
+
+async def test_a_unit_not_ready_yet_gets_a_second_try(hass, unit, caplog) -> None:
+    """Right after a restart the first request may go unanswered."""
+    caplog.set_level(logging.INFO, logger="custom_components.lg_therma_v_r290")
+    real_read = unit.read_input_registers
+    calls = []
+
+    async def read_input_registers(address, count):
+        calls.append(address)
+        if len(calls) == 1:
+            unit.silent.add(("input", 0))
+        else:
+            unit.silent.discard(("input", 0))
+        return await real_read(address, count)
+
+    unit.read_input_registers = read_input_registers
+    result = await _submit_rtu(hass)
+    assert result["step_id"] == "check"
+    assert calls == [0, 0]
+    assert "Connection test to /dev/ttyUSB0, slave 1 failed" in caplog.text
+    assert "trying again" in caplog.text
+
+
+async def test_a_failed_test_logs_why(hass, unit, caplog) -> None:
+    """The form can only say "Connection failed"; the log says why."""
+    unit.silent = {("input", 0)}
+    result = await _submit_rtu(hass)
+    assert result["errors"] == {"base": "cannot_connect"}
+    assert unit.requests == [("input", 0), ("input", 0)]  # two attempts
+    assert "failed after 2 attempts" in caplog.text
+    assert "input 0: no answer" in caplog.text  # the reason from the unit
+
+
+async def test_a_refusal_is_not_retried(hass, unit, caplog) -> None:
+    unit.refused = {("input", 0)}
+    result = await _submit_rtu(hass)
+    assert result["errors"] == {"base": "invalid_slave_id"}
+    assert unit.requests == [("input", 0)]
+    assert "refused" in caplog.text
 
 
 async def test_the_check_can_be_skipped(hass, unit) -> None:

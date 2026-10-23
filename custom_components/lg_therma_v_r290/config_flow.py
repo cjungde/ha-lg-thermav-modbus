@@ -157,6 +157,37 @@ def _same_unit(old: dict, new: dict) -> bool:
     return where(old) == where(new)
 
 
+#: Attempts of the connection test, and the pause between them. Right after
+#: a restart a serial adapter or the shared connection may not be ready yet,
+#: and the first request goes unanswered; a second try a moment later
+#: usually gets through. A refusal or a link conflict is not retried: asking
+#: again cannot change those.
+_PROBE_ATTEMPTS = 2
+_PROBE_RETRY_PAUSE = 2  # seconds
+
+
+def _describe_link(data: dict) -> str:
+    """Where the connection test went, for the log."""
+    if data.get(CONF_CONNECTION_TYPE) == CONNECTION_RTU:
+        where = data.get(CONF_SERIAL_PORT)
+    else:
+        where = f"{data.get('host')}:{data.get('port', DEFAULT_PORT)}"
+    return f"{where}, slave {int(data[CONF_SLAVE_ID])}"
+
+
+async def _probe(hass: HomeAssistant, data: dict) -> None:
+    """Read input 0 once, within _PROBE_TIMEOUT; raises what went wrong."""
+    async with (
+        asyncio.timeout(_PROBE_TIMEOUT),
+        async_get_temporary_unit(
+            hass,
+            params_from_entry_data(data),
+            int(data[CONF_SLAVE_ID]),
+        ) as unit,
+    ):
+        await unit.read_input_registers(0, 1)
+
+
 async def _test_connection(hass: HomeAssistant, data: dict) -> str | None:
     """Try to read one input register. Returns an error key or None.
 
@@ -165,36 +196,52 @@ async def _test_connection(hass: HomeAssistant, data: dict) -> str | None:
     on that connection and the probe queues behind its traffic instead of
     opening a competing socket; otherwise a connection is opened here and
     closed again on the way out.
+
+    A test that gets no answer is tried once more after a short pause (see
+    _PROBE_ATTEMPTS). The form can only show "Connection failed", so the
+    reason -- a timeout, a port that would not open -- goes to the log.
     """
-    try:
-        async with (
-            asyncio.timeout(_PROBE_TIMEOUT),
-            async_get_temporary_unit(
-                hass,
-                params_from_entry_data(data),
-                int(data[CONF_SLAVE_ID]),
-            ) as unit,
-        ):
-            await unit.read_input_registers(0, 1)
-    except HomeAssistantError as exc:
-        # The endpoint is already held with link settings that cannot be
-        # reconciled with these — a different framing on the same socket. The
-        # form can only show a fixed sentence, and which settings collided is
-        # exactly what makes this fixable, so it goes to the log.
-        _LOGGER.error("Cannot take a unit on this device: %s", exc)
-        return "link_settings_conflict"
-    except ModbusExceptionError:
-        # Something answered but refused the request, which for register 0 of
-        # a Therma V means we are talking to the wrong unit.
-        return "invalid_slave_id"
-    except (ModbusError, TimeoutError):
-        # A queued probe that ran out of time is indistinguishable, from the
-        # form's side, from a device that never answered.
-        return "cannot_connect"
-    except Exception:
-        _LOGGER.exception("Unexpected error testing LG Therma V connection")
-        return "unknown"
-    return None
+    link = _describe_link(data)
+    for attempt in range(1, _PROBE_ATTEMPTS + 1):
+        try:
+            await _probe(hass, data)
+        except HomeAssistantError as exc:
+            # The endpoint is already held with link settings that cannot be
+            # reconciled with these — a different framing on the same socket.
+            # The form can only show a fixed sentence, and which settings
+            # collided is exactly what makes this fixable, so it goes to the log.
+            _LOGGER.error("Cannot take a unit on this device: %s", exc)
+            return "link_settings_conflict"
+        except ModbusExceptionError as exc:
+            # Something answered but refused the request, which for register 0
+            # of a Therma V means we are talking to the wrong unit.
+            _LOGGER.warning("Connection test to %s refused: %s", link, exc)
+            return "invalid_slave_id"
+        except (ModbusError, TimeoutError) as exc:
+            # A queued probe that ran out of time is indistinguishable, from
+            # the form's side, from a device that never answered.
+            reason = str(exc) or f"no answer within {_PROBE_TIMEOUT} s"
+            if attempt < _PROBE_ATTEMPTS:
+                _LOGGER.info(
+                    "Connection test to %s failed (%s); trying again in %s s",
+                    link,
+                    reason,
+                    _PROBE_RETRY_PAUSE,
+                )
+                await asyncio.sleep(_PROBE_RETRY_PAUSE)
+                continue
+            _LOGGER.warning(
+                "Connection test to %s failed after %d attempts: %s",
+                link,
+                _PROBE_ATTEMPTS,
+                reason,
+            )
+            return "cannot_connect"
+        except Exception:
+            _LOGGER.exception("Unexpected error testing LG Therma V connection")
+            return "unknown"
+        return None
+    return "cannot_connect"  # not reached
 
 
 async def _detect(hass: HomeAssistant, data: dict) -> dict[str, bool] | None:
