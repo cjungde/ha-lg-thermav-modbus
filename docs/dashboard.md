@@ -182,6 +182,8 @@ views:
 
 A sections view (Home Assistant 2024.3+) with every entity the integration creates: overview with a 24 h history, controls, status and diagnostics, efficiency and energy, the rarely used inputs, the energy states of holding 9, DHW and the experimental registers. Paste it the same way as the compact view. It is a separate dashboard; do not paste it into the compact one.
 
+<img src="images/dashboard-full.png" alt="Full view on a 12 kW unit while heating: Overview with the 24 h history, Control with compressor and heating circuit 1, Status &amp; diagnostics with Power and the weather forecast, Efficiency &amp; energy with COP tiles, today's statistics, counters, water pressure and poll statistics">
+
 Most of it needs options switched on in *Configure → Options*; without them those rows show *Entity not found*. Remove them, or switch the option on:
 
 | Option | Cards |
