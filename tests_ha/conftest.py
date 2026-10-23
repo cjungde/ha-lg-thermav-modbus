@@ -146,3 +146,11 @@ def unit():
     Bus.unit = FakeUnit()
     Bus.held.clear()
     return Bus.unit
+
+
+@pytest.fixture(autouse=True)
+def no_retry_pause(monkeypatch):
+    """The connection test's pause before its second attempt, at 0 in tests."""
+    monkeypatch.setattr(
+        "custom_components.lg_therma_v_r290.config_flow._PROBE_RETRY_PAUSE", 0
+    )
