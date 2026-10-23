@@ -324,7 +324,7 @@ You keep the integration's entity ids (the ones in this guide and the README) an
 
 Their history stays under the old ids until the recorder purges it (long-term statistics stay longer); delete the leftover entities in *Settings → Entities* when you no longer need them.
 
-**Units spelled differently** (`U/min` → `rpm` for the compressor speed, `COP` → no unit for the COP): the history continues; Home Assistant then shows a note under *Developer tools → Statistics*; choose *Update the unit* there. The values are the same. The energy counters were in Wh and are shown in kWh: the recorder converts these itself.
+**Units spelled differently** (`U/min` → `rpm` for the compressor speed, `COP` → no unit for the COP): the history continues. Only if the YAML sensor kept **long-term statistics** (it had a `state_class`) do those statistics carry the old unit; Home Assistant then stops adding to them and shows a note under *Developer tools → Statistics* (after its next hourly run). Choose *Fix issue* → *Update the unit of the historic statistic values*, not *Delete*: the values are the same. Without a `state_class` in the YAML there were no long-term statistics, no note appears, and there is nothing to do. The energy counters were in Wh and are shown in kWh: the recorder converts these itself.
 
 **Requirements:** the YAML package must be removed and Home Assistant restarted before you add the integration; an entity whose YAML is still loaded is listed with ⑥ and not taken over. The integration's entity ids must still be free, i.e. it has not been set up before (⑦ otherwise).
 
@@ -413,6 +413,6 @@ Replace `modbus.write_register` / `modbus.write_coil` calls and helper writes wi
 8. Compare the values from step 1 with the new entities. Compressor modulation shows *unknown* if no limit is set.
 9. Update the Energy dashboard. For the electrical consumption, prefer an external meter over the unit's own counters, which deviate from a smart meter (see [§10](#10-differences-that-can-bite)); the unit's thermal counter can be added if you use it.
 10. Rewrite automations and dashboards using the tables in §3–§9 and the examples in §14. Check [§10](#10-differences-that-can-bite) for every automation that uses input 16, input 17, Energy State, coil 3, coil 5, or setpoints outside the new ranges.
-11. Under *Developer tools → Statistics*, choose *Update the unit* where Home Assistant shows a note (compressor speed, COP).
+11. Only if *Developer tools → Statistics* shows a note for the compressor speed or the COP (look after the next full hour): choose *Fix issue* → *Update the unit of the historic statistic values*. No note means nothing to do ([§13](#13-keeping-history)).
 12. Delete the YAML entities that were not taken over (they show as *unavailable*) once you no longer need their old history.
 13. Delete the YAML file once everything works.
