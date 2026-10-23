@@ -405,13 +405,14 @@ Replace `modbus.write_register` / `modbus.write_coil` calls and helper writes wi
 
 1. Note the current values of all writable registers (operation mode, control method, HK1/HK2/DHW targets, shift values, compressor modulation), so you can compare after switching.
 2. Export or screenshot dashboards and automations that use `hp_*` entities or the helpers.
-3. Remove (or comment out) the YAML package: the `modbus:` hub, `input_number:`, `input_select:`, `template:` and `automation:` parts. Restart Home Assistant.
-4. *Settings → Devices & Services → Add Integration → LG Therma V R290*: connection type RTU, the same `/dev/serial/by-id/…` port, 9600, N, 1, slave 1.
-5. On the options step, **Energy registers** and **Compressor modulation limit** come ticked when the unit answers on them; tick **Power limit** too if you used it. Experimental registers only if you want to record the undocumented addresses. The next page lists which YAML entities continue as which integration entities: keep **Take over the history** ticked ([§13](#13-keeping-history)).
-6. Enable the disabled-by-default sensors you used: target room air temperature circuit 1/2 (the old *room air temperature circuit 1/2 (holding)*).
-7. Compare the values from step 1 with the new entities. Compressor modulation shows *unknown* if no limit is set.
-8. Update the Energy dashboard. For the electrical consumption, prefer an external meter over the unit's own counters, which deviate from a smart meter (see [§10](#10-differences-that-can-bite)); the unit's thermal counter can be added if you use it.
-9. Rewrite automations and dashboards using the tables in §3–§9 and the examples in §14. Check [§10](#10-differences-that-can-bite) for every automation that uses input 16, input 17, Energy State, coil 3, coil 5, or setpoints outside the new ranges.
-10. Under *Developer tools → Statistics*, choose *Update the unit* where Home Assistant shows a note (compressor speed, COP).
-11. Delete the YAML entities that were not taken over (they show as *unavailable*) once you no longer need their old history.
-12. Delete the YAML file once everything works.
+3. Install the integration, but do not add it yet: in *HACS → Integrations → ⋮ → Custom repositories*, add `https://github.com/isarrider/ha-lg-therma-v-modbus` with category **Integration**, then download **LG Therma V R290** (version 2.1.0 or newer). Without HACS, copy the folder `custom_components/lg_therma_v_r290/` from the latest release into your `config/custom_components/`. The restart in the next step loads it.
+4. Remove (or comment out) the YAML package: the `modbus:` hub, `input_number:`, `input_select:`, `template:` and `automation:` parts. Restart Home Assistant; this also loads the integration installed in step 3.
+5. *Settings → Devices & Services → Add Integration → LG Therma V R290*: connection type RTU, the same `/dev/serial/by-id/…` port, 9600, N, 1, slave 1.
+6. After the connection test, choose **Check the optional registers now** (on a unit that serves all three groups it takes seconds; see the README, *Which options the unit supports*). On the options step that follows, **Energy registers** and **Compressor modulation limit** come ticked when the unit answers on them; tick **Power limit** too if you used it. Experimental registers only if you want to record the undocumented addresses. The next page lists which YAML entities continue as which integration entities: keep **Take over the history** ticked ([§13](#13-keeping-history)).
+7. Enable the disabled-by-default sensors you used: target room air temperature circuit 1/2 (the old *room air temperature circuit 1/2 (holding)*).
+8. Compare the values from step 1 with the new entities. Compressor modulation shows *unknown* if no limit is set.
+9. Update the Energy dashboard. For the electrical consumption, prefer an external meter over the unit's own counters, which deviate from a smart meter (see [§10](#10-differences-that-can-bite)); the unit's thermal counter can be added if you use it.
+10. Rewrite automations and dashboards using the tables in §3–§9 and the examples in §14. Check [§10](#10-differences-that-can-bite) for every automation that uses input 16, input 17, Energy State, coil 3, coil 5, or setpoints outside the new ranges.
+11. Under *Developer tools → Statistics*, choose *Update the unit* where Home Assistant shows a note (compressor speed, COP).
+12. Delete the YAML entities that were not taken over (they show as *unavailable*) once you no longer need their old history.
+13. Delete the YAML file once everything works.
