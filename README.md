@@ -219,7 +219,7 @@ Four places show the state:
 
 ## Entities
 
-A ready-to-paste dashboard with temperatures, compressor, COP, controls and per-day statistics, built from Home Assistant's own cards: [docs/dashboard.md](docs/dashboard.md).
+Two ready-to-paste dashboards built from Home Assistant's own cards: a compact one with temperatures, compressor, COP, controls and per-day statistics, and a full sections view with every entity of the integration: [docs/dashboard.md](docs/dashboard.md).
 
 ### Sensors
 

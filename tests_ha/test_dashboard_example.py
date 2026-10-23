@@ -1,4 +1,4 @@
-"""Every entity in docs/dashboard.md exists, with all options on."""
+"""Every entity of the integration in docs/dashboard.md exists, with all options on."""
 
 from __future__ import annotations
 
@@ -16,7 +16,6 @@ DASHBOARD = Path(__file__).resolve().parent.parent / "docs" / "dashboard.md"
 
 def _entity_ids() -> set[str]:
     text = DASHBOARD.read_text()
-    config = yaml.safe_load(re.search(r"```yaml\n(.*?)```", text, re.S).group(1))
     found: set[str] = set()
 
     def walk(node) -> None:
@@ -29,8 +28,12 @@ def _entity_ids() -> set[str]:
             for value in node:
                 walk(value)
 
-    walk(config)
-    return found
+    blocks = re.findall(r"```yaml\n(.*?)```", text, re.S)
+    assert len(blocks) >= 2
+    for block in blocks:
+        walk(yaml.safe_load(block))
+    # Only the integration's own entities; e.g. the weather card is the user's.
+    return {i for i in found if ".lg_therma_v_r290_" in i}
 
 
 async def test_every_dashboard_entity_exists(hass, unit) -> None:
