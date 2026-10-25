@@ -180,15 +180,15 @@ views:
 
 ## Full view
 
-A sections view (Home Assistant 2024.3+) with every entity the integration creates: overview with a 24 h history, controls, status and diagnostics, efficiency and energy, the rarely used inputs, the energy states of holding 9, DHW and the experimental registers. It is a separate dashboard; do not paste it into the compact one.
+A sections view (Home Assistant 2024.3+) with every entity the integration creates: overview with a 24 h history, controls with starts and run time today, status and diagnostics with refrigerant temperatures and pressures, power, energy and COP as big-number cards, the rarely used inputs, the energy states of holding 9, DHW and the experimental registers. It is a separate dashboard; do not paste it into the compact one.
 
-<img src="images/dashboard-full.png" alt="Full view on a 12 kW unit while heating: Overview with the 24 h history, Control with compressor and heating circuit 1, Status &amp; diagnostics with Power and the weather forecast, Efficiency &amp; energy with COP tiles, today's statistics, counters, water pressure and poll statistics">
+<img src="images/dashboard-readme.png" alt="Full view on a 12 kW unit while heating: 24 h history of temperatures, compressor speed and flow rate; compressor controls with starts and run time today; refrigerant temperatures and pressures; power, COP and today's energy as big-number cards, counters, weather and poll statistics">
 
 Most of it needs options switched on in *Configure → Options*; without them those rows show *Entity not found*. Remove them, or switch the option on:
 
 | Option | Cards |
 |---|---|
-| Energy registers | *Power* (electrical, thermal reported), the COP tiles, *Electrical today*, *Space heating today*, *Counters*, *Demand vs supply* |
+| Energy registers | *Electrical (reads high)*, *Thermal (reported)*, the COP cards, *Electrical today*, *Space heating today*, *Counters*, *Demand vs supply* |
 | Compressor statistics | *Compressor Average Speed*, *Compressor Starts*, *Compressor Run Time*, *Starts today*, *Run time today* |
 | Compressor modulation limit | *Max Compressor Modulation* |
 | Power limit | *Power Limit*, *Max Electrical Power* |

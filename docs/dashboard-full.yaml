@@ -24,23 +24,21 @@ views:
             entities:
               - entity: switch.lg_therma_v_r290_heating_cooling
                 name: Heating/Cooling
+              - entity: sensor.lg_therma_v_r290_operation_mode
           - type: history-graph
-            title: Last 24 h
-            hours_to_show: 24
-            logarithmic_scale: false
             entities:
               - entity: sensor.lg_therma_v_r290_inlet_temperature
-                name: Inlet Temperature
+                name: Inlet Temp.
               - entity: sensor.lg_therma_v_r290_outlet_temperature
-                name: Outlet Temperature
+                name: Outlet Temp.
               - entity: sensor.lg_therma_v_r290_temperature_before_evaporator
-                name: Temperature Before Evaporator
+                name: Temp. before Evaporator
               - entity: sensor.lg_therma_v_r290_temperature_after_evaporator
-                name: Temperature After Evaporator
+                name: Temp. after Evaporator
               - entity: sensor.lg_therma_v_r290_room_air_temperature_circuit_1
                 name: Technikraum
               - entity: sensor.lg_therma_v_r290_outdoor_temperature
-                name: Outdoor Temperature
+                name: Outdoor Temp.
               - entity: sensor.lg_therma_v_r290_compressor_speed
                 name: Compressor Speed
               - entity: sensor.lg_therma_v_r290_flow_rate
@@ -51,22 +49,19 @@ views:
                 name: Compressor
               - entity: binary_sensor.lg_therma_v_r290_defrost
                 name: Defrost
+            hours_to_show: 24
+            logarithmic_scale: false
       - type: grid
         cards:
           - type: heading
             heading: Control
           - type: entities
-            title: Compressor & limits
             show_header_toggle: false
             entities:
               - entity: sensor.lg_therma_v_r290_compressor_speed
                 name: Compressor Speed
               - entity: sensor.lg_therma_v_r290_compressor_average_speed
                 name: Compressor Average Speed
-              - entity: sensor.lg_therma_v_r290_compressor_starts
-                name: Compressor Starts
-              - entity: sensor.lg_therma_v_r290_compressor_run_time
-                name: Compressor Run Time
               - entity: number.lg_therma_v_r290_max_compressor_modulation
                 name: Max Compressor Modulation
               - entity: binary_sensor.lg_therma_v_r290_compressor
@@ -97,12 +92,31 @@ views:
             stat_type: change
             grid_options:
               rows: auto
+          - type: tile
+            grid_options:
+              rows: auto
+            entity: sensor.lg_therma_v_r290_compressor_starts
+            name: Compressor Starts
+            show_entity_picture: false
+            hide_state: false
+            vertical: false
+            features_position: bottom
+          - type: tile
+            grid_options:
+              rows: auto
+            entity: sensor.lg_therma_v_r290_compressor_run_time
+            name: Compressor Run Time
+            show_entity_picture: false
+            hide_state: false
+            vertical: false
+            features_position: bottom
           - type: entities
-            title: Heating circuit 1
             show_header_toggle: false
             entities:
               - entity: sensor.lg_therma_v_r290_outdoor_temperature
                 name: Outdoor Temperature
+              - entity: sensor.lg_therma_v_r290_suction_temperature
+                name: Suction Temperature
               - entity: sensor.lg_therma_v_r290_outlet_temperature
                 name: Outlet Temperature
               - entity: sensor.lg_therma_v_r290_inlet_temperature
@@ -110,6 +124,8 @@ views:
               - entity: number.lg_therma_v_r290_target_temperature_circuit_1_radiators
                 name: Target Temperature Circuit 1 (Radiators)
               - entity: select.lg_therma_v_r290_control_method
+                name: Control Method
+              - entity: sensor.lg_therma_v_r290_control_method
                 name: Control Method
               - entity: number.lg_therma_v_r290_setpoint_shift_circuit_1
                 name: Setpoint Shift Circuit 1
@@ -122,75 +138,50 @@ views:
       - type: grid
         cards:
           - type: heading
-            heading: Status & diagnostics
+            heading: Status & Diagnostics
+            heading_style: title
           - type: entities
             show_header_toggle: false
             entities:
-              - entity: sensor.lg_therma_v_r290_operation_mode
-                name: Operation Mode
-              - entity: sensor.lg_therma_v_r290_control_method
-                name: Control Method
-              - entity: sensor.lg_therma_v_r290_energy_state_reported
-                name: Energy state (input 11, reported)
               - entity: sensor.lg_therma_v_r290_energy_state
                 name: Energy state (holding 9, command)
+              - entity: sensor.lg_therma_v_r290_energy_state_reported
+                name: Energy state (input 11, reported)
               - entity: sensor.lg_therma_v_r290_energy_control_signal
                 name: Energy Control Signal
-              - entity: sensor.lg_therma_v_r290_suction_temperature
-                name: Suction Temperature
-              - entity: sensor.lg_therma_v_r290_hot_gas_temperature
-                name: Hot Gas Temperature
-              - entity: sensor.lg_therma_v_r290_liquid_gas_temperature
-                name: Liquid Gas Temperature
-              - entity: sensor.lg_therma_v_r290_high_pressure_condenser
-                name: High Pressure (Condenser)
-              - entity: sensor.lg_therma_v_r290_low_pressure_evaporator
-                name: Low Pressure (Evaporator)
               - entity: sensor.lg_therma_v_r290_error_code
                 name: Error Code
               - entity: binary_sensor.lg_therma_v_r290_fault
                 name: Fault
           - type: history-graph
-            title: Water pressure (7 days)
-            hours_to_show: 168
+            entities:
+              - entity: sensor.lg_therma_v_r290_hot_gas_temperature
+              - entity: sensor.lg_therma_v_r290_liquid_gas_temperature
+              - entity: sensor.lg_therma_v_r290_high_pressure_condenser
+              - entity: sensor.lg_therma_v_r290_low_pressure_evaporator
+            hours_to_show: 24
             logarithmic_scale: false
+          - type: history-graph
             entities:
               - entity: sensor.lg_therma_v_r290_water_pressure
                 name: Water Pressure
-          - type: weather-forecast
-            entity: weather.forecast_home
-            show_current: true
-            show_forecast: true
-            forecast_type: daily
-            round_temperature: false
-            forecast_slots: 5
+            hours_to_show: 168
+            logarithmic_scale: false
       - type: grid
         cards:
           - type: heading
-            heading: Efficiency & energy
-          - type: entities
-            title: Power
-            show_header_toggle: false
-            state_color: false
-            entities:
-              - entity: sensor.lg_therma_v_r290_electrical_power_heat_pump
-                name: Electrical (reported, reads high)
-              - entity: sensor.lg_therma_v_r290_thermal_power_reported
-                name: Thermal (reported)
-              - entity: sensor.lg_therma_v_r290_thermal_power_calculated
-                name: Thermal (flow × ΔT)
-          - type: tile
-            entity: sensor.lg_therma_v_r290_cop_reported
-            name: COP (reported)
-          - type: tile
-            entity: sensor.lg_therma_v_r290_cop_calculated
-            name: COP (flow × ΔT)
-          - type: tile
-            entity: sensor.lg_therma_v_r290_cop_system_reported
-            name: COP system
-          - type: tile
-            entity: sensor.lg_therma_v_r290_cop_heating_cumulative
-            name: COP heating (cumulative)
+            heading: Power & Energy & Efficiency & Misc
+            heading_style: title
+          - type: entity
+            entity: sensor.lg_therma_v_r290_electrical_power_heat_pump
+            name: Electrical (reads high)
+            grid_options:
+              rows: auto
+          - type: entity
+            entity: sensor.lg_therma_v_r290_thermal_power_reported
+            name: Thermal (reported)
+            grid_options:
+              rows: auto
           - type: statistic
             entity: sensor.lg_therma_v_r290_electrical_energy_total
             name: Electrical today
@@ -207,6 +198,26 @@ views:
               calendar:
                 period: day
             stat_type: change
+            grid_options:
+              rows: auto
+          - type: entity
+            entity: sensor.lg_therma_v_r290_cop_calculated
+            name: COP (flow × ΔT)
+            grid_options:
+              rows: auto
+          - type: entity
+            entity: sensor.lg_therma_v_r290_cop_reported
+            name: COP (reported)
+            grid_options:
+              rows: auto
+          - type: entity
+            entity: sensor.lg_therma_v_r290_cop_system_reported
+            name: COP system
+            grid_options:
+              rows: auto
+          - type: entity
+            entity: sensor.lg_therma_v_r290_cop_heating_cumulative
+            name: COP heating (cumulative)
             grid_options:
               rows: auto
           - color: none
@@ -226,6 +237,13 @@ views:
                 name: Electrical Power Total System
               - entity: sensor.lg_therma_v_r290_thermal_power_heating_circuit_calculated
                 name: Thermal Power Heating Circuit (Calculated)
+          - type: weather-forecast
+            entity: weather.forecast_home
+            show_current: true
+            show_forecast: true
+            forecast_type: daily
+            round_temperature: false
+            forecast_slots: 5
           - type: entities
             show_header_toggle: false
             entities:
@@ -235,9 +253,7 @@ views:
                 name: Bus Load
               - entity: sensor.lg_therma_v_r290_optional_registers
                 name: Optional Registers
-              - entity: sensor.lg_therma_v_r290_operation_state_odu
-              - entity: sensor.lg_therma_v_r290_operation_cycle_odu
-              - entity: sensor.lg_therma_v_r290_demand_vs_supply
+              - entity: sensor.lg_therma_v_r290_thermal_power_calculated
             title: Misc
       - type: grid
         cards:
@@ -319,6 +335,13 @@ views:
                 name: Saving
               - entity: binary_sensor.lg_therma_v_r290_energy_state_super_energy_saving_mode
                 name: Super saving
+          - type: entities
+            show_header_toggle: false
+            entities:
+              - entity: sensor.lg_therma_v_r290_operation_state_odu
+              - entity: sensor.lg_therma_v_r290_operation_cycle_odu
+              - entity: sensor.lg_therma_v_r290_demand_vs_supply
+            title: Misc
       - type: grid
         cards:
           - type: heading
