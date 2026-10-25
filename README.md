@@ -8,6 +8,10 @@ Based on [cjungde/ha-lg-thermav-modbus](https://github.com/cjungde/ha-lg-thermav
 
 Replaces a hand-crafted YAML Modbus configuration with native HA entities: sensors, binary sensors, switches, buttons, number inputs, and select dropdowns — all updated on every poll cycle without requiring template sensors or automations.
 
+<img src="docs/images/dashboard-readme.png" alt="Dashboard on a 12 kW unit while heating: 24 h history of temperatures, compressor speed and flow rate; compressor controls with starts and run time today; refrigerant temperatures and pressures; power, COP and today's energy as big-number cards, counters, weather and poll statistics">
+
+*A dashboard built from Home Assistant's own cards; ready-to-paste examples are in [docs/dashboard.md](docs/dashboard.md).*
+
 ## Contents
 
 - [Features](#features)
