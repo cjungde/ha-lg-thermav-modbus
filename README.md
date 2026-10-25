@@ -221,6 +221,8 @@ Four places show the state:
 
 Two ready-to-paste dashboards built from Home Assistant's own cards: a compact one with temperatures, compressor, COP, controls and per-day statistics, and a full sections view with every entity of the integration: [docs/dashboard.md](docs/dashboard.md).
 
+<img src="docs/images/dashboard-readme.png" alt="Dashboard on a 12 kW unit while heating: 24 h history of temperatures, compressor speed and flow rate; compressor controls with starts and run time today; refrigerant temperatures and pressures; power, COP and today's energy as big-number cards, counters, weather and poll statistics">
+
 ### Sensors
 
 | Entity | Description | Unit |
