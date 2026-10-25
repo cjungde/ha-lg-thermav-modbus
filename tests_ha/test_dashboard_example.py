@@ -1,4 +1,8 @@
-"""Every entity of the integration in docs/dashboard.md exists, with all options on."""
+"""Every entity of the integration in the example dashboards exists, with all options on.
+
+The compact view is inline in docs/dashboard.md, the full view is its own file,
+docs/dashboard-full.yaml.
+"""
 
 from __future__ import annotations
 
@@ -11,7 +15,9 @@ import yaml
 
 from .test_config_flow import DOMAIN, RTU
 
-DASHBOARD = Path(__file__).resolve().parent.parent / "docs" / "dashboard.md"
+DOCS = Path(__file__).resolve().parent.parent / "docs"
+DASHBOARD = DOCS / "dashboard.md"
+FULL_VIEW = DOCS / "dashboard-full.yaml"
 
 
 def _entity_ids() -> set[str]:
@@ -29,7 +35,9 @@ def _entity_ids() -> set[str]:
                 walk(value)
 
     blocks = re.findall(r"```yaml\n(.*?)```", text, re.S)
-    assert len(blocks) >= 2
+    assert blocks, "the compact view is no longer inline in dashboard.md"
+    blocks.append(FULL_VIEW.read_text())
+    assert "dashboard-full.yaml" in text, "dashboard.md does not link the full view"
     for block in blocks:
         walk(yaml.safe_load(block))
     # Only the integration's own entities; e.g. the weather card is the user's.
