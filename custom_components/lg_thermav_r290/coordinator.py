@@ -335,8 +335,8 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         done in the constructor.
         """
         if self._device_id is None:
-            device = dr.async_get(self.hass).async_get_device(
-                identifiers={(DOMAIN, self._entry.entry_id)}
+            device = dr.async_get(self.hass).async_get_device_by_identifier(
+                (DOMAIN, self._entry.entry_id), self._entry.entry_id
             )
             if device is not None:
                 self._device_id = device.id
