@@ -19,7 +19,6 @@ from modbus_connection.exceptions import ModbusError, ModbusExceptionError
 import voluptuous as vol
 
 from .connection import params_from_entry_data
-from .logic import FUNCTIONS, option_key
 from .const import (
     CONF_BAUDRATE,
     CONF_CONNECTION_TYPE,
@@ -42,6 +41,7 @@ from .const import (
     DEFAULT_STOPBITS,
     DOMAIN,
 )
+from .logic import FUNCTIONS, option_key
 
 _LOGGER = logging.getLogger(__name__)
 

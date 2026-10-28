@@ -120,9 +120,15 @@ def test_options_of_other_features_do_not_enable_anything():
 def test_every_function_has_a_label_and_a_description_in_both_languages():
     """The options form is built from the registry; a missing string shows a raw key."""
     for language in ("en", "de"):
-        strings = json.loads((COMPONENT / "translations" / f"{language}.json").read_text())
+        strings = json.loads(
+            (COMPONENT / "translations" / f"{language}.json").read_text()
+        )
         step = strings["options"]["step"]["init"]
         for key in logic.FUNCTIONS:
             option = logic.option_key(key)
             assert step["data"].get(option), (language, option, "label")
-            assert step["data_description"].get(option), (language, option, "description")
+            assert step["data_description"].get(option), (
+                language,
+                option,
+                "description",
+            )
