@@ -19,6 +19,7 @@ from modbus_connection.exceptions import ModbusError, ModbusExceptionError
 import voluptuous as vol
 
 from .connection import params_from_entry_data
+from .logic import FUNCTIONS, option_key
 from .const import (
     CONF_BAUDRATE,
     CONF_CONNECTION_TYPE,
@@ -293,6 +294,16 @@ class LGThermaVOptionsFlow(config_entries.OptionsFlow):
                         CONF_FLUSH_PULSE_LEAD, DEFAULT_FLUSH_PULSE_LEAD
                     ),
                 ): vol.All(int, vol.Range(min=60, max=1800)),
+                # One switch per function of the logic layer (logic.py).
+                **{
+                    vol.Required(
+                        option_key(key),
+                        default=self._entry.options.get(
+                            option_key(key), function.default_enabled
+                        ),
+                    ): bool
+                    for key, function in FUNCTIONS.items()
+                },
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

@@ -52,9 +52,11 @@
         "data": {
           "scan_interval": "Polling interval (seconds)",
           "experimental_registers": "Experimental registers",
-          "flush_pulse_lead_seconds": "Flush pulse warning (seconds)"
+          "flush_pulse_lead_seconds": "Flush pulse warning (seconds)",
+          "logic_flow_gate": "Report no flow while the pump is off"
         },
         "data_description": {
+          "logic_flow_gate": "The flow sensor cannot measure below 5 l/min and reports exactly 5.0 with the pump stopped. With this on, the flow reads 0 whenever the water pump is off, which also removes the phantom thermal power computed from it. The raw register value stays available as `flow_rate_raw`.",
           "experimental_registers": "Adds read-only sensors for 18 registers the device answers on but the manual does not document. Nothing is ever written to them. Meant for collecting data over time.",
           "flush_pulse_lead_seconds": "How early the “before a flush pulse” trigger fires. The unit ramps up over about 50 seconds, which is too short to react to — the default of 180 s leaves time to write to the machine first."
         }

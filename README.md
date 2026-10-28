@@ -166,6 +166,17 @@ The config flow asks for connection type first, then connection-specific paramet
 | Slave ID | 1 | 1–247 |
 | Poll interval | 30 s | Adjustable in Options |
 
+### Logic layer
+
+Judgements that are not registers but opinions about them live in their own layer
+(`logic.py`) on top of the Modbus read, one function each, and every one has a switch
+in Options. They are **off by default**, and with all of them off the entities show the
+plain register values.
+
+| Option | What it does |
+|---|---|
+| Report no flow while the pump is off | `flow_rate` reads 0 while `binary_sensor.lg_thermav_r290_water_pump` is off, which also removes the phantom thermal power computed from the sensor's 5.0 l/min floor (see Notes). The register value stays available as `flow_rate_raw` in the coordinator data. |
+
 ---
 
 ## Entities
@@ -313,7 +324,7 @@ see whether the operation actually started.
 ## Notes
 
 - Thermal power formula: `Q [W] = (flow_rate [l/min] / 60) × (outlet_temp − inlet_temp) [K] × 4186 [J/(l·K)]`
-- `flow_rate` has a hard floor of **5.0 l/min** (input register 8 × 0.1, passed through unchanged). With the circulation pump stopped the device keeps reporting exactly 5.0 instead of 0; in a long-term statistics check (May–Oct 2026) the value was never below 5.0 and never between 5.0 and about 9, and every hour with a constant 5.0 had the compressor at 0 rpm. It is a device property, not an integration artefact: the flow sensor is a SIKA VVX20 (standard variant, measuring range 5–80 l/min), a vortex sensor that cannot measure below the start of its range, so 5.0 means "flow between 0 and 5 l/min, not measurable" rather than an actual 5 l/min. Thermal power calculated from flows just above the floor is correspondingly coarse. If you need a true zero, treat `flow_rate ≤ 5.0` with the compressor off as 0 in a template sensor — a threshold below 5 will not catch it. The thermal power sensors are practically unaffected because the outlet/inlet spread approaches 0 when the pump stands. If the circuits are set to continuous pump operation the pump never stops and the floor is no longer visible.
+- `flow_rate` has a hard floor of **5.0 l/min** (input register 8 × 0.1, passed through unchanged). With the circulation pump stopped the device keeps reporting exactly 5.0 instead of 0; in a long-term statistics check (May–Oct 2026) the value was never below 5.0 and never between 5.0 and about 9, and every hour with a constant 5.0 had the compressor at 0 rpm. It is a device property, not an integration artefact: the flow sensor is a SIKA VVX20 (standard variant, measuring range 5–80 l/min), a vortex sensor that cannot measure below the start of its range, so 5.0 means "flow between 0 and 5 l/min, not measurable" rather than an actual 5 l/min. Thermal power calculated from flows just above the floor is correspondingly coarse. If you need a true zero, switch on **Report no flow while the pump is off** in Options (see Logic layer). The pump bit and the flow bit (discrete input 10001, see the note below) agreed in every recorded hour, and over four weeks (136,583 flow samples) 5.0 never occurred with the pump on. The flow bit switches at roughly 10 l/min, with a lag of about one poll, so a few ramp samples between 5 and 12 l/min arrive while it is still off and are dropped as well (about 0.1 % of samples). A plain threshold below 5 will not catch the floor. The thermal power sensors are affected: they multiply the flow by the outlet/inlet spread, so every 1 K of residual spread at standstill shows up as roughly 350 W of phantom thermal power. On one installation (May–Oct 2026) the hours with the floor value and the compressor at 0 rpm averaged 365 W, which adds up to about 925 kWh of thermal energy that was never delivered; gating `flow_rate` as described above removes it. If the circuits are set to continuous pump operation the pump never stops and the floor is no longer visible.
 - Heating circuit / DHW split is based on the `di_dhw_heating` discrete input; when DHW is active the full flow is attributed to DHW and the heating circuit sensor reports 0, and vice versa.
 - Shift values (holding regs 4, 7) are stored as two's-complement uint16; values ≥ 32768 are interpreted as negative.
 - Tested on LG ThermaV R290 9 kW via Modbus TCP, slave ID 33.

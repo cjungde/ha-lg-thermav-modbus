@@ -43,6 +43,7 @@ from .flush_pulse import (
     FlushPulseConfig,
     FlushPulseTracker,
 )
+from .logic import LogicLayer
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -99,6 +100,10 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.unit.require_timeout(_REQUEST_TIMEOUT)
 
         self._experimental = bool(entry.options.get(CONF_EXPERIMENTAL, False))
+
+        #: Judgements over the raw registers, each switched in the options.
+        #: Applied to every poll before the entities see it.
+        self.logic = LogicLayer.from_options(entry.options)
 
         #: What this unit served, as far as we know. Empty until the cache is
         #: read and, for anything the cache could not answer for, until the
@@ -275,6 +280,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "di_mix_pump": di[16],
         }
 
+        self.logic.process(data)
         self._track_flush_pulse(data)
         return data
 

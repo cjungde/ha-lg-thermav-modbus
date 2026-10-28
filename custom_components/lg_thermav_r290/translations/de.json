@@ -52,9 +52,11 @@
         "data": {
           "scan_interval": "Abfrageintervall (Sekunden)",
           "experimental_registers": "Experimentelle Register",
-          "flush_pulse_lead_seconds": "Vorwarnzeit Spülpuls (Sekunden)"
+          "flush_pulse_lead_seconds": "Vorwarnzeit Spülpuls (Sekunden)",
+          "logic_flow_gate": "Durchfluss 0 melden, solange die Pumpe aus ist"
         },
         "data_description": {
+          "logic_flow_gate": "Der Durchflusssensor kann unter 5 l/min nicht messen und meldet bei stehender Pumpe genau 5,0. Mit dieser Option steht der Durchfluss auf 0, sobald die Wasserpumpe aus ist; damit verschwindet auch die daraus errechnete Phantom-Heizleistung. Der Registerwert bleibt als `flow_rate_raw` erhalten.",
           "experimental_registers": "Legt schreibgeschützte Sensoren für 18 Register an, die das Gerät beantwortet, die aber nicht im Handbuch stehen. Es wird nie darauf geschrieben. Gedacht zum Sammeln von Daten über längere Zeit.",
           "flush_pulse_lead_seconds": "Wie früh der Trigger „vor Spülpuls“ auslöst. Die Anlage fährt in etwa 50 Sekunden hoch, darauf lässt sich nicht mehr reagieren — die voreingestellten 180 s lassen Zeit, vorher auf die Maschine zu schreiben."
         }
