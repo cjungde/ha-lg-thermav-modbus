@@ -10,7 +10,7 @@ Replaces a hand-crafted YAML Modbus configuration with native HA entities: senso
 
 <img src="docs/images/dashboard-readme.png" alt="Dashboard on a 12 kW unit while heating: 24 h history of temperatures, compressor speed and flow rate; compressor controls with starts and run time today; refrigerant temperatures and pressures; power, COP and today's energy as big-number cards, counters, weather and poll statistics">
 
-*A dashboard built from Home Assistant's own cards; ready-to-paste examples are in [docs/dashboard.md](docs/dashboard.md).*
+*A dashboard built from Home Assistant's own cards; ready-to-paste examples are in [docs/dashboard.md](docs/dashboard.md). Example automations for a heating day, with the setpoint following the inlet temperature so the compressor keeps running: [docs/automations.md](docs/automations.md).*
 
 ## Contents
 
@@ -37,6 +37,7 @@ Replaces a hand-crafted YAML Modbus configuration with native HA entities: senso
     - [Max compressor modulation (optional)](#max-compressor-modulation-optional)
     - [Power limit (optional)](#power-limit-optional)
   - [Select inputs](#select-inputs)
+- [Example automations](#example-automations)
 - [Modbus register map](#modbus-register-map)
 - [Notes](#notes)
 - [Reporting a problem](#reporting-a-problem)
@@ -453,6 +454,18 @@ Switch on **Power limit** in the integration's options. The manual documents the
 | `select.lg_therma_v_r290_control_method` | Outlet / Inlet Water Temp Control / Room Air Control | 1 |
 
 *Room Air Control* regulates on *Room Air Temperature Circuit 1*. Without a wired remote that is the temperature where the indoor unit is installed, not that of a living room (see [*Notes*](#notes)).
+
+---
+
+## Example automations
+
+Ready-to-paste automations for a heating day on circuit 1, so the compressor starts once in the morning and then keeps running at low speed instead of switching on and off: **[docs/automations.md](docs/automations.md)**.
+
+- **Start** at 08:00: heating on, outlet control, 60 °C.
+- **AutoTemp** ([docs/autotemp-heat-circuit-1.yaml](docs/autotemp-heat-circuit-1.yaml)), 08:00–17:00: switches to inlet control after the warm-up and keeps the setpoint just below the inlet temperature, so the unit never reaches thermo off. A morning ramp brings it to 33–38 °C by 13:00 depending on the outdoor temperature, frost protection throttles the unit while the coil is icing, and an oil boost replaces the hourly oil-return spike to about 3600 rpm with a few minutes at moderate speed. Setting the slider to 20 °C by hand switches it off for the day.
+- **Stop** at 18:00: setpoint 20 °C and max compressor modulation 40 %, the unit reaches thermo off.
+
+They are tuned for a thermo on/off hysteresis of ±4 °C (installer menu of the remote); see the document for what to change otherwise.
 
 ---
 
