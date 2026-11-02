@@ -1,4 +1,4 @@
-"""Poll Duration and Bus Load: created, enabled, by the poll statistics option."""
+"""Poll Duration, Bus Load and the Modbus error sensors, by the poll statistics option."""
 
 from __future__ import annotations
 
@@ -9,6 +9,23 @@ from .test_config_flow import DOMAIN, RTU
 
 DURATION = "sensor.lg_therma_v_r290_poll_duration"
 LOAD = "sensor.lg_therma_v_r290_bus_load"
+ERRORS = "sensor.lg_therma_v_r290_modbus_errors"
+LAST_ERROR = "sensor.lg_therma_v_r290_last_modbus_error"
+OUTDOOR = "sensor.lg_therma_v_r290_outdoor_temperature"
+
+
+async def _set_up(hass):
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={"connection_type": "rtu", **RTU},
+        options={"poll_statistics": True},
+        version=1,
+        minor_version=4,
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    return entry
 
 
 async def test_poll_sensors_with_the_option(hass, unit) -> None:
@@ -24,7 +41,7 @@ async def test_poll_sensors_with_the_option(hass, unit) -> None:
     await hass.async_block_till_done()
 
     registry = er.async_get(hass)
-    for entity_id in (DURATION, LOAD):
+    for entity_id in (DURATION, LOAD, ERRORS, LAST_ERROR):
         entity = registry.async_get(entity_id)
         assert entity is not None
         assert entity.disabled_by is None  # enabled, as the option asked
@@ -45,11 +62,49 @@ async def test_poll_sensors_with_the_option(hass, unit) -> None:
     # The identity is read once per start, not per poll.
     assert hass.states.get(DURATION).attributes["requests"] == 5
 
-    # Switching the option off removes both.
+    # Switching the option off removes all four.
     hass.config_entries.async_update_entry(entry, options={"poll_statistics": False})
     await hass.async_block_till_done()
-    assert registry.async_get(DURATION) is None
-    assert registry.async_get(LOAD) is None
+    for entity_id in (DURATION, LOAD, ERRORS, LAST_ERROR):
+        assert registry.async_get(entity_id) is None
+
+
+async def test_error_sensors_count_failed_requests(hass, unit) -> None:
+    # A unit without the identity registers refuses them on the first poll:
+    # an answer, not a bus error.
+    unit.refused = {("input", 9997)}
+    entry = await _set_up(hass)
+
+    errors = hass.states.get(ERRORS)
+    assert errors.state == "0"
+    assert errors.attributes["refusals"] == 1
+    assert errors.attributes["state_class"] == "total_increasing"
+    assert hass.states.get(LAST_ERROR).state == "unknown"
+
+    # The coil block stops answering: the poll fails, the heat pump's
+    # entities go unavailable, the error sensors stay and say why.
+    unit.silent = {("coil", 0)}
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    for expected in (1, 2):
+        await coordinator.async_refresh()
+        await hass.async_block_till_done()
+        assert hass.states.get(OUTDOOR).state == "unavailable"
+        # Counted on the second failure too, when the coordinator itself does
+        # not notify its entities again.
+        assert hass.states.get(ERRORS).state == str(expected)
+
+    last = hass.states.get(LAST_ERROR)
+    assert last.state == "ModbusTimeoutError: coil 0: no answer"
+    assert last.attributes["request"] == "read_coils(0, 6)"
+    assert last.attributes["time"] is not None
+
+    # Answering again: the data is back, the count and the last error stay.
+    unit.silent = set()
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get(OUTDOOR).state == "0.0"
+    assert hass.states.get(ERRORS).state == "2"
+    assert hass.states.get(LAST_ERROR).state == last.state
 
 
 async def test_status_table_shows_the_option(hass, unit) -> None:

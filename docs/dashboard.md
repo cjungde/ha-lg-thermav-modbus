@@ -192,7 +192,7 @@ Most of it needs options switched on in *Configure → Options*; without them th
 | Compressor statistics | *Compressor Average Speed*, *Compressor Starts*, *Compressor Run Time*, *Starts today*, *Run time today* |
 | Compressor modulation limit | *Max Compressor Modulation* |
 | Power limit | *Power Limit*, *Max Electrical Power* |
-| Poll statistics | *Poll Duration*, *Bus Load* |
+| Poll statistics | *Poll Duration*, *Bus Load*, *Modbus Errors*, *Last Modbus Error* |
 | Experimental registers | the *Experimental registers* section |
 
 The *Target Room Air Temperature Circuit 1/2* sensors are disabled by default; enable them in the entity settings or remove the tiles. The weather card uses `weather.forecast_home`, the default of the Met.no integration; replace it with your own weather entity.

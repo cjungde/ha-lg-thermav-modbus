@@ -51,7 +51,7 @@ from .experimental import (
 )
 from .issues import raise_never_answered
 from .limits import DATA_KEY_MAX_COMPRESSOR_MODULATION, MODULATION_LIMIT_REGISTER
-from .pollstats import CountingUnit, stats
+from .pollstats import CountingUnit, ErrorLog, stats
 from .power_limit import (
     DATA_KEY_MAX_ELECTRICAL_POWER,
     DATA_KEY_POWER_LIMIT,
@@ -112,14 +112,20 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         That serialization is also why the timeout needs raising; see
         `_REQUEST_TIMEOUT`.
         """
-        # Counts the reads of each poll for the poll statistics (pollstats.py).
+        # Every failed request since start, for Modbus Errors and Last Modbus
+        # Error (pollstats.py). An exception response is the unit answering,
+        # not a bus error, so it is counted apart.
+        self.modbus_errors = ErrorLog(refused=(ModbusExceptionError,))
+        # Counts the reads of each poll for the poll statistics, and writes
+        # every failed request into the error log (pollstats.py).
         self.unit = CountingUnit(
             async_get_unit(
                 hass,
                 entry,
                 params_from_entry_data(dict(entry.data)),
                 int(entry.data[CONF_SLAVE_ID]),
-            )
+            ),
+            self.modbus_errors,
         )
         self.unit.require_timeout(_REQUEST_TIMEOUT)
 
@@ -345,6 +351,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     for kind, start in self._experimental_gate.given_up
                 ),
             },
+            "modbus_errors": self.modbus_errors.state(),
             "writable_holding_registers": sorted(self._writable_holding),
             "writable_coils": sorted(self._writable_coils),
         }
