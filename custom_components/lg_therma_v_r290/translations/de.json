@@ -116,7 +116,7 @@
               "poll_statistics": "Einschalten"
             },
             "data_description": {
-              "poll_statistics": "Legt 2 Diagnose-Sensoren an:\n\n- **Abfragedauer** — ms pro Abfrage, mit der Zahl der Lesezugriffe als Attribut\n- **Buslast** — Abfragedauer in % des Abfrageintervalls"
+              "poll_statistics": "Legt 4 Diagnose-Sensoren an:\n\n- **Abfragedauer** — ms pro Abfrage, mit der Zahl der Lesezugriffe als Attribut\n- **Buslast** — Abfragedauer in % des Abfrageintervalls\n- **Modbus-Fehler** — Anfragen ohne gültige Antwort seit dem Start\n- **Letzter Modbus-Fehler** — die Meldung, mit Anfrage und Zeitpunkt als Attribute"
             }
           }
         }
@@ -236,7 +236,7 @@
               "poll_statistics": "Einschalten"
             },
             "data_description": {
-              "poll_statistics": "Legt 2 Diagnose-Sensoren an:\n\n- **Abfragedauer** — ms pro Abfrage, mit der Zahl der Lesezugriffe als Attribut\n- **Buslast** — Abfragedauer in % des Abfrageintervalls"
+              "poll_statistics": "Legt 4 Diagnose-Sensoren an:\n\n- **Abfragedauer** — ms pro Abfrage, mit der Zahl der Lesezugriffe als Attribut\n- **Buslast** — Abfragedauer in % des Abfrageintervalls\n- **Modbus-Fehler** — Anfragen ohne gültige Antwort seit dem Start\n- **Letzter Modbus-Fehler** — die Meldung, mit Anfrage und Zeitpunkt als Attribute"
             }
           },
           "external_meter": {
@@ -543,6 +543,12 @@
       },
       "cop_cumulative_external_meter": {
         "name": "COP kumuliert (externer Zähler)"
+      },
+      "modbus_errors": {
+        "name": "Modbus-Fehler"
+      },
+      "last_modbus_error": {
+        "name": "Letzter Modbus-Fehler"
       },
       "bus_load": {
         "name": "Buslast"

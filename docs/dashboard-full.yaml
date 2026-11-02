@@ -251,6 +251,10 @@ views:
                 name: Poll Duration
               - entity: sensor.lg_therma_v_r290_bus_load
                 name: Bus Load
+              - entity: sensor.lg_therma_v_r290_modbus_errors
+                name: Modbus Errors
+              - entity: sensor.lg_therma_v_r290_last_modbus_error
+                name: Last Modbus Error
               - entity: sensor.lg_therma_v_r290_optional_registers
                 name: Optional Registers
               - entity: sensor.lg_therma_v_r290_thermal_power_calculated

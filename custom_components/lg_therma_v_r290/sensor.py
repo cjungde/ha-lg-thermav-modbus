@@ -506,8 +506,19 @@ async def async_setup_entry(
         remove_entities(hass, entry, "sensor", external_meter.ENERGY_KEYS)
     if entry.options.get(CONF_POLL_STATISTICS, False):
         entities.extend(LGPollSensor(coordinator, entry, d) for d in _POLL_SENSORS)
+        entities.append(LGModbusErrorsSensor(coordinator, entry))
+        entities.append(LGLastModbusErrorSensor(coordinator, entry))
     else:
-        remove_entities(hass, entry, "sensor", tuple(d.key for d in _POLL_SENSORS))
+        remove_entities(
+            hass,
+            entry,
+            "sensor",
+            (
+                *(d.key for d in _POLL_SENSORS),
+                pollstats.KEY_MODBUS_ERRORS,
+                pollstats.KEY_LAST_MODBUS_ERROR,
+            ),
+        )
     async_add_entities(english_entity_ids("sensor", entities))
 
 
@@ -694,6 +705,74 @@ class LGPollSensor(LGSensor):
     @property
     def extra_state_attributes(self) -> dict[str, int | None]:
         return {"requests": self._data(pollstats.DATA_KEY_POLL_REQUESTS)}
+
+
+class _LGModbusErrorEntity(LGEntity, SensorEntity):
+    """Base of the two error sensors: they report on the bus itself.
+
+    So they stay available while the polls fail, which is exactly when they
+    have something to say, and update on every failed request through the
+    error log rather than through the coordinator: after the first failed
+    poll the coordinator does not notify its entities again until a poll
+    succeeds.
+    """
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    @property
+    def available(self) -> bool:
+        return True
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.async_on_remove(
+            self.coordinator.modbus_errors.add_listener(self.async_write_ha_state)
+        )
+
+
+class LGModbusErrorsSensor(_LGModbusErrorEntity):
+    """Requests without a valid answer since start (pollstats.ErrorLog)."""
+
+    _attr_icon = "mdi:alert-circle-outline"
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+
+    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator, entry, pollstats.KEY_MODBUS_ERRORS)
+
+    @property
+    def native_value(self) -> int:
+        return self.coordinator.modbus_errors.errors
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        log = self.coordinator.modbus_errors
+        return {
+            "refusals": log.refusals,
+            "since": dt_util.utc_from_timestamp(log.since).isoformat(),
+        }
+
+
+class LGLastModbusErrorSensor(_LGModbusErrorEntity):
+    """The last request without a valid answer: type and message as state."""
+
+    _attr_icon = "mdi:message-alert-outline"
+
+    def __init__(self, coordinator: LGThermaVCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator, entry, pollstats.KEY_LAST_MODBUS_ERROR)
+
+    @property
+    def native_value(self) -> str | None:
+        return self.coordinator.modbus_errors.last_text()
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        last = self.coordinator.modbus_errors.last
+        if last is None:
+            return {"time": None, "request": None}
+        return {
+            "time": dt_util.utc_from_timestamp(last["time"]).isoformat(),
+            "request": last["request"],
+        }
 
 
 # --- External electricity meter (external_meter.py) --------------------------

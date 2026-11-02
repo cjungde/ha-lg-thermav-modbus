@@ -46,6 +46,8 @@ async def test_entities_without_options(hass, unit) -> None:
         "sensor.lg_therma_v_r290_experimental_input_30015",
         "sensor.lg_therma_v_r290_poll_duration",
         "sensor.lg_therma_v_r290_bus_load",
+        "sensor.lg_therma_v_r290_modbus_errors",
+        "sensor.lg_therma_v_r290_last_modbus_error",
     ):
         assert entity_id not in entities, entity_id
     # Every unique id is <entry id>_<key>.
@@ -83,9 +85,11 @@ async def test_all_options_create_their_entities(hass, unit) -> None:
         "sensor.lg_therma_v_r290_experimental_input_30015",
         "sensor.lg_therma_v_r290_poll_duration",
         "sensor.lg_therma_v_r290_bus_load",
+        "sensor.lg_therma_v_r290_modbus_errors",
+        "sensor.lg_therma_v_r290_last_modbus_error",
     ):
         assert entity_id in entities, entity_id
-    assert len(entities) == 113
+    assert len(entities) == 115
 
 
 async def test_writes_reach_the_unit(hass, unit) -> None:

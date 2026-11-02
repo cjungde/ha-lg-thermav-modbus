@@ -1,4 +1,4 @@
-"""Poll statistics: counting reads, duration and bus load (pollstats.py).
+"""Poll statistics: counting reads, duration, bus load and errors (pollstats.py).
 
 pollstats.py imports nothing from Home Assistant, so none of this needs an
 install.
@@ -88,9 +88,110 @@ def test_stats() -> None:
 def test_keys_follow_the_naming_rules() -> None:
     assert pollstats.KEY_POLL_DURATION == "poll_duration"
     assert pollstats.KEY_BUS_LOAD == "bus_load"
+    assert pollstats.KEY_MODBUS_ERRORS == "modbus_errors"
+    assert pollstats.KEY_LAST_MODBUS_ERROR == "last_modbus_error"
     for key in (
         pollstats.DATA_KEY_POLL_DURATION,
         pollstats.DATA_KEY_BUS_LOAD,
         pollstats.DATA_KEY_POLL_REQUESTS,
     ):
         assert key.startswith("poll_")
+
+
+class Timeout(Exception):
+    pass
+
+
+class Refused(Exception):
+    pass
+
+
+class FailingUnit(Unit):
+    def __init__(self, error: Exception) -> None:
+        super().__init__()
+        self.error = error
+
+    async def read_coils(self, address, count):
+        raise self.error
+
+    async def write_register(self, address, value):
+        raise self.error
+
+
+def _clock():
+    times = iter(range(100, 200))
+    return lambda: next(times)
+
+
+def test_failed_requests_are_logged_and_raised() -> None:
+    log = pollstats.ErrorLog(refused=(Refused,), clock=_clock())
+    calls = []
+    log.add_listener(lambda: calls.append(log.errors))
+    unit = pollstats.CountingUnit(FailingUnit(Timeout("no answer")), log)
+
+    async def run():
+        for call in (unit.read_coils(0, 6), unit.write_register(4, 350)):
+            try:
+                await call
+            except Timeout:
+                pass
+            else:
+                raise AssertionError("the error must reach the caller")
+        assert await unit.read_holding_registers(0, 1) == [2]
+
+    asyncio.run(run())
+    assert log.since == 100
+    assert log.errors == 2
+    assert log.refusals == 0
+    assert unit.reads == 2  # failed reads still count as requests
+    assert log.last == {
+        "error": "Timeout",
+        "message": "no answer",
+        "request": "write_register(4, 350)",
+        "time": 102,
+    }
+    assert log.last_text() == "Timeout: no answer"
+    assert calls == [1, 2]  # told after every failure, not after a success
+
+
+def test_refusals_are_counted_apart() -> None:
+    log = pollstats.ErrorLog(refused=(Refused,), clock=_clock())
+    calls = []
+    log.add_listener(lambda: calls.append(True))
+    log.record("read_input_registers(9997, 2)", Refused("illegal address"))
+    assert (log.errors, log.refusals) == (0, 1)
+    assert log.last is None  # the unit answered: not the last error
+    assert log.last_text() is None
+    assert calls == [True]
+
+
+def test_last_text_fits_a_state_and_never_is_empty() -> None:
+    log = pollstats.ErrorLog(clock=_clock())
+    log.record("read_coils(0, 6)", Timeout())
+    assert log.last_text() == "Timeout: Timeout"
+    log.record("read_coils(0, 6)", Timeout("x" * 400))
+    assert len(log.last_text()) == pollstats.MAX_STATE_LENGTH
+
+
+def test_listener_can_be_removed() -> None:
+    log = pollstats.ErrorLog(clock=_clock())
+    calls = []
+    remove = log.add_listener(lambda: calls.append(True))
+    remove()
+    remove()  # twice is harmless
+    log.record("read_coils(0, 6)", Timeout())
+    assert calls == []
+
+
+def test_without_a_log_errors_pass_through() -> None:
+    unit = pollstats.CountingUnit(FailingUnit(Timeout("no answer")))
+
+    async def run():
+        try:
+            await unit.read_coils(0, 6)
+        except Timeout:
+            return
+        raise AssertionError("the error must reach the caller")
+
+    asyncio.run(run())
+    assert unit.reads == 1

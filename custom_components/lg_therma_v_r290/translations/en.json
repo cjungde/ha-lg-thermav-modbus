@@ -116,7 +116,7 @@
               "poll_statistics": "Switch on"
             },
             "data_description": {
-              "poll_statistics": "Adds 2 diagnostic sensors:\n\n- **Poll Duration** — ms per poll, with the number of reads as attribute\n- **Bus Load** — poll duration as % of the poll interval"
+              "poll_statistics": "Adds 4 diagnostic sensors:\n\n- **Poll Duration** — ms per poll, with the number of reads as attribute\n- **Bus Load** — poll duration as % of the poll interval\n- **Modbus Errors** — requests without a valid answer since start\n- **Last Modbus Error** — its message, with the request and the time as attributes"
             }
           }
         }
@@ -236,7 +236,7 @@
               "poll_statistics": "Switch on"
             },
             "data_description": {
-              "poll_statistics": "Adds 2 diagnostic sensors:\n\n- **Poll Duration** — ms per poll, with the number of reads as attribute\n- **Bus Load** — poll duration as % of the poll interval"
+              "poll_statistics": "Adds 4 diagnostic sensors:\n\n- **Poll Duration** — ms per poll, with the number of reads as attribute\n- **Bus Load** — poll duration as % of the poll interval\n- **Modbus Errors** — requests without a valid answer since start\n- **Last Modbus Error** — its message, with the request and the time as attributes"
             }
           },
           "external_meter": {
@@ -543,6 +543,12 @@
       },
       "poll_duration": {
         "name": "Poll Duration"
+      },
+      "modbus_errors": {
+        "name": "Modbus Errors"
+      },
+      "last_modbus_error": {
+        "name": "Last Modbus Error"
       },
       "bus_load": {
         "name": "Bus Load"
