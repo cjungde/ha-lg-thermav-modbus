@@ -255,6 +255,13 @@ views:
                 name: Modbus Errors
               - entity: sensor.lg_therma_v_r290_last_modbus_error
                 name: Last Modbus Error
+                secondary_info: last-changed
+              - type: attribute
+                entity: sensor.lg_therma_v_r290_last_modbus_error
+                attribute: time
+                name: Last error at
+                icon: mdi:history
+                format: relative
               - entity: sensor.lg_therma_v_r290_optional_registers
                 name: Optional Registers
               - entity: sensor.lg_therma_v_r290_thermal_power_calculated
