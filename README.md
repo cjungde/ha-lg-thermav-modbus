@@ -238,7 +238,7 @@ Two ready-to-paste dashboards built from Home Assistant's own cards: a compact o
 | `sensor.lg_therma_v_r290_flow_temperature_circuit_2` | Flow temperature circuit 2 | °C |
 | `sensor.lg_therma_v_r290_room_air_temperature_circuit_1` | Room air temperature circuit 1, measured at the wired remote controller. **Without a wired remote, the indoor unit's own sensor**: the temperature of the room the unit is installed in, see [*Notes*](#notes) | °C |
 | `sensor.lg_therma_v_r290_room_air_temperature_circuit_2` | Room air temperature circuit 2 | °C |
-| `sensor.lg_therma_v_r290_flow_rate` | Water flow rate (device class `volume_flow_rate`) | L/min |
+| `sensor.lg_therma_v_r290_flow_rate` | Water flow rate (device class `volume_flow_rate`). **0 while nothing flows:** the unit's flow sensor (SIKA VVX20, 5–80 L/min) reads exactly 5.0 with the pump stopped, so with *Water Flow* and *Water Pump* both off and the register at 5.0 the integration reports 0; otherwise the calculated thermal power, COP and thermal energy would count heat that is not there. The register value is in the attribute `register_value` | L/min |
 | `sensor.lg_therma_v_r290_water_pressure` | Water pressure | bar |
 | `sensor.lg_therma_v_r290_high_pressure_condenser` | High pressure (condenser) | bar |
 | `sensor.lg_therma_v_r290_low_pressure_evaporator` | Low pressure (evaporator) | bar |

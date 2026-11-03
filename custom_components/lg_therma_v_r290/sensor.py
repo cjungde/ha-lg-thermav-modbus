@@ -61,7 +61,11 @@ from .const import (
     ODU_OPERATION_CYCLE_LABELS,
     OPERATION_MODE_FROM_VALUE,
 )
-from .coordinator import DATA_KEY_OPTIONAL_REGISTERS, LGThermaVCoordinator
+from .coordinator import (
+    DATA_KEY_FLOW_RATE_REGISTER,
+    DATA_KEY_OPTIONAL_REGISTERS,
+    LGThermaVCoordinator,
+)
 from .energy import (
     DATA_KEY_ELECTRICAL_ENERGY_SPACE_HEATING,
     DATA_KEY_ELECTRICAL_POWER_HEAT_PUMP,
@@ -93,6 +97,9 @@ EXPERIMENTAL_OPTION_KEYS = tuple(r.key for r in EXPERIMENTAL_REGISTERS)
 @dataclass(frozen=True, kw_only=True)
 class LGSensorDescription(SensorEntityDescription):
     data_key: str
+    #: Where the plain register value is, when the state is a conditioned one;
+    #: shown as the ``register_value`` attribute.
+    register_data_key: str | None = None
 
 
 def _temperature(
@@ -158,6 +165,8 @@ _SENSORS: tuple[LGSensorDescription, ...] = (
     LGSensorDescription(
         key="flow_rate",
         data_key="input_flow_rate",
+        # 0 instead of the sensor's 5.0 floor while the pump is off (flow.py).
+        register_data_key=DATA_KEY_FLOW_RATE_REGISTER,
         name="Flow Rate",
         # A device class makes the unit convertible in the UI (m³/h, gal/min)
         # and gives the sensor the matching icon. It requires Home Assistant's
@@ -542,6 +551,13 @@ class LGSensor(LGEntity, SensorEntity):
     @property
     def native_value(self) -> Any:
         return self._data(self.entity_description.data_key)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        key = self.entity_description.register_data_key
+        if key is None:
+            return None
+        return {"register_value": self._data(key)}
 
 
 class LGLabelSensor(LGEntity, SensorEntity):

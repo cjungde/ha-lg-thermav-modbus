@@ -44,6 +44,8 @@ class FakeUnit:
         # Reads on these addresses never return (a request waiting on a link
         # whose timeout has been raised), until the caller gives up.
         self.hanging: set[tuple[str, int]] = set()
+        # Raw register values other than 0, per (kind, address).
+        self.values: dict[tuple[str, int], int] = {}
         self.required_timeout: float | None = None
 
     def require_timeout(self, timeout: float | None) -> None:
@@ -58,7 +60,7 @@ class FakeUnit:
             raise ModbusTimeoutError(f"{kind} {address}: no answer")
         if (kind, address) in self.refused:
             raise IllegalDataAddressError(f"{kind} {address}: illegal address")
-        return [0] * count
+        return [self.values.get((kind, address + i), 0) for i in range(count)]
 
     async def read_input_registers(self, address, count):
         return await self._read("input", address, count)
