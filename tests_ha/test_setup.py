@@ -153,3 +153,31 @@ async def test_migration_keeps_entity_ids(hass, unit) -> None:
         assert entity.unique_id == f"{entry.entry_id}_{key}"
     # The kept entity id still has a state.
     assert hass.states.get("switch.lg_therma_v_r290_heat_pump") is not None
+
+
+async def test_no_flow_while_the_pump_is_off(hass, unit) -> None:
+    """5.0 L/min with the pump stopped means 0; the register stays visible."""
+    unit.values = {("input", 8): 50, ("input", 2): 300, ("input", 3): 305}
+    await _set_up(hass)
+    state = hass.states.get("sensor.lg_therma_v_r290_flow_rate")
+    assert float(state.state) == 0.0
+    assert state.attributes["register_value"] == 5.0
+    # No phantom heat from the 0.5 K between inlet and outlet.
+    power = hass.states.get("sensor.lg_therma_v_r290_thermal_power_calculated")
+    assert float(power.state) == 0
+
+
+async def test_flow_with_the_pump_running_is_kept(hass, unit) -> None:
+    unit.values = {
+        ("input", 8): 153,
+        ("input", 2): 300,
+        ("input", 3): 350,
+        ("discrete", 0): 1,
+        ("discrete", 1): 1,
+    }
+    await _set_up(hass)
+    state = hass.states.get("sensor.lg_therma_v_r290_flow_rate")
+    assert float(state.state) == 15.3
+    assert state.attributes["register_value"] == 15.3
+    power = hass.states.get("sensor.lg_therma_v_r290_thermal_power_calculated")
+    assert float(power.state) > 5000

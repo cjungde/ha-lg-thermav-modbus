@@ -49,6 +49,7 @@ from .experimental import (
     BlockGate,
     data_key,
 )
+from .flow import flow_rate
 from .issues import raise_never_answered
 from .limits import DATA_KEY_MAX_COMPRESSOR_MODULATION, MODULATION_LIMIT_REGISTER
 from .pollstats import CountingUnit, ErrorLog, stats
@@ -63,6 +64,9 @@ from .register_status import EXPERIMENTAL_GIVEN_UP
 #: Coordinator data key of the optional-register snapshot (see
 #: LGThermaVCoordinator.optional_snapshot), read by the diagnostic sensor.
 DATA_KEY_OPTIONAL_REGISTERS = "optional_registers"
+
+#: The flow rate register as read, before flow.py turns the pump-off 5.0 into 0.
+DATA_KEY_FLOW_RATE_REGISTER = "input_flow_rate_register"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -231,7 +235,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         modulation_limit = await self._async_read_modulation_limit()
         power_limit = await self._async_read_power_limit()
 
-        return {
+        data = {
             **experimental,
             **energy,
             **modulation_limit,
@@ -323,6 +327,15 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "discrete_emergency_dhw_available": di[15],
             "discrete_mixing_pump": di[16],
         }
+        # 5.0 L/min with the pump stopped means no flow (flow.py); the register
+        # value stays as the flow sensor's attribute.
+        data[DATA_KEY_FLOW_RATE_REGISTER] = data["input_flow_rate"]
+        data["input_flow_rate"] = flow_rate(
+            data["input_flow_rate"],
+            data["discrete_water_flow"],
+            data["discrete_water_pump"],
+        )
+        return data
 
     def diagnostics(self) -> dict[str, Any]:
         """The state of the optional reads, for the diagnostics download."""
