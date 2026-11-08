@@ -36,6 +36,7 @@ from .const import (
     WRITABLE_COILS,
     WRITABLE_HOLDING_REGISTERS,
 )
+from .decode import signed16, temperature
 from .experimental import EXPERIMENTAL_BLOCKS, INPUT_FROM_MAIN_READ, register_key
 from .flush_pulse import (
     EVENT_FINISHED,
@@ -66,11 +67,6 @@ _LOGGER = logging.getLogger(__name__)
 #: Needs `modbus-connection` 4.12.3 (Home Assistant 2026.10); the 4.10.0 that
 #: the 2026.9 line pins has no such method.
 _REQUEST_TIMEOUT = 20.0
-
-
-def _signed16(value: int) -> int:
-    """Convert an unsigned 16-bit register value to a signed integer."""
-    return value - 65536 if value >= 32768 else value
 
 
 class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -197,28 +193,28 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         data = {
             **experimental,
             **optional,
-            # Input registers (raw × scale)
+            # Input registers (raw × scale; temperatures are signed)
             # inp_lo[n] = register n  (0-13)
             # inp_hi[n] = register 16+n (16-24)
             "error_code": inp_lo[0],
             "odu_operation_cycle": inp_lo[1],
-            "inlet_temp": round(inp_lo[2] * 0.1, 1),
-            "outlet_temp": round(inp_lo[3] * 0.1, 1),
-            "backup_heater_outlet_temp": round(inp_lo[4] * 0.1, 1),
-            "dhw_water_temp": round(inp_lo[5] * 0.1, 1),
-            "solar_collector_temp": round(inp_lo[6] * 0.1, 1),
-            "room_air_temp_circuit1": round(inp_lo[7] * 0.1, 1),
+            "inlet_temp": temperature(inp_lo[2]),
+            "outlet_temp": temperature(inp_lo[3]),
+            "backup_heater_outlet_temp": temperature(inp_lo[4]),
+            "dhw_water_temp": temperature(inp_lo[5]),
+            "solar_collector_temp": temperature(inp_lo[6]),
+            "room_air_temp_circuit1": temperature(inp_lo[7]),
             "flow_rate": round(inp_lo[8] * 0.1, 1),
-            "flow_temp_circle_2": round(inp_lo[9] * 0.1, 1),
-            "room_air_temp_circuit2_in": round(inp_lo[10] * 0.1, 1),
+            "flow_temp_circle_2": temperature(inp_lo[9]),
+            "room_air_temp_circuit2_in": temperature(inp_lo[10]),
             "energy_state_input": inp_lo[11],
-            "outside_temp": round(inp_lo[12] * 0.1, 1),
+            "outside_temp": temperature(inp_lo[12]),
             "water_pressure": round(inp_lo[13] * 0.1, 1),
-            "temp_liquid_gas": round(inp_hi[0] * 0.1, 1),
-            "temp_suction": round(inp_hi[2] * 0.1, 1),
-            "temp_heatgas": round(inp_hi[3] * 0.1, 1),
-            "temp_before_vaporiser": round(inp_hi[4] * 0.1, 1),
-            "temp_after_vaporiser": round(inp_hi[5] * 0.1, 1),
+            "temp_liquid_gas": temperature(inp_hi[0]),
+            "temp_suction": temperature(inp_hi[2]),
+            "temp_heatgas": temperature(inp_hi[3]),
+            "temp_before_vaporiser": temperature(inp_hi[4]),
+            "temp_after_vaporiser": temperature(inp_hi[5]),
             # Registers 22/23 count in hundredths of a bar, unlike register 13
             # (water pressure, tenths). Measured 2026-10-03: with 0.1 the
             # condenser read 63-80 bar at standstill and 220.6 bar at
@@ -232,13 +228,13 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # Holding registers
             "operation_mode": hold_low[0],
             "control_method": hold_low[1],
-            "target_temp_circuit1": round(hold_low[2] * 0.1, 1),
-            "room_air_temp_circuit1_hold": round(hold_low[3] * 0.1, 1),
-            "shift_value_circuit1": _signed16(hold_low[4]),
-            "target_temp_circuit2": round(hold_low[5] * 0.1, 1),
-            "room_air_temp_circuit2_hold": round(hold_low[6] * 0.1, 1),
-            "shift_value_circuit2": _signed16(hold_low[7]),
-            "dhw_target_temp": round(hold_low[8] * 0.1, 1),
+            "target_temp_circuit1": temperature(hold_low[2]),
+            "room_air_temp_circuit1_hold": temperature(hold_low[3]),
+            "shift_value_circuit1": signed16(hold_low[4]),
+            "target_temp_circuit2": temperature(hold_low[5]),
+            "room_air_temp_circuit2_hold": temperature(hold_low[6]),
+            "shift_value_circuit2": signed16(hold_low[7]),
+            "dhw_target_temp": temperature(hold_low[8]),
             "energy_state_raw": hold_low[9],
             # Coils
             "coil_hauptschalter": coils[0],
