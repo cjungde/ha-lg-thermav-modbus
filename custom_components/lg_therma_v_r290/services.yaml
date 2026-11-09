@@ -1,0 +1,10 @@
+repair_temperature_history:
+  fields:
+    dry_run:
+      default: true
+      selector:
+        boolean:
+    remove_unrecoverable:
+      default: false
+      selector:
+        boolean:

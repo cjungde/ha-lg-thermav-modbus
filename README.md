@@ -21,6 +21,7 @@ Replaces a hand-crafted YAML Modbus configuration with native HA entities: senso
 - [Installation via HACS](#installation-via-hacs)
   - [Upgrading from 1.x](#upgrading-from-1x)
   - [Manual installation](#manual-installation)
+  - [Repairing temperatures recorded before 2.2.2](#repairing-temperatures-recorded-before-222)
 - [Configuration](#configuration)
   - [Which options the unit supports](#which-options-the-unit-supports)
   - [When optional registers do not answer](#when-optional-registers-do-not-answer)
@@ -141,6 +142,43 @@ New entity ids start with `lg_therma_v_r290_` instead of `lg_thermav_r290_`; das
 ### Manual installation
 
 Copy the `custom_components/lg_therma_v_r290/` folder into your HA `custom_components/` directory and restart.
+
+### Repairing temperatures recorded before 2.2.2
+
+Versions before 2.2.2 read temperatures unsigned. Every value below 0 °C was recorded as **6553.6 °C too high**: −4.7 °C as 6548.9 °C, −0.2 °C as 6553.4 °C. In cold weather that shows up as spikes to about 6550 °C on the outdoor, evaporator, suction and liquid gas temperatures. Before 2.2.3, a temperature input without a sensor (e.g. *Flow Temperature Circuit 2* on a unit without a second circuit) was recorded as 6488.7 °C. Updating fixes new values; the action *Repair temperature history* fixes what was recorded before.
+
+**What it repairs.** Home Assistant keeps two kinds of history:
+
+| | What it is | Kept | Repair |
+|---|---|---|---|
+| States | every single value with its time; the graphs of the last days | `purge_keep_days`, 10 days by default | exact: 6548.9 → −4.7 °C; 6488.7 → unknown |
+| Statistics | per hour (kept for good) and per 5 minutes (10 days): mean, min, max | see left | recalculated from the repaired states, the way the recorder calculates them |
+
+A period entirely below 0 °C is repaired exactly even without its states. A *mixed* period (a short dip inside an otherwise normal hour, the usual case) can only be recalculated while its single values still exist: from mean, min and max alone, the real mean cannot be worked out. Those periods are listed and kept, or removed if you choose. **So repair soon after updating**, or keep the single values longer in the meantime:
+
+```yaml
+recorder:
+  purge_keep_days: 30
+```
+
+Only the temperature sensors of this integration are touched, and only values above 3276.7 °C, which no temperature of the unit reaches. Running it twice does no harm: the second run finds nothing.
+
+**How to run it:**
+
+1. Make a backup (*Settings → System → Backups*): this changes Home Assistant's database.
+2. *Developer tools → Actions* → **LG Therma V R290: Repair temperature history**. Leave *Dry run* on and run it. The response lists, per sensor, how many values (`states`) and periods (`hourly`, `five_minute`) would be `recalculated`, `shifted` (entirely below zero), `removed_no_sensor`, or are `unrecoverable`.
+3. Run it again with *Dry run* off. To also remove the `unrecoverable` periods instead of keeping their spikes, switch on *Remove unrecoverable statistics*.
+4. Reload the graphs (the browser caches them).
+
+As YAML:
+
+```yaml
+action: lg_therma_v_r290.repair_temperature_history
+data:
+  dry_run: false
+```
+
+InfluxDB and VictoriaMetrics are not touched: they keep their own copy. There a query can repair the values as they are read, e.g. in MetricsQL `(x > 3276.7) * (x - 6553.6) or (x <= 3276.7) * x`.
 
 ---
 
