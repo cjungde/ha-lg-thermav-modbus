@@ -18,5 +18,5 @@
   "requirements": [
     "modbus-connection>=4.12.3"
   ],
-  "version": "2.2.4"
+  "version": "2.2.5"
 }
