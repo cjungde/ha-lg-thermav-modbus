@@ -1,4 +1,4 @@
-# AutoTemp_Heat_Circuit_1: the circuit 1 setpoint follows the inlet temperature
+# AutoTemp_Heat_Circuit_1: the circuit 1 setpoint follows the water temperature
 # so the compressor keeps running at low speed instead of switching off.
 # Explained in docs/automations.md. Paste it in Settings → Automations &
 # scenes → Create automation → ⋮ → Edit in YAML.
@@ -9,38 +9,44 @@
 # lower up_gap, emergency_gap and frost_max_gap.
 alias: AutoTemp_Heat_Circuit_1
 description: >
-  Between 08:00 and 17:00, while the compressor runs, not within 5 minutes after
-  a defrost, and only while the setpoint is above off_setpoint (setting the
-  slider to off_setpoint or lower by hand means off: AutoTemp then does
-  nothing). Kick-in: once the compressor has run 5 minutes on outlet control
-  (warm-up), switch to inlet control with a setpoint just below the inlet
-  temperature. Then with inlet control: raise the circuit 1 setpoint by step
-  when the inlet is up_gap above it, lower it when the inlet is down_gap below
-  it for 5 minutes. Morning ramp: the setpoint is never below a minimum that
-  rises from the floor at 08:30 to the target at 13:00 (target_cold at
-  outdoor_cold, target_warm at outdoor_warm) and is held until 17:00. Frost
-  protection: while the air after the evaporator is below frost_limit, don't
-  raise but lower the setpoint every 2 minutes so the unit throttles, keeping a
-  safe gap to thermo off. Oil boost: after 55 minutes below low_rpm, set the
-  setpoint to the inlet temperature + boost_step (up to boost_ceiling, not
-  limited by ceiling) until the compressor has been at or above low_rpm for
-  boost_hold_sec without a break (at most boost_wait_min), then set it to
-  boost_after_drop below the inlet (rounded up, at least floor and ramp) so the
-  compressor slows down, to avoid the hourly oil-return pulse. Re-checks every
-  5 minutes.
+  Until 17:00, while the compressor runs, not within 5 minutes after a defrost,
+  and only while the setpoint is above off_setpoint (setting the slider to
+  off_setpoint or lower, by hand or by the stop automation, means off: AutoTemp
+  then does nothing). Cold start: once the compressor has run 1 minute on
+  outlet control and the inlet is still below inlet_switch, stay on outlet
+  control and keep the setpoint just below the outlet temperature (outlet
+  rounded down - 1, at least floor), so the unit throttles to minimum while the
+  water is cold. Kick-in: once the inlet reaches inlet_switch, switch to inlet
+  control with a setpoint just below the inlet temperature. Then with inlet
+  control: raise the circuit 1 setpoint by step when the inlet is up_gap above
+  it, lower it when the inlet is down_gap below it for 5 minutes. Morning ramp:
+  the setpoint is never below a minimum that rises from the floor at 09:00 to
+  the target at 13:00 (target_cold at outdoor_cold, target_warm at
+  outdoor_warm) and is held until 17:00. Frost protection: while the air after
+  the evaporator is below frost_limit, don't raise but lower the setpoint every
+  2 minutes so the unit throttles, keeping a safe gap to thermo off. Oil boost:
+  after 55 minutes below low_rpm, set the setpoint to the inlet temperature +
+  boost_step (up to boost_ceiling, not limited by ceiling) until the compressor
+  has been at or above low_rpm for boost_hold_sec without a break (at most
+  boost_wait_min), then set it to boost_after_drop below the inlet (rounded up,
+  at least floor and ramp) so the compressor slows down, to avoid the hourly
+  oil-return pulse. Re-checks every 5 minutes. The unit's lowest heating
+  setpoint is 20 °C (with the backup heater off), hence off_setpoint 20.
 trigger_variables:
   # Entities
   inlet_entity: sensor.lg_therma_v_r290_inlet_temperature
+  outlet_entity: sensor.lg_therma_v_r290_outlet_temperature
   setpoint_entity: number.lg_therma_v_r290_target_temperature_circuit_1_radiators
   evap_entity: sensor.lg_therma_v_r290_temperature_after_evaporator
   speed_entity: sensor.lg_therma_v_r290_compressor_speed
   # Thresholds (used by the triggers and the conditions)
-  up_gap: 2.5        # raise by step when inlet >= setpoint + up_gap
+  up_gap: 2.8        # raise by step when inlet >= setpoint + up_gap
   emergency_gap: 3   # raise always (even while frosting) when inlet >= setpoint + emergency_gap
   down_gap: 1        # lower when inlet <= setpoint - down_gap for 5 minutes
   frost_limit: 1     # frosting while the air after the evaporator is below this (°C)
   low_rpm: 1500      # oil boost after 55 minutes below this compressor speed
   off_setpoint: 20   # setpoint at or below this = off, AutoTemp does nothing
+  floor: 21          # lowest setpoint AutoTemp sets (also used by the cold-start trigger)
 triggers:
   - trigger: template
     id: up
@@ -63,6 +69,13 @@ triggers:
       - down_gap }}
     for:
       minutes: 5
+  # Cold start: on outlet control, the setpoint is no longer "outlet rounded down - 1"
+  - trigger: template
+    id: cold_follow
+    value_template: >
+      {{ is_state('select.lg_therma_v_r290_control_method', 'Outlet Water Temp Control') and
+         [ (states(outlet_entity) | float(0) | round(0, 'floor')) - 1, floor ] | max
+         != states(setpoint_entity) | float(0) }}
   - trigger: template
     id: frost
     value_template: |
@@ -109,7 +122,7 @@ triggers:
     entity_id: binary_sensor.lg_therma_v_r290_compressor
     to: 'on'
     for:
-      minutes: 5
+      minutes: 1
   - trigger: state
     id: defrost_end
     entity_id: binary_sensor.lg_therma_v_r290_defrost
@@ -122,9 +135,6 @@ triggers:
     to: Inlet Water Temp Control
     for:
       seconds: 20
-  - trigger: time
-    id: window_start
-    at: '08:00:00'
   # Re-check every 5 minutes: moves the ramp forward, and catches up after
   # enabling the automation or a restart
   - trigger: time_pattern
@@ -135,7 +145,6 @@ conditions:
     entity_id: binary_sensor.lg_therma_v_r290_compressor
     state: 'on'
   - condition: time
-    after: '08:00:00'
     before: '17:00:00'
   - condition: state
     entity_id: binary_sensor.lg_therma_v_r290_defrost
@@ -144,13 +153,14 @@ conditions:
       minutes: 5
   - condition: template
     value_template: '{{ inlet is number and setpoint is number }}'
-  # Off: setpoint at or below off_setpoint (by hand or the evening automation)
+  # Off: setpoint at or below off_setpoint (by hand or the stop automation)
   - condition: template
     value_template: '{{ setpoint > off_setpoint }}'
 actions:
   - choose:
-      # 0. Kick-in: the warm-up on outlet control has run 5 minutes -> inlet
-      #    control first, then a setpoint just below the inlet (at least the ramp)
+      # 0. Cold start: outlet control, compressor on 1 minute, inlet still below
+      #    inlet_switch -> setpoint just below the outlet, so the unit throttles
+      #    to minimum
       - conditions:
           - condition: state
             entity_id: select.lg_therma_v_r290_control_method
@@ -159,7 +169,33 @@ actions:
             entity_id: binary_sensor.lg_therma_v_r290_compressor
             state: 'on'
             for:
-              minutes: 5
+              minutes: 1
+          - condition: template
+            value_template: '{{ inlet < inlet_switch and outlet is number }}'
+        sequence:
+          - variables:
+              cold_sp: "{{ [ (outlet | round(0, 'floor')) - 1, floor ] | max }}"
+          - condition: template
+            value_template: '{{ cold_sp != setpoint }}'
+          - action: number.set_value
+            target:
+              entity_id: '{{ setpoint_entity }}'
+            data:
+              value: '{{ cold_sp }}'
+      # 1. Kick-in: outlet control, compressor on 1 minute, inlet at or above
+      #    inlet_switch -> inlet control first, then a setpoint just below the
+      #    inlet (at least the ramp)
+      - conditions:
+          - condition: state
+            entity_id: select.lg_therma_v_r290_control_method
+            state: Outlet Water Temp Control
+          - condition: state
+            entity_id: binary_sensor.lg_therma_v_r290_compressor
+            state: 'on'
+            for:
+              minutes: 1
+          - condition: template
+            value_template: '{{ inlet >= inlet_switch }}'
         sequence:
           - action: select.select_option
             target:
@@ -173,7 +209,7 @@ actions:
               value: >
                 {{ [ [ (inlet | round(0, 'floor')) - 1, floor, ramp ] | max,
                      ceiling ] | min }}
-      # 1. Oil boost: 55 minutes below low_rpm -> inlet + boost_step, wait until
+      # 2. Oil boost: 55 minutes below low_rpm -> inlet + boost_step, wait until
       #    the speed has been at or above low_rpm for boost_hold_sec, then drop
       - conditions:
           - condition: trigger
@@ -205,7 +241,7 @@ actions:
             timeout:
               minutes: '{{ boost_wait_min }}'
             continue_on_timeout: true
-          # Switched off by hand during the boost -> leave the setpoint alone
+          # Switched off during the boost -> leave the setpoint alone
           - condition: template
             value_template: '{{ states(setpoint_entity) | float(999) > off_setpoint }}'
           # boost_after_drop below the inlet (rounded up), so the compressor slows down
@@ -217,7 +253,7 @@ actions:
                 {% set i = states(inlet_entity) | float(0) %}
                 {{ [ [ (i | round(0, 'ceil')) - boost_after_drop, floor, ramp ] | max,
                      boosted ] | min }}
-      # 2. Raise: inlet up_gap above, or the setpoint below the ramp (both not
+      # 3. Raise: inlet up_gap above, or the setpoint below the ramp (both not
       #    while frosting), or emergency_gap above (always)
       - conditions:
           - condition: state
@@ -234,7 +270,7 @@ actions:
               entity_id: '{{ setpoint_entity }}'
             data:
               value: '{{ [ setpoint + step, ceiling ] | min }}'
-      # 3. Frost protection: lower every 2 minutes so the unit throttles (may go
+      # 4. Frost protection: lower every 2 minutes so the unit throttles (may go
       #    below the ramp)
       - conditions:
           - condition: state
@@ -254,7 +290,7 @@ actions:
               entity_id: '{{ setpoint_entity }}'
             data:
               value: '{{ [ setpoint - step, floor ] | max }}'
-      # 4. Lower: inlet at least down_gap below for 5 minutes, never below the ramp
+      # 5. Lower: inlet at least down_gap below for 5 minutes, never below the ramp
       - conditions:
           - condition: state
             entity_id: select.lg_therma_v_r290_control_method
@@ -277,7 +313,7 @@ max_exceeded: silent
 variables:
   step: 1                # °C per step
   ceiling: 40            # highest setpoint, except during the oil boost
-  floor: 21              # lowest setpoint AutoTemp sets (above off_setpoint)
+  inlet_switch: 22       # cold start on outlet control until the inlet reaches this
   frost_max_gap: 2.5     # frost lowering only while the inlet stays <= new setpoint + this
   # Oil boost
   boost_step: 3          # the boost sets the setpoint to inlet + boost_step
@@ -291,9 +327,10 @@ variables:
   target_warm: 33
   outdoor_cold: 0
   outdoor_warm: 15
-  ramp_start: 8.5        # 08:30
+  ramp_start: 9          # 09:00
   ramp_end: 13           # 13:00
   inlet: '{{ states(inlet_entity) | float(none) }}'
+  outlet: '{{ states(outlet_entity) | float(none) }}'
   setpoint: '{{ states(setpoint_entity) | float(none) }}'
   evap: '{{ states(evap_entity) | float(none) }}'
   frosting: '{{ evap is number and evap < frost_limit }}'

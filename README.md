@@ -505,9 +505,9 @@ Switch on **Power limit** in the integration's options. The manual documents the
 
 Ready-to-paste automations for a heating day on circuit 1, so the compressor starts once in the morning and then keeps running at low speed instead of switching on and off: **[docs/automations.md](docs/automations.md)**.
 
-- **Start** at 08:00: heating on, outlet control, 60 °C.
-- **AutoTemp** ([docs/autotemp-heat-circuit-1.yaml](docs/autotemp-heat-circuit-1.yaml)), 08:00–17:00: switches to inlet control after the warm-up and keeps the setpoint just below the inlet temperature, so the unit never reaches thermo off. A morning ramp brings it to 33–38 °C by 13:00 depending on the outdoor temperature, frost protection throttles the unit while the coil is icing, and an oil boost replaces the hourly oil-return spike to about 3600 rpm with a few minutes at moderate speed. Setting the slider to 20 °C by hand switches it off for the day.
-- **Stop** at 18:00: setpoint 20 °C and max compressor modulation 40 %, the unit reaches thermo off.
+- **Start** ([docs/therma-v-start.yaml](docs/therma-v-start.yaml)) at 08:00: heating on, outlet control, 60 °C.
+- **AutoTemp** ([docs/autotemp-heat-circuit-1.yaml](docs/autotemp-heat-circuit-1.yaml)), from 1 minute after the compressor starts until 17:00: while the water is still cold it stays on outlet control with the setpoint just below the outlet temperature (cold start, the compressor throttles to minimum), then switches to inlet control and keeps the setpoint just below the inlet temperature, so the unit never reaches thermo off. A morning ramp brings it to 33–38 °C by 13:00 depending on the outdoor temperature, frost protection throttles the unit while the coil is icing, and an oil boost replaces the hourly oil-return spike to about 3600 rpm with a few minutes at moderate speed. Setting the slider to 20 °C by hand switches it off for the day.
+- **Stop** ([docs/therma-v-stop.yaml](docs/therma-v-stop.yaml)) at 18:00: setpoint 20 °C and max compressor modulation 40 %, the unit reaches thermo off.
 
 They are tuned for a thermo on/off hysteresis of ±4 °C (installer menu of the remote); see the document for what to change otherwise.
 
