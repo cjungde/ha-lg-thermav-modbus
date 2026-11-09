@@ -72,7 +72,7 @@ async def test_cop_and_jaz_from_the_meter(hass, running) -> None:
         assert float(hass.states.get(COP).state) == pytest.approx(
             THERMAL_W / 1500, abs=0.01
         )
-        coordinator = hass.data[DOMAIN][entry.entry_id]
+        coordinator = entry.runtime_data
         # Five minutes at 1.5 kW: the meter grows by 0.125 kWh per poll.
         _meter(hass, 1.5, 100.125)
         await coordinator.async_refresh()
@@ -92,7 +92,7 @@ async def test_no_value_in_standby_or_without_a_usable_meter(hass, running) -> N
     _meter(hass, 0.05, 100.0)  # 50 W: standby
     entry = await _set_up(hass, {"external_power_sensor": POWER})
     assert hass.states.get(COP).state == "unknown"
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     for state, attributes in (
         ("1500", {}),  # no unit: W or kW cannot be told apart
         ("unavailable", {"unit_of_measurement": "W"}),
@@ -152,7 +152,7 @@ async def test_thermal_energy_survives_a_restart_while_unavailable(
 async def test_a_dip_of_the_meter_is_not_a_reset(hass, running) -> None:
     _meter(hass, 1.5, 12345.6)
     entry = await _set_up(hass, {"external_energy_sensor": ENERGY})
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     for energy in (12345.5, 12346.6):
         _meter(hass, 1.5, energy)
         await coordinator.async_refresh()

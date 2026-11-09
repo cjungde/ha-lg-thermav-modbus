@@ -17,8 +17,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, ENERGY_STATE_LABELS
-from .coordinator import LGThermaVCoordinator
+from .const import ENERGY_STATE_LABELS
+from .coordinator import LGThermaVConfigEntry, LGThermaVCoordinator
 from .entity import LGEntity, english_entity_ids
 
 
@@ -74,10 +74,10 @@ def _energy_state_key(label: str) -> str:
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: LGThermaVConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: LGThermaVCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     entities: list[BinarySensorEntity] = [
         LGBinarySensor(coordinator, entry, description)
         for description in _BINARY_SENSORS

@@ -21,8 +21,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import limits, power_limit
-from .const import CONF_MODULATION_LIMIT, CONF_POWER_LIMIT, DOMAIN
-from .coordinator import LGThermaVCoordinator
+from .const import CONF_MODULATION_LIMIT, CONF_POWER_LIMIT
+from .coordinator import LGThermaVConfigEntry, LGThermaVCoordinator
 from .entity import LGEntity, english_entity_ids, remove_entities
 
 
@@ -139,10 +139,10 @@ _NUMBERS: tuple[LGNumberDescription, ...] = (
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: LGThermaVConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: LGThermaVCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     entities: list[NumberEntity] = [
         LGNumber(coordinator, entry, description) for description in _NUMBERS
     ]

@@ -22,7 +22,7 @@ ENERGY_SENSOR = "sensor.lg_therma_v_r290_electrical_power_heat_pump"
 
 
 async def _polls(hass, entry, count: int) -> None:
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     for _ in range(count):
         await coordinator.async_refresh()
     await hass.async_block_till_done()

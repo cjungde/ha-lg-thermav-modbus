@@ -11,7 +11,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN
-from .coordinator import LGThermaVCoordinator
+from .coordinator import LGThermaVConfigEntry, LGThermaVCoordinator
 from .issues import clear_never_answered
 from .migration import MIGRATION_STEPS, UNIQUE_ID_MINOR_VERSION, renamed_unique_id
 from .services import async_setup_services
@@ -76,22 +76,22 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: LGThermaVConfigEntry) -> bool:
     coordinator = LGThermaVCoordinator(hass, entry)
     await coordinator.async_config_entry_first_refresh()
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_update_options))
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: LGThermaVConfigEntry) -> bool:
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
         # The shared connection closes itself when its last unit holder unloads,
-        # so there is no client of our own left to close here.
-        hass.data[DOMAIN].pop(entry.entry_id)
+        # so there is no client of our own left to close here; Home Assistant
+        # drops entry.runtime_data itself.
         # A "never answered" notice belongs to the run that raised it: after a
         # reload the reads start over, and the notice comes back only if the
         # unit still does not answer (issues.py).

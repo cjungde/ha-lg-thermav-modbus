@@ -56,7 +56,7 @@ async def test_poll_sensors_with_the_option(hass, unit) -> None:
     assert load.attributes["unit_of_measurement"] == "%"
     assert 0 <= float(load.state) < 100
 
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     await coordinator.async_refresh()
     await hass.async_block_till_done()
     # The identity is read once per start, not per poll.
@@ -84,7 +84,7 @@ async def test_error_sensors_count_failed_requests(hass, unit) -> None:
     # The coil block stops answering: the poll fails, the heat pump's
     # entities go unavailable, the error sensors stay and say why.
     unit.silent = {("coil", 0)}
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     for expected in (1, 2):
         await coordinator.async_refresh()
         await hass.async_block_till_done()

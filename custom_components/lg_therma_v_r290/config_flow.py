@@ -676,7 +676,7 @@ class LGThermaVOptionsFlow(config_entries.OptionsFlow):
     def _placeholders(self, options: dict[str, Any]) -> dict[str, str]:
         # What the reads did since start, from the running coordinator; None
         # (every row –) while the entry is not loaded.
-        coordinator = self.hass.data.get(DOMAIN, {}).get(self._entry.entry_id)
+        coordinator = getattr(self._entry, "runtime_data", None)
         snapshot = None if coordinator is None else coordinator.optional_snapshot()
         return {
             **status_placeholders(self._detected, options),
