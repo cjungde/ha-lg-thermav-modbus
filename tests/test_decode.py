@@ -75,3 +75,14 @@ def test_flow_and_pressure_stay_unsigned() -> None:
     keys = _poll_keys()
     for key in ("input_flow_rate", "input_water_pressure"):
         assert "temperature(" not in ast.unparse(keys[key])
+
+
+def test_an_input_without_a_sensor_has_no_temperature() -> None:
+    """64887 is -64.9 °C as a signed word: what an unconnected input sends."""
+    assert decode.temperature(decode.NO_SENSOR) is None
+    assert decode.temperature(64887) is None
+
+
+def test_temperatures_next_to_the_placeholder_are_kept() -> None:
+    assert decode.temperature(64886) == -65.0
+    assert decode.temperature(64888) == -64.8
