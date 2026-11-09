@@ -455,13 +455,17 @@ binary sensors to see the status.
 
 | Entity | Range | Holding register |
 |---|---|---|
-| `number.lg_therma_v_r290_target_temperature_circuit_1_radiators` | 15–65 °C | 2 (×0.1) |
+| `number.lg_therma_v_r290_target_temperature_circuit_1_radiators` | 20–60 °C | 2 (×0.1) |
 | `number.lg_therma_v_r290_target_temperature_circuit_2_underfloor` | 20–40 °C | 5 (×0.1) |
 | `number.lg_therma_v_r290_dhw_target_temperature` | 35–65 °C | 8 (×0.1) |
 | `number.lg_therma_v_r290_setpoint_shift_circuit_1` | −5…+5 K | 4 (signed) |
 | `number.lg_therma_v_r290_setpoint_shift_circuit_2` | −5…+5 K | 7 (signed) |
 | `number.lg_therma_v_r290_max_compressor_modulation` | 40–100 % | 23 (optional, see below) |
 | `number.lg_therma_v_r290_max_electrical_power` | 0.1–25.0 kW | 24 (×0.1, optional, see below) |
+
+> **Circuit 1 starts at 20 °C** because a unit without a backup heater does not
+> accept a lower heating setpoint. With a backup heater the unit can go lower;
+> the integration still offers 20–60 °C.
 
 #### Max compressor modulation (optional)
 

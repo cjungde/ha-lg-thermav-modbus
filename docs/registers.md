@@ -81,7 +81,7 @@ Marks: ⚠ the unit behaves differently from the manual (measured) · ⚙ only w
 |---|---|---|---|
 | 40001 | Betriebsmodus | 0: Kühlung / 4: Heizung / 3: Auto | `select.operation_mode` + `sensor.operation_mode` |
 | 40002 | Steuermethode (Kreis 1/2) | 0: Wasserauslasstemp. Steuerung / 1: Wassereinlasstemp. Steuerung / 2: Raumluftsteuerung | `select.control_method` + `sensor.control_method` |
-| 40003 | Zieltemp. (Heizung / Kühlung) Kreislauf 1 | [0.1 °C ×10] | `number.target_temperature_circuit_1_radiators` (15–65 °C) |
+| 40003 | Zieltemp. (Heizung / Kühlung) Kreislauf 1 | [0.1 °C ×10] | `number.target_temperature_circuit_1_radiators` (20–60 °C) |
 | 40004 | Raumlufttemp. Kreislauf 1 | [0.1 °C ×10] | ⛔ `sensor.target_room_air_temperature_circuit_1` — read only, disabled by default; as a holding register this is the room temperature *target* (the measured value is input 30008) |
 | 40005 | Schaltwert (Ziel) im Auto-Modus Kreislauf 1 | 1K | `number.setpoint_shift_circuit_1` (−5…+5 K) |
 | 40006 | Zieltemp. (Heizung / Kühlung) Kreislauf 2 | [0.1 °C ×10] | `number.target_temperature_circuit_2_underfloor` (20–40 °C) |

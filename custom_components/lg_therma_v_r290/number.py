@@ -65,22 +65,23 @@ def _temperature(
 
 
 _NUMBERS: tuple[LGNumberDescription, ...] = (
-    # 15-65 °C: the heating flow range LG gives (15-65 °C in the service
-    # manual's operation range; the R290 itself goes up to 75 °C). Until 2.2
-    # this was 20-60, the range the YAML setups offered, which cut off low
-    # flow temperatures on mild days. Holding 40003 is also the cooling
-    # setpoint; LG advises at least 16 °C there (18 °C for underfloor in humid
-    # rooms) against condensation, so 15 is not a limit cooling misses. The
-    # unit applies its own limits on top: a value outside what it accepts is
-    # acknowledged and then stored clamped (seen on the DHW setpoint), and the
-    # refresh after the write shows what it actually stored.
+    # 20-60 °C. 2.2.2 widened this to 15-65 °C, the heating flow range in
+    # LG's service manual, but the unit (default installer settings) does not
+    # accept heating setpoints below 20 °C, so the slider's lower part only
+    # produced writes that did not stick. 2.2.5 is back at 20-60, the range
+    # the YAML setups offered. A unit with a backup heater can accept lower
+    # heating setpoints; this range is for the unit without one, the common
+    # case. The unit applies its own limits on top: a value
+    # outside what it accepts is acknowledged and then stored clamped (seen on
+    # the DHW setpoint), and the refresh after the write shows what it
+    # actually stored.
     _temperature(
         "target_temperature_circuit_1_radiators",
         "holding_target_temperature_circuit_1",
         2,
         "Target Temperature Circuit 1 (Radiators)",
-        15,
-        65,
+        20,
+        60,
         "mdi:radiator",
     ),
     _temperature(
