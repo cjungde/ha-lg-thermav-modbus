@@ -230,3 +230,10 @@ async def test_options_pick_and_clear_the_meter(hass, unit) -> None:
     assert "external_power_sensor" not in entry.options
     assert registry.async_get(COP) is None
     assert registry.async_get(CUMULATIVE) is not None
+
+
+async def test_thermal_energy_may_go_down(hass, running) -> None:
+    """State class total, not total_increasing: a defrost lowers it a little."""
+    _meter(hass, 1.5, 100.0)
+    await _set_up(hass, {"external_energy_sensor": ENERGY})
+    assert hass.states.get(THERMAL).attributes["state_class"] == "total"

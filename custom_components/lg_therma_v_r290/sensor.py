@@ -851,11 +851,14 @@ class LGThermalEnergySensor(LGEntity, RestoreEntity, SensorEntity):
 
     A counter of its own, independent of the unit's thermal counter. Kept
     across restarts; the time Home Assistant is down is a gap, not counted.
+    A defrost takes heat out of the water, so the counter goes down a little
+    then: state class total, not total_increasing, so Home Assistant's
+    statistics count that as a decrease rather than as a meter reset.
     """
 
     _attr_icon = "mdi:heat-wave"
     _attr_device_class = SensorDeviceClass.ENERGY
-    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_state_class = SensorStateClass.TOTAL
     _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
     _attr_suggested_display_precision = 2
 

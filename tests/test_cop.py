@@ -92,9 +92,14 @@ def test_thermal_power_from_flow_and_delta_t() -> None:
     assert cop.thermal_power_w(0.0, 30.0, 35.0) == 0
 
 
-def test_thermal_power_never_negative() -> None:
-    """Reversed ΔT (defrost, cooling) gives 0, as the sensors always did."""
-    assert cop.thermal_power_w(20.0, 35.0, 30.0) == 0
+def test_thermal_power_goes_negative_with_a_reversed_delta_t() -> None:
+    """Defrost: the water loses heat; cooling: the figure is the cooling power."""
+    assert cop.thermal_power_w(20.0, 35.0, 30.0) == -6977
+
+
+def test_a_defrost_gives_a_negative_calculated_cop() -> None:
+    thermal = cop.thermal_power_w(20.0, 35.0, 33.0)  # -2791 W
+    assert cop.instantaneous_cop(thermal, 1500) == -1.86
 
 
 def test_thermal_power_needs_all_inputs() -> None:
