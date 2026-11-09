@@ -1,7 +1,6 @@
 """The example automations in docs/automations.md are valid and use real entities.
 
-AutoTemp is its own file, docs/autotemp-heat-circuit-1.yaml; the start and stop
-automations are inline in docs/automations.md.
+Each automation is its own file in docs/, linked from docs/automations.md.
 """
 
 from __future__ import annotations
@@ -21,19 +20,25 @@ from .test_config_flow import DOMAIN, RTU
 
 DOCS = Path(__file__).resolve().parent.parent / "docs"
 AUTOMATIONS = DOCS / "automations.md"
-AUTOTEMP = DOCS / "autotemp-heat-circuit-1.yaml"
+FILES = [
+    DOCS / "therma-v-start.yaml",
+    DOCS / "autotemp-heat-circuit-1.yaml",
+    DOCS / "therma-v-stop.yaml",
+]
+
+
+def test_automations_md_links_every_file() -> None:
+    text = AUTOMATIONS.read_text()
+    missing = [f.name for f in FILES if f"]({f.name})" not in text]
+    assert missing == []
 
 
 def _configs() -> list[dict]:
-    text = AUTOMATIONS.read_text()
-    assert AUTOTEMP.name in text, "automations.md does not link the AutoTemp file"
-    blocks = re.findall(r"```yaml\n(.*?)```", text, re.S)
-    assert len(blocks) == 2, "expected the start and stop automations inline"
-    return [yaml.safe_load(b) for b in blocks] + [yaml.safe_load(AUTOTEMP.read_text())]
+    return [yaml.safe_load(f.read_text()) for f in FILES]
 
 
 def _texts() -> str:
-    return AUTOMATIONS.read_text() + AUTOTEMP.read_text()
+    return AUTOMATIONS.read_text() + "".join(f.read_text() for f in FILES)
 
 
 def test_control_method_options_exist() -> None:

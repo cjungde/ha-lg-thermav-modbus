@@ -1,0 +1,32 @@
+# Therma V start (warm-up): heating on, outlet control, 60 °C at 08:00.
+# AutoTemp_Heat_Circuit_1 (autotemp-heat-circuit-1.yaml) takes over 1 minute
+# after the compressor starts. Explained in docs/automations.md. Paste it in
+# Settings → Automations & scenes → Create automation → ⋮ → Edit in YAML.
+alias: Therma V start (warm-up)
+description: >-
+  Daily start of the heat pump at 08:00. Switches heating on, sets the control
+  method to Outlet Water Temp Control and the circuit 1 setpoint to 60 °C, so
+  the compressor starts reliably. After 1 minute AutoTemp_Heat_Circuit_1 takes
+  over: cold start on outlet control (setpoint just below the outlet) while the
+  inlet is below 22 °C, then Inlet Water Temp Control for the rest of the day
+  (until 17:00). The max compressor modulation is not changed here; it stays at
+  the 40 % set by the stop automation unless raised by hand.
+triggers:
+  - trigger: time
+    at: '08:00:00'
+conditions: []
+actions:
+  - action: switch.turn_on
+    target:
+      entity_id: switch.lg_therma_v_r290_heating_cooling
+  - action: select.select_option
+    target:
+      entity_id: select.lg_therma_v_r290_control_method
+    data:
+      option: Outlet Water Temp Control
+  - action: number.set_value
+    target:
+      entity_id: number.lg_therma_v_r290_target_temperature_circuit_1_radiators
+    data:
+      value: 60
+mode: single

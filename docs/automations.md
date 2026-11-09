@@ -1,6 +1,6 @@
 # Example automations: a heating day with AutoTemp
 
-Three automations that run circuit 1 (radiators) through the day so the compressor starts once in the morning and then keeps running at low speed instead of switching on and off:
+Three automations, each in its own file, that run circuit 1 (radiators) through the day so the compressor starts once in the morning and then keeps running at low speed instead of switching on and off:
 
 | Time | Automation | What happens |
 |---|---|---|
@@ -13,7 +13,7 @@ Three automations that run circuit 1 (radiators) through the day so the compress
 
 They were written for a 12 kW unit. Entity ids are the defaults (`…lg_therma_v_r290_…`); if you renamed yours, adjust them. The stop automation needs the *Max compressor modulation* option; leave its second action out without it. The start and stop times can be changed freely: AutoTemp takes over 1 minute after the compressor starts, whenever that is (before 17:00), and stops as soon as the setpoint is at 20 °C.
 
-**To use them:** *Settings → Automations & scenes → Create automation → Create new automation → ⋮ → Edit in YAML*, paste, *Save*.
+**To use them:** open the file, copy its content, then *Settings → Automations & scenes → Create automation → Create new automation → ⋮ → Edit in YAML*, paste, *Save*.
 
 ## Before you start: the thermo on/off hysteresis and the lowest setpoint
 
@@ -25,36 +25,9 @@ The lowest heating setpoint the unit accepts is **20 °C** with the backup heate
 
 ## Start (08:00)
 
-```yaml
-alias: Therma V start (warm-up)
-description: >-
-  Daily start of the heat pump at 08:00. Switches heating on, sets the control
-  method to Outlet Water Temp Control and the circuit 1 setpoint to 60 °C, so
-  the compressor starts reliably. After 1 minute AutoTemp_Heat_Circuit_1 takes
-  over: cold start on outlet control (setpoint just below the outlet) while the
-  inlet is below 22 °C, then Inlet Water Temp Control for the rest of the day
-  (until 17:00). The max compressor modulation is not changed here; it stays at
-  the 40 % set by the stop automation unless raised by hand.
-triggers:
-  - trigger: time
-    at: '08:00:00'
-conditions: []
-actions:
-  - action: switch.turn_on
-    target:
-      entity_id: switch.lg_therma_v_r290_heating_cooling
-  - action: select.select_option
-    target:
-      entity_id: select.lg_therma_v_r290_control_method
-    data:
-      option: Outlet Water Temp Control
-  - action: number.set_value
-    target:
-      entity_id: number.lg_therma_v_r290_target_temperature_circuit_1_radiators
-    data:
-      value: 60
-mode: single
-```
+The YAML is its own file: [therma-v-start.yaml](therma-v-start.yaml).
+
+It switches heating on, sets **outlet control** and the circuit 1 setpoint to 60 °C, so the compressor starts reliably. The time is in its trigger (`at: '08:00:00'`).
 
 The start must set **outlet control**: the cold start and the kick-in only take over from there.
 
@@ -85,33 +58,6 @@ It re-checks every 5 minutes, so it catches up after a restart of Home Assistant
 
 ## Stop (18:00)
 
-```yaml
-alias: Therma V stop
-description: >-
-  Daily shutdown of the heat pump. Sets the circuit 1 setpoint to 20 °C, the
-  unit's lowest value with the backup heater off: with Inlet Water Temp Control
-  and a thermo on/off hysteresis of ±4 °C, the unit switches off once the inlet
-  is at 24 °C, which after a day of heating it always is, so the compressor
-  stops right away. 20 °C is also "off" for AutoTemp_Heat_Circuit_1, so it stops
-  adjusting at once, even when this runs before 17:00. Heating stays switched
-  on, so on a very cold night the unit restarts when the inlet drops below 16 °C
-  and heats until it is back at 24 °C (safety net against the house cooling down
-  too far). Also resets the max compressor modulation to 40 %, in case it was
-  raised by hand on a cold day, so the next day starts at 40 % again.
-triggers:
-  - trigger: time
-    at: '18:00:00'
-conditions: []
-actions:
-  - action: number.set_value
-    target:
-      entity_id: number.lg_therma_v_r290_target_temperature_circuit_1_radiators
-    data:
-      value: 20
-  - action: number.set_value
-    target:
-      entity_id: number.lg_therma_v_r290_max_compressor_modulation
-    data:
-      value: 40
-mode: single
-```
+The YAML is its own file: [therma-v-stop.yaml](therma-v-stop.yaml).
+
+It sets the circuit 1 setpoint to 20 °C, the unit's lowest value with the backup heater off: with inlet control and a hysteresis of ±4 °C the unit switches off once the inlet is at 24 °C, which after a day of heating it always is. 20 °C is also "off" for AutoTemp, so it stops adjusting at once, even before 17:00. Heating stays switched on, so on a very cold night the unit restarts when the inlet drops below 16 °C and heats until it is back at 24 °C (safety net). It also resets the max compressor modulation to 40 %, in case it was raised by hand on a cold day. The time is in its trigger (`at: '18:00:00'`).

@@ -1,0 +1,33 @@
+# Therma V stop: circuit 1 setpoint 20 °C (thermo off, and "off" for
+# AutoTemp_Heat_Circuit_1) and max compressor modulation 40 % at 18:00.
+# Needs the Max compressor modulation option; leave the second action out
+# without it. Explained in docs/automations.md. Paste it in Settings →
+# Automations & scenes → Create automation → ⋮ → Edit in YAML.
+alias: Therma V stop
+description: >-
+  Daily shutdown of the heat pump. Sets the circuit 1 setpoint to 20 °C, the
+  unit's lowest value with the backup heater off: with Inlet Water Temp Control
+  and a thermo on/off hysteresis of ±4 °C, the unit switches off once the inlet
+  is at 24 °C, which after a day of heating it always is, so the compressor
+  stops right away. 20 °C is also "off" for AutoTemp_Heat_Circuit_1, so it stops
+  adjusting at once, even when this runs before 17:00. Heating stays switched
+  on, so on a very cold night the unit restarts when the inlet drops below 16 °C
+  and heats until it is back at 24 °C (safety net against the house cooling down
+  too far). Also resets the max compressor modulation to 40 %, in case it was
+  raised by hand on a cold day, so the next day starts at 40 % again.
+triggers:
+  - trigger: time
+    at: '18:00:00'
+conditions: []
+actions:
+  - action: number.set_value
+    target:
+      entity_id: number.lg_therma_v_r290_target_temperature_circuit_1_radiators
+    data:
+      value: 20
+  - action: number.set_value
+    target:
+      entity_id: number.lg_therma_v_r290_max_compressor_modulation
+    data:
+      value: 40
+mode: single
