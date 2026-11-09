@@ -73,6 +73,23 @@ def test_counter_delta_counts_growth_and_resets() -> None:
     assert delta.add(2.0) == pytest.approx(4.5)
 
 
+def test_counter_delta_ignores_jitter() -> None:
+    """A small dip is not a reset: before, 0.1 kWh down added the whole meter."""
+    delta = em.CounterDelta()
+    delta.add(12345.6)
+    assert delta.add(12345.5) == 0  # dip: ignored
+    assert delta.add(12345.6) == 0  # back to the last value: not counted twice
+    assert delta.add(12346.6) == pytest.approx(1.0)
+
+
+def test_counter_delta_reset_threshold_is_ten_percent() -> None:
+    delta = em.CounterDelta()
+    delta.add(1000.0)
+    assert delta.add(901.0) == 0  # 9.9 % down: jitter
+    assert delta.add(899.0) == pytest.approx(899.0)  # more than 10 %: reset
+    assert delta.add(900.0) == pytest.approx(900.0)
+
+
 def test_ratio() -> None:
     assert em.ratio(7.0, 2.0) == 3.5
     assert em.ratio(7.0, 0) is None

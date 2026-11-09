@@ -60,12 +60,22 @@ class EnergyIntegrator:
         return self.kwh
 
 
+#: A drop of the meter's counter to below this share of its last value is a
+#: reset; a smaller drop is jitter. The same threshold Home Assistant's
+#: statistics use for total_increasing sensors.
+RESET_RATIO = 0.9
+
+
 class CounterDelta:
     """How much a total counter has grown since the first reading.
 
-    Only increases count. A counter that goes down was reset (a new meter, a
-    counter rolled over): its new value is counted as growth from zero, the
-    way Home Assistant treats a total_increasing sensor.
+    Only increases count. A counter that drops by more than 10 % was reset (a
+    new meter, a counter rolled over): its new value is counted as growth from
+    zero. A smaller drop -- a rounding step, a reading arriving out of order,
+    the meter software restarting with an older value -- is ignored, and
+    growth is counted again once the counter is past its last value. Without
+    that, a dip of 0.1 kWh on a meter at 12 345 kWh added 12 345 kWh, and the
+    cumulative COP collapsed for good.
     """
 
     def __init__(self, kwh: float = 0.0, last: float | None = None) -> None:
@@ -76,9 +86,16 @@ class CounterDelta:
         """Record a counter reading (None: unknown); returns the growth."""
         if value is None:
             return self.kwh
-        if self.last is not None:
-            self.kwh += value - self.last if value >= self.last else value
-        self.last = value
+        if self.last is None or value >= self.last:
+            if self.last is not None:
+                self.kwh += value - self.last
+            self.last = value
+        elif value < self.last * RESET_RATIO:
+            # Reset: everything since is growth from zero.
+            self.kwh += value
+            self.last = value
+        # else: jitter below the last value; keep the last value, so the
+        # recovery to it is not counted twice.
         return self.kwh
 
 
