@@ -181,3 +181,20 @@ async def test_flow_with_the_pump_running_is_kept(hass, unit) -> None:
     assert state.attributes["register_value"] == 15.3
     power = hass.states.get("sensor.lg_therma_v_r290_thermal_power_calculated")
     assert float(power.state) > 5000
+
+
+async def test_circuit_1_target_spans_15_to_65(hass, unit) -> None:
+    """LG's heating flow range; the YAML's 20-60 cut off mild-day flow temps."""
+    await _set_up(hass)
+    entity_id = "number.lg_therma_v_r290_target_temperature_circuit_1_radiators"
+    state = hass.states.get(entity_id)
+    assert state.attributes["min"] == 15
+    assert state.attributes["max"] == 65
+    for value, raw in ((15, 150), (65, 650)):
+        await hass.services.async_call(
+            "number",
+            "set_value",
+            {"entity_id": entity_id, "value": value},
+            blocking=True,
+        )
+        assert ("holding", 2, raw) in unit.writes
