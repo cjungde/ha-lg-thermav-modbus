@@ -210,3 +210,14 @@ async def test_temperatures_below_zero(hass, unit) -> None:
         "sensor.lg_therma_v_r290_temperature_before_evaporator"
     )
     assert float(evaporator.state) == -8.5
+
+
+async def test_a_temperature_input_without_a_sensor_is_unknown(hass, unit) -> None:
+    """Flow Temperature Circuit 2 without a second circuit: 64887, not -64.9 °C."""
+    unit.values = {("input", 9): 64887, ("input", 12): 65534}
+    await _set_up(hass)
+    state = hass.states.get("sensor.lg_therma_v_r290_flow_temperature_circuit_2")
+    assert state.state == "unknown"
+    # The other temperatures are not affected.
+    outdoor = hass.states.get("sensor.lg_therma_v_r290_outdoor_temperature")
+    assert float(outdoor.state) == -0.2
