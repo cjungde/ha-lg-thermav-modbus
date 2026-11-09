@@ -35,6 +35,7 @@ from .const import (
     WRITABLE_COILS,
     WRITABLE_HOLDING_REGISTERS,
 )
+from .decode import signed16, temperature
 from .energy import (
     ENERGY_BLOCK_COUNT,
     ENERGY_BLOCK_START,
@@ -93,11 +94,6 @@ _REQUEST_TIMEOUT = 20.0
 def _monotonic() -> float:
     """The clock the compressor statistics run on (replaced in tests)."""
     return time.monotonic()
-
-
-def _signed16(value: int) -> int:
-    """Convert an unsigned 16-bit register value to a signed integer."""
-    return value - 65536 if value >= 32768 else value
 
 
 class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -246,23 +242,23 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # inp_hi[n] = register 16+n (16-24)
             "input_error_code": inp_lo[0],
             "input_operation_cycle_odu": inp_lo[1],
-            "input_inlet_temperature": round(inp_lo[2] * 0.1, 1),
-            "input_outlet_temperature": round(inp_lo[3] * 0.1, 1),
-            "input_backup_heater_outlet_temperature": round(inp_lo[4] * 0.1, 1),
-            "input_dhw_temperature": round(inp_lo[5] * 0.1, 1),
-            "input_solar_collector_temperature": round(inp_lo[6] * 0.1, 1),
-            "input_room_air_temperature_circuit_1": round(inp_lo[7] * 0.1, 1),
+            "input_inlet_temperature": temperature(inp_lo[2]),
+            "input_outlet_temperature": temperature(inp_lo[3]),
+            "input_backup_heater_outlet_temperature": temperature(inp_lo[4]),
+            "input_dhw_temperature": temperature(inp_lo[5]),
+            "input_solar_collector_temperature": temperature(inp_lo[6]),
+            "input_room_air_temperature_circuit_1": temperature(inp_lo[7]),
             "input_flow_rate": round(inp_lo[8] * 0.1, 1),
-            "input_flow_temperature_circuit_2": round(inp_lo[9] * 0.1, 1),
-            "input_room_air_temperature_circuit_2": round(inp_lo[10] * 0.1, 1),
+            "input_flow_temperature_circuit_2": temperature(inp_lo[9]),
+            "input_room_air_temperature_circuit_2": temperature(inp_lo[10]),
             "input_energy_control_signal": inp_lo[11],
-            "input_outdoor_temperature": round(inp_lo[12] * 0.1, 1),
+            "input_outdoor_temperature": temperature(inp_lo[12]),
             "input_water_pressure": round(inp_lo[13] * 0.1, 1),
-            "input_liquid_gas_temperature": round(inp_hi[0] * 0.1, 1),
-            "input_suction_temperature": round(inp_hi[2] * 0.1, 1),
-            "input_hot_gas_temperature": round(inp_hi[3] * 0.1, 1),
-            "input_temperature_before_evaporator": round(inp_hi[4] * 0.1, 1),
-            "input_temperature_after_evaporator": round(inp_hi[5] * 0.1, 1),
+            "input_liquid_gas_temperature": temperature(inp_hi[0]),
+            "input_suction_temperature": temperature(inp_hi[2]),
+            "input_hot_gas_temperature": temperature(inp_hi[3]),
+            "input_temperature_before_evaporator": temperature(inp_hi[4]),
+            "input_temperature_after_evaporator": temperature(inp_hi[5]),
             # Registers 22/23 count in hundredths of a bar, unlike register 13
             # (water pressure, tenths). Measured 2026-10-03: with 0.1 the
             # condenser read 63-80 bar at standstill and 220.6 bar at
@@ -276,17 +272,13 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # Holding registers
             "holding_operation_mode": hold_low[0],
             "holding_control_method": hold_low[1],
-            "holding_target_temperature_circuit_1": round(hold_low[2] * 0.1, 1),
-            "holding_target_room_air_temperature_circuit_1": round(
-                hold_low[3] * 0.1, 1
-            ),
-            "holding_setpoint_shift_circuit_1": _signed16(hold_low[4]),
-            "holding_target_temperature_circuit_2": round(hold_low[5] * 0.1, 1),
-            "holding_target_room_air_temperature_circuit_2": round(
-                hold_low[6] * 0.1, 1
-            ),
-            "holding_setpoint_shift_circuit_2": _signed16(hold_low[7]),
-            "holding_dhw_target_temperature": round(hold_low[8] * 0.1, 1),
+            "holding_target_temperature_circuit_1": temperature(hold_low[2]),
+            "holding_target_room_air_temperature_circuit_1": temperature(hold_low[3]),
+            "holding_setpoint_shift_circuit_1": signed16(hold_low[4]),
+            "holding_target_temperature_circuit_2": temperature(hold_low[5]),
+            "holding_target_room_air_temperature_circuit_2": temperature(hold_low[6]),
+            "holding_setpoint_shift_circuit_2": signed16(hold_low[7]),
+            "holding_dhw_target_temperature": temperature(hold_low[8]),
             "holding_energy_state": hold_low[9],
             # Coils
             "coil_heating_cooling": coils[0],

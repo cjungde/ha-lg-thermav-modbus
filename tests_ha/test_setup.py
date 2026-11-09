@@ -198,3 +198,15 @@ async def test_circuit_1_target_spans_15_to_65(hass, unit) -> None:
             blocking=True,
         )
         assert ("holding", 2, raw) in unit.writes
+
+
+async def test_temperatures_below_zero(hass, unit) -> None:
+    """-0.2 °C outdoors and -8.5 °C at the evaporator, not 6553.4 °C."""
+    unit.values = {("input", 12): 65534, ("input", 20): 65451}
+    await _set_up(hass)
+    outdoor = hass.states.get("sensor.lg_therma_v_r290_outdoor_temperature")
+    assert float(outdoor.state) == -0.2
+    evaporator = hass.states.get(
+        "sensor.lg_therma_v_r290_temperature_before_evaporator"
+    )
+    assert float(evaporator.state) == -8.5
