@@ -63,7 +63,7 @@ async def test_counts_from_polls(hass, unit) -> None:
         side_effect=lambda: next(clock),
     ):
         entry = await _set_up(hass)  # poll at t=0: off
-        coordinator = hass.data[DOMAIN][entry.entry_id]
+        coordinator = entry.runtime_data
         for on, rpm in (
             (True, 1800),
             (True, 2400),
@@ -118,4 +118,4 @@ async def test_not_created_without_the_option(hass, unit) -> None:
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     assert hass.states.get(STARTS) is None
-    assert hass.data[DOMAIN][entry.entry_id].compressor_stats is None
+    assert entry.runtime_data.compressor_stats is None

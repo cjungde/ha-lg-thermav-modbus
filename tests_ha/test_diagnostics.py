@@ -64,3 +64,18 @@ async def test_diagnostics_of_an_entry_that_is_not_loaded(hass, unit) -> None:
     result = await async_get_config_entry_diagnostics(hass, entry)
     assert result["coordinator"] is None
     assert result["entry"]["data"]["host"] == "**REDACTED**"
+
+
+async def test_unloading_drops_the_coordinator(hass, unit) -> None:
+    """Home Assistant removes runtime_data on unload; diagnostics still work."""
+    entry = MockConfigEntry(domain=DOMAIN, data=TCP, version=1, minor_version=4)
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.runtime_data is not None
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert not hasattr(entry, "runtime_data")
+    result = await async_get_config_entry_diagnostics(hass, entry)
+    assert result["coordinator"] is None

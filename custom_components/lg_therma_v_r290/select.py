@@ -18,12 +18,11 @@ from .const import (
     CONTROL_METHOD_FROM_VALUE,
     CONTROL_METHOD_OPTIONS,
     CONTROL_METHOD_TO_VALUE,
-    DOMAIN,
     OPERATION_MODE_FROM_VALUE,
     OPERATION_MODE_OPTIONS,
     OPERATION_MODE_TO_VALUE,
 )
-from .coordinator import LGThermaVCoordinator
+from .coordinator import LGThermaVConfigEntry, LGThermaVCoordinator
 from .entity import LGEntity, english_entity_ids
 
 _LOGGER = logging.getLogger(__name__)
@@ -63,10 +62,10 @@ _SELECTS: tuple[LGSelectDescription, ...] = (
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: LGThermaVConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: LGThermaVCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     async_add_entities(
         english_entity_ids(
             "select",

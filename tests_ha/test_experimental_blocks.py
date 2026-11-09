@@ -22,7 +22,7 @@ async def _set_up(hass) -> MockConfigEntry:
 
 
 async def _poll(hass, entry, times: int) -> None:
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     for _ in range(times):
         await coordinator.async_refresh()
     await hass.async_block_till_done()

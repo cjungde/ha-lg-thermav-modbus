@@ -96,6 +96,10 @@ def _monotonic() -> float:
     return time.monotonic()
 
 
+LGThermaVConfigEntry = ConfigEntry["LGThermaVCoordinator"]
+"""A config entry of this integration, its coordinator in ``runtime_data``."""
+
+
 class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Polls the LG Therma V R290 at a fixed interval and distributes data to entities."""
 
@@ -167,6 +171,7 @@ class LGThermaVCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=entry,
             name=DOMAIN,
             update_interval=timedelta(seconds=scan_interval),
         )

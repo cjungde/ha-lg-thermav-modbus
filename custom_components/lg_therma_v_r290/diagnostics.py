@@ -24,7 +24,8 @@ async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> dict[str, Any]:
     integration = await async_get_integration(hass, DOMAIN)
-    coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    # runtime_data exists only while the entry is loaded.
+    coordinator = getattr(entry, "runtime_data", None)
     result: dict[str, Any] = {
         "integration_version": str(integration.version),
         "entry": {

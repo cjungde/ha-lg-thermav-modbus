@@ -56,7 +56,6 @@ from .const import (
     CONF_EXTERNAL_POWER,
     CONF_POLL_STATISTICS,
     CONTROL_METHOD_FROM_VALUE,
-    DOMAIN,
     ENERGY_STATE_DISPLAY,
     ODU_OPERATION_CYCLE_LABELS,
     OPERATION_MODE_FROM_VALUE,
@@ -64,6 +63,7 @@ from .const import (
 from .coordinator import (
     DATA_KEY_FLOW_RATE_REGISTER,
     DATA_KEY_OPTIONAL_REGISTERS,
+    LGThermaVConfigEntry,
     LGThermaVCoordinator,
 )
 from .energy import (
@@ -471,10 +471,10 @@ _POLL_SENSORS: tuple[LGSensorDescription, ...] = (
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: LGThermaVConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: LGThermaVCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     entities: list[SensorEntity] = [
         *(LGSensor(coordinator, entry, d) for d in _SENSORS),
         *(LGLabelSensor(coordinator, entry, d) for d in _LABEL_SENSORS),
