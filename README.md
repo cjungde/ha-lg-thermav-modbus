@@ -246,7 +246,7 @@ Two ready-to-paste dashboards built from Home Assistant's own cards: a compact o
 | `sensor.lg_therma_v_r290_error_code` | Error code | — |
 | `sensor.lg_therma_v_r290_operation_state_odu` | Outdoor unit cycle as text: Standby/Off, Cooling, Heating (input 30002; raw value in *Operation Cycle (ODU)*) | — |
 | `sensor.lg_therma_v_r290_optional_registers` | Diagnostic: *OK*, *Paused*, *Given up* or *Not used*, what the optional reads have done since start; see [When optional registers do not answer](#when-optional-registers-do-not-answer) | — |
-| `sensor.lg_therma_v_r290_thermal_power_calculated` | Thermal power, calculated from flow rate × ΔT | W |
+| `sensor.lg_therma_v_r290_thermal_power_calculated` | Thermal power, calculated from flow rate × ΔT; negative while the water loses heat (defrost) and in cooling, and so is *COP (Calculated)* then | W |
 | `sensor.lg_therma_v_r290_thermal_power_heating_circuit_calculated` | Same, while not heating DHW (0 otherwise) | W |
 | `sensor.lg_therma_v_r290_thermal_power_dhw_calculated` | Same, while heating DHW (0 otherwise) | W |
 | `sensor.lg_therma_v_r290_operation_mode` | Operation mode (label) | — |
@@ -261,10 +261,10 @@ The electrical figures the unit reports tend to read high, so COPs built on them
 | You pick | Entity | What it shows |
 |---|---|---|
 | a power sensor (W or kW) | `sensor.lg_therma_v_r290_cop_external_meter` | thermal power from flow rate × ΔT ÷ your meter's power: the COP of the moment; no value below 100 W |
-| an energy sensor (a total counter, Wh or kWh) | `sensor.lg_therma_v_r290_thermal_energy_calculated` | flow rate × ΔT added up over time, kWh, `total_increasing` |
+| an energy sensor (a total counter, Wh or kWh) | `sensor.lg_therma_v_r290_thermal_energy_calculated` | flow rate × ΔT added up over time, kWh, `total`: a defrost takes heat out of the water, so it goes down a little then |
 | | `sensor.lg_therma_v_r290_cop_cumulative_external_meter` | that thermal energy ÷ your meter's energy, both counted from when the sensor was set: the seasonal performance factor (JAZ) over that period; attributes `since`, `thermal_energy_kwh`, `electrical_energy_kwh` |
 
-Both counters are kept across restarts. Gaps over five minutes (Home Assistant down, the unit not answering) are not counted rather than guessed; a reset of your meter's counter counts as growth from zero. Choosing another energy sensor starts a new period. The thermal side is flow rate × ΔT, which reads 0 while cooling or defrosting.
+Both counters are kept across restarts. Gaps over five minutes (Home Assistant down, the unit not answering) are not counted rather than guessed; a drop of your meter's counter to below 90 % of its last value counts as a reset (its new value as growth from zero); a smaller dip is ignored. Choosing another energy sensor starts a new period. The thermal side is flow rate × ΔT, which is negative while defrosting or cooling.
 
 #### Compressor statistics (option)
 

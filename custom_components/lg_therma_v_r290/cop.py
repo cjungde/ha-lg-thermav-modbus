@@ -77,10 +77,12 @@ def thermal_power_w(
 ) -> int | None:
     """Thermal power from flow and ΔT: Q = flow/60 × (outlet − inlet) × 4186 W.
 
-    None while any input is missing. Never negative: a reversed ΔT (defrost,
-    cooling) gives 0, as the calculated thermal power sensors always have.
+    None while any input is missing. Negative with a reversed ΔT: during a
+    defrost the water loses heat, and in cooling the figure is the cooling
+    power. Until 2.2.3 it was cut off at 0, which hid both; the reported
+    thermal power (input 48) is read signed for the same reason.
     """
     if flow_l_min is None or inlet_c is None or outlet_c is None:
         return None
     power = float(flow_l_min) / 60.0 * (float(outlet_c) - float(inlet_c)) * CP_WATER
-    return max(0, int(round(power)))
+    return int(round(power))

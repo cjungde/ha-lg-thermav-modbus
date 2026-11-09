@@ -231,3 +231,20 @@ async def test_negative_thermal_power_during_a_defrost(hass, unit) -> None:
     assert float(thermal.state) == -1200
     cop = hass.states.get("sensor.lg_therma_v_r290_cop_reported")
     assert float(cop.state) == -0.8
+
+
+async def test_a_defrost_shows_on_the_calculated_side(hass, unit) -> None:
+    """Pump running, outlet 2 K below inlet: heat leaves the water."""
+    unit.values = {
+        ("input", 2): 350,  # inlet 35.0 °C
+        ("input", 3): 330,  # outlet 33.0 °C
+        ("input", 8): 200,  # 20.0 L/min
+        ("discrete", 0): 1,
+        ("discrete", 1): 1,
+        ("input", 37): 1500,  # electrical 1500 W
+    }
+    await _set_up(hass, {"energy_registers": True})
+    power = hass.states.get("sensor.lg_therma_v_r290_thermal_power_calculated")
+    assert float(power.state) == -2791  # 20/60 × -2 × 4186
+    cop = hass.states.get("sensor.lg_therma_v_r290_cop_calculated")
+    assert float(cop.state) == -1.86
