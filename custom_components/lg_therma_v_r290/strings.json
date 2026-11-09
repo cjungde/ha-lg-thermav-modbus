@@ -630,5 +630,21 @@
         }
       }
     }
+  },
+  "services": {
+    "repair_temperature_history": {
+      "name": "Repair temperature history",
+      "description": "Corrects temperatures that versions before 2.2.2 recorded as 6553.6 °C too high (every value below 0 °C, e.g. 6548.9 instead of -4.7 °C), and inputs without a sensor recorded as 6488.7 °C, in the history and the statistics of this integration's temperature sensors. Make a backup first. By default only a dry run: the response lists what would change.",
+      "fields": {
+        "dry_run": {
+          "name": "Dry run",
+          "description": "Only report what would change, without changing anything. Switch off to repair."
+        },
+        "remove_unrecoverable": {
+          "name": "Remove unrecoverable statistics",
+          "description": "Remove hours (and 5-minute periods) with a spike whose single values are already purged, so they cannot be recalculated. Off: they are kept as they are and listed in the response."
+        }
+      }
+    }
   }
 }

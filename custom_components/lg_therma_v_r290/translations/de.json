@@ -630,5 +630,21 @@
         }
       }
     }
+  },
+  "services": {
+    "repair_temperature_history": {
+      "name": "Temperaturverlauf reparieren",
+      "description": "Korrigiert Temperaturen, die Versionen vor 2.2.2 um 6553,6 °C zu hoch aufgezeichnet haben (jeden Wert unter 0 °C, z. B. 6548,9 statt -4,7 °C), und Eingänge ohne Fühler, die als 6488,7 °C aufgezeichnet wurden, im Verlauf und in den Statistiken der Temperatursensoren dieser Integration. Vorher ein Backup machen. Standardmäßig nur ein Probelauf: Die Antwort zeigt, was sich ändern würde.",
+      "fields": {
+        "dry_run": {
+          "name": "Probelauf",
+          "description": "Nur melden, was sich ändern würde, ohne etwas zu ändern. Zum Reparieren ausschalten."
+        },
+        "remove_unrecoverable": {
+          "name": "Nicht wiederherstellbare Statistiken entfernen",
+          "description": "Stunden (und 5-Minuten-Abschnitte) mit einer Spitze entfernen, deren Einzelwerte schon gelöscht sind, sodass sie sich nicht neu berechnen lassen. Aus: Sie bleiben wie sie sind und werden in der Antwort aufgeführt."
+        }
+      }
+    }
   }
 }

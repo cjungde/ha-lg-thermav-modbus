@@ -1,6 +1,9 @@
 {
   "domain": "lg_therma_v_r290",
   "name": "LG Therma V R290",
+  "after_dependencies": [
+    "recorder"
+  ],
   "codeowners": [
     "@cjungde"
   ],
