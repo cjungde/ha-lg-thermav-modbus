@@ -42,6 +42,8 @@ class EnergyRegister:
     address: int  # first of the two registers (high word)
     name: str
     kind: str
+    # Two's complement rather than unsigned (see thermal_power_reported).
+    signed: bool = False
 
     @property
     def data_key(self) -> str:
@@ -83,8 +85,18 @@ ENERGY_REGISTERS: tuple[EnergyRegister, ...] = (
     # Reads 0-12 on a 12 kW unit: not a percentage. What the number means (a
     # step, or kW of demand) is not established, so it carries no unit.
     EnergyRegister("demand_vs_supply", 46, "Demand vs Supply", KIND_VALUE),
+    # Signed, as a precaution: during a defrost (or in cooling) heat flows out
+    # of the water, and if the unit reports that as negative power, an
+    # unsigned read turns -1.2 kW into 4 294 966 096 W. Not observed yet (no
+    # defrost on record), but a real thermal power never comes near 2^31 W,
+    # so reading it signed changes nothing until a negative value arrives.
+    # Temperatures had exactly this bug (decode.py).
     EnergyRegister(
-        "thermal_power_reported", 48, "Thermal Power (Reported)", KIND_POWER
+        "thermal_power_reported",
+        48,
+        "Thermal Power (Reported)",
+        KIND_POWER,
+        signed=True,
     ),
     EnergyRegister(
         "thermal_energy_space_heating",
@@ -109,6 +121,12 @@ def decode_uint32(high: int, low: int) -> int:
     return ((high & 0xFFFF) << 16) | (low & 0xFFFF)
 
 
+def decode_int32(high: int, low: int) -> int:
+    """The same as a signed (two's complement) value."""
+    value = decode_uint32(high, low)
+    return value - (1 << 32) if value >= 1 << 31 else value
+
+
 def decode_block(registers: list[int]) -> dict[str, int]:
     """Decode a read of the energy block into coordinator data."""
     if len(registers) != ENERGY_BLOCK_COUNT:
@@ -118,9 +136,8 @@ def decode_block(registers: list[int]) -> dict[str, int]:
     values: dict[str, int] = {}
     for register in ENERGY_REGISTERS:
         offset = register.address - ENERGY_BLOCK_START
-        values[register.data_key] = decode_uint32(
-            registers[offset], registers[offset + 1]
-        )
+        decode = decode_int32 if register.signed else decode_uint32
+        values[register.data_key] = decode(registers[offset], registers[offset + 1])
     return values
 
 
