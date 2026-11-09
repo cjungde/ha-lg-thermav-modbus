@@ -306,7 +306,7 @@ Switch on **Energy registers** in the integration's options. These are 32-bit va
 | `sensor.lg_therma_v_r290_electrical_energy_space_cooling` | 42–43 | Wh (shown as kWh) |
 | `sensor.lg_therma_v_r290_electrical_energy_dhw` | 44–45 | Wh (shown as kWh) |
 | `sensor.lg_therma_v_r290_demand_vs_supply` | 46–47 | none (reads 0–12 on a 12 kW unit) |
-| `sensor.lg_therma_v_r290_thermal_power_reported` | 48–49, read signed: negative if the unit reports heat leaving the water (defrost, cooling); *COP (Reported)* is then unknown | W |
+| `sensor.lg_therma_v_r290_thermal_power_reported` | 48–49, read signed: negative if the unit reports heat leaving the water (defrost, cooling), and so is *COP (Reported)* then | W |
 | `sensor.lg_therma_v_r290_thermal_energy_space_heating` | 50–51 | Wh (shown as kWh) |
 
 The block is read in one request, high word first. A unit that does not answer leaves the sensors without a value and does not affect the other entities; after three misses in a row the read stops (see [When optional registers do not answer](#when-optional-registers-do-not-answer)), so a unit that does not serve the block costs a few timeouts, not one per poll. Registers 52–55 (cumulative thermal yield for cooling and DHW) are not read; they do not answer on a 12 kW unit. Switching the option off removes the sensors again.

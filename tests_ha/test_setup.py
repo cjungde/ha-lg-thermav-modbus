@@ -224,10 +224,10 @@ async def test_a_temperature_input_without_a_sensor_is_unknown(hass, unit) -> No
 
 
 async def test_negative_thermal_power_during_a_defrost(hass, unit) -> None:
-    """-1.2 kW, not 4 294 966 096 W; and no COP while heat flows out."""
+    """-1.2 kW, not 4 294 966 096 W; the COP shows what the defrost costs."""
     unit.values = {("input", 48): 0xFFFF, ("input", 49): 0xFB50, ("input", 37): 1500}
     await _set_up(hass, {"energy_registers": True})
     thermal = hass.states.get("sensor.lg_therma_v_r290_thermal_power_reported")
     assert float(thermal.state) == -1200
     cop = hass.states.get("sensor.lg_therma_v_r290_cop_reported")
-    assert cop.state == "unknown"
+    assert float(cop.state) == -0.8
