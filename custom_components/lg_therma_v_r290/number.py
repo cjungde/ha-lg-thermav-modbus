@@ -69,7 +69,9 @@ _NUMBERS: tuple[LGNumberDescription, ...] = (
     # LG's service manual, but the unit (default installer settings) does not
     # accept heating setpoints below 20 °C, so the slider's lower part only
     # produced writes that did not stick. 2.2.5 is back at 20-60, the range
-    # the YAML setups offered. The unit applies its own limits on top: a value
+    # the YAML setups offered. A unit with a backup heater can accept lower
+    # heating setpoints; this range is for the unit without one, the common
+    # case. The unit applies its own limits on top: a value
     # outside what it accepts is acknowledged and then stored clamped (seen on
     # the DHW setpoint), and the refresh after the write shows what it
     # actually stored.

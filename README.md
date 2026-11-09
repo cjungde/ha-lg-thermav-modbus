@@ -463,6 +463,10 @@ binary sensors to see the status.
 | `number.lg_therma_v_r290_max_compressor_modulation` | 40–100 % | 23 (optional, see below) |
 | `number.lg_therma_v_r290_max_electrical_power` | 0.1–25.0 kW | 24 (×0.1, optional, see below) |
 
+> **Circuit 1 starts at 20 °C** because a unit without a backup heater does not
+> accept a lower heating setpoint. With a backup heater the unit can go lower;
+> the integration still offers 20–60 °C.
+
 #### Max compressor modulation (optional)
 
 Switch on **Compressor modulation limit** in the integration's options. Holding register 23 (40024) caps how far the compressor may modulate, in percent: 40–100 sets a limit, 0 means no limit is set. It is not in the manual's table and not every unit serves it — the 9 kW unit in [docs/register-scan.md](docs/register-scan.md) does not answer on it, a 12 kW unit does.
