@@ -55,6 +55,11 @@ def test_reported_from_the_threshold_on() -> None:
     assert cop.instantaneous_cop(350, cop.MIN_ELECTRICAL_POWER_W) == 3.5
 
 
+def test_no_value_while_heat_flows_out_of_the_water() -> None:
+    """Defrost: negative thermal power gives no COP, not a negative one."""
+    assert cop.instantaneous_cop(-1200, 1500) is None
+
+
 def test_no_value_without_both_values() -> None:
     assert cop.instantaneous_cop(None, 2_000) is None
     assert cop.instantaneous_cop(8_000, None) is None

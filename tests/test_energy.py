@@ -118,6 +118,27 @@ def test_decode_block_picks_each_value_from_its_own_pair() -> None:
     assert len(values) == len(energy.ENERGY_REGISTERS)
 
 
+def test_thermal_power_is_signed() -> None:
+    """A negative heat flow (defrost) must not become 4 294 966 096 W."""
+    assert energy.decode_int32(0xFFFF, 0xFB50) == -1200
+    assert energy.decode_int32(0, 5738) == 5738
+    assert energy.decode_int32(0x7FFF, 0xFFFF) == 2**31 - 1
+    registers = [0] * energy.ENERGY_BLOCK_COUNT
+    offset = 48 - energy.ENERGY_BLOCK_START
+    registers[offset : offset + 2] = [0xFFFF, 0xFB50]
+    values = energy.decode_block(registers)
+    assert values["input_thermal_power_reported"] == -1200
+
+
+def test_only_the_thermal_power_is_signed() -> None:
+    """Counters and electrical power cannot be negative; they stay unsigned."""
+    signed = [r.key for r in energy.ENERGY_REGISTERS if r.signed]
+    assert signed == ["thermal_power_reported"]
+    registers = [0xFFFF] * energy.ENERGY_BLOCK_COUNT
+    values = energy.decode_block(registers)
+    assert values["input_electrical_energy_total"] == 2**32 - 1
+
+
 def test_decode_block_rejects_a_short_read() -> None:
     with pytest.raises(ValueError):
         energy.decode_block([0] * (energy.ENERGY_BLOCK_COUNT - 1))

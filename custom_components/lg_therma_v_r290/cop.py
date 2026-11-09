@@ -46,11 +46,15 @@ def instantaneous_cop(thermal_w: int | None, electrical_w: int | None) -> float 
 
     None, not 0, while either value is missing or the electrical power is
     below MIN_ELECTRICAL_POWER_W, so idle periods do not drag down the
-    long-term statistics.
+    long-term statistics; likewise while the thermal power is negative.
     """
     if thermal_w is None or electrical_w is None:
         return None
     if electrical_w < MIN_ELECTRICAL_POWER_W:
+        return None
+    if thermal_w < 0:
+        # Heat flowing out of the water (defrost, cooling): there is no
+        # heating COP then, and a negative one would drag down the statistics.
         return None
     return round(thermal_w / electrical_w, 2)
 
