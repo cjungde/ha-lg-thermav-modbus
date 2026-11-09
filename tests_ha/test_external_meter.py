@@ -137,6 +137,30 @@ async def test_restart_continues_the_period(hass, running) -> None:
     assert float(hass.states.get(THERMAL).state) == pytest.approx(35.0)
 
 
+async def test_thermal_energy_survives_a_restart_while_unavailable(
+    hass, running
+) -> None:
+    """Saved while the unit did not answer: the state is no number, the total is."""
+    mock_restore_cache_with_extra_data(
+        hass, [(State(THERMAL, "unavailable"), {"thermal_kwh": 42.0})]
+    )
+    _meter(hass, 1.5, 100.0)
+    await _set_up(hass, {"external_energy_sensor": ENERGY})
+    assert float(hass.states.get(THERMAL).state) == pytest.approx(42.0)
+
+
+async def test_a_dip_of_the_meter_is_not_a_reset(hass, running) -> None:
+    _meter(hass, 1.5, 12345.6)
+    entry = await _set_up(hass, {"external_energy_sensor": ENERGY})
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    for energy in (12345.5, 12346.6):
+        _meter(hass, 1.5, energy)
+        await coordinator.async_refresh()
+        await hass.async_block_till_done()
+    cumulative = hass.states.get(CUMULATIVE)
+    assert cumulative.attributes["electrical_energy_kwh"] == pytest.approx(1.0)
+
+
 async def test_another_meter_starts_a_new_period(hass, running) -> None:
     mock_restore_cache_with_extra_data(
         hass,

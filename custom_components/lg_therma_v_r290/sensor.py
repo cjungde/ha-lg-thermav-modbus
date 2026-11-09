@@ -865,12 +865,25 @@ class LGThermalEnergySensor(LGEntity, RestoreEntity, SensorEntity):
         )
         self._integrator = external_meter.EnergyIntegrator()
 
+    @property
+    def extra_restore_state_data(self) -> ExtraStoredData:
+        # The total itself, kept apart from the state: a state saved while the
+        # entity was unavailable is not a number, and restoring from it alone
+        # started the counter at 0 again.
+        return _CumulativeCopData({"thermal_kwh": self._integrator.kwh})
+
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
-        last = await self.async_get_last_state()
-        if last is not None:
-            with contextlib.suppress(ValueError):
-                self._integrator.kwh = float(last.state)
+        extra = await self.async_get_last_extra_data()
+        stored = extra.as_dict().get("thermal_kwh") if extra is not None else None
+        if stored is not None:
+            self._integrator.kwh = float(stored)
+        else:
+            # Saved by a version that kept only the state.
+            last = await self.async_get_last_state()
+            if last is not None:
+                with contextlib.suppress(ValueError):
+                    self._integrator.kwh = float(last.state)
         self._sample()
 
     def _sample(self) -> None:
