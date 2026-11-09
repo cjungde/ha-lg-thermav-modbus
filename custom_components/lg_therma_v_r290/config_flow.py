@@ -9,8 +9,9 @@ from typing import Any
 from homeassistant import config_entries
 from homeassistant.components.modbus import async_get_temporary_unit
 from homeassistant.components.sensor import SensorDeviceClass
+from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.data_entry_flow import FlowResult, section
+from homeassistant.data_entry_flow import section
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.selector import (
@@ -409,7 +410,7 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     # step says so.
     _check_failed = False
 
-    async def async_step_user(self, user_input=None) -> FlowResult:
+    async def async_step_user(self, user_input=None) -> ConfigFlowResult:
         if user_input is not None:
             self._connection_type = user_input[CONF_CONNECTION_TYPE]
             if self._connection_type in (CONNECTION_TCP, CONNECTION_TCP_RTU):
@@ -448,7 +449,7 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await self.hass.config_entries.async_setup(entry.entry_id)
         return error
 
-    def _finish_reconfigure(self, data: dict, title: str) -> FlowResult:
+    def _finish_reconfigure(self, data: dict, title: str) -> ConfigFlowResult:
         """Save new link settings and reload the entry.
 
         When they point at a different unit -- another address, port, serial
@@ -478,7 +479,7 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             reason="reconfigure_successful_check_cleared",
         )
 
-    async def async_step_tcp(self, user_input=None) -> FlowResult:
+    async def async_step_tcp(self, user_input=None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         defaults = self._reconfigure_entry.data if self._reconfigure_entry else {}
         if user_input is not None:
@@ -500,7 +501,7 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_rtu(self, user_input=None) -> FlowResult:
+    async def async_step_rtu(self, user_input=None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         defaults = self._reconfigure_entry.data if self._reconfigure_entry else {}
         if user_input is not None:
@@ -524,7 +525,7 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_check(self, user_input=None) -> FlowResult:
+    async def async_step_check(self, user_input=None) -> ConfigFlowResult:
         """Ask whether to check the optional registers now.
 
         Which registers a unit serves only changes with its firmware, so the
@@ -538,7 +539,7 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="check", menu_options=["detect", "features"]
         )
 
-    async def async_step_detect(self, user_input=None) -> FlowResult:
+    async def async_step_detect(self, user_input=None) -> ConfigFlowResult:
         """Check which optional registers the new unit answers on.
 
         Shown as progress: on a unit that lacks a group, each missing one
@@ -558,7 +559,7 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._check_failed = self._detected is None
         return self.async_show_progress_done(next_step_id="features")
 
-    async def async_step_features(self, user_input=None) -> FlowResult:
+    async def async_step_features(self, user_input=None) -> ConfigFlowResult:
         """The optional register groups, ticked where the unit answered."""
         if user_input is not None:
             self._options = {
@@ -581,7 +582,7 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors={"base": "check_inconclusive"} if self._check_failed else None,
         )
 
-    async def async_step_yaml_takeover(self, user_input=None) -> FlowResult:
+    async def async_step_yaml_takeover(self, user_input=None) -> ConfigFlowResult:
         """Offer to continue the history of the YAML setup (yaml_takeover.py).
 
         Shown only when orphaned entities of the isarrider YAML package are in
@@ -602,12 +603,12 @@ class LGThermaVConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             },
         )
 
-    def _create(self) -> FlowResult:
+    def _create(self) -> ConfigFlowResult:
         return self.async_create_entry(
             title=self._title, data=self._data, options=self._options
         )
 
-    async def async_step_reconfigure(self, user_input=None) -> FlowResult:
+    async def async_step_reconfigure(self, user_input=None) -> ConfigFlowResult:
         self._reconfigure_entry = self.hass.config_entries.async_get_entry(
             self.context["entry_id"]
         )
@@ -683,14 +684,14 @@ class LGThermaVOptionsFlow(config_entries.OptionsFlow):
             "checked": _checked_at(self._detected_at),
         }
 
-    async def async_step_init(self, user_input=None) -> FlowResult:
+    async def async_step_init(self, user_input=None) -> ConfigFlowResult:
         return self.async_show_menu(
             step_id="init",
             menu_options=["options", "detect"],
             description_placeholders=self._placeholders(self._current()),
         )
 
-    async def async_step_options(self, user_input=None) -> FlowResult:
+    async def async_step_options(self, user_input=None) -> ConfigFlowResult:
         if user_input is not None:
             return self.async_create_entry(
                 title="",
@@ -718,7 +719,7 @@ class LGThermaVOptionsFlow(config_entries.OptionsFlow):
             errors={"base": "check_inconclusive"} if self._check_failed else None,
         )
 
-    async def async_step_detect(self, user_input=None) -> FlowResult:
+    async def async_step_detect(self, user_input=None) -> ConfigFlowResult:
         """Check the optional registers, on the entry's own connection."""
         if self._detect_task is None:
             self._detect_task = self.hass.async_create_task(
