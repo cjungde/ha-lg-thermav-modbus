@@ -65,7 +65,7 @@ What it does, between 08:00 and 17:00 while the compressor runs:
 - **Frost protection.** While the air after the evaporator (`temperature_after_evaporator`) is below `frost_limit` (1 °C), it does not raise but lowers the setpoint every 2 minutes, so the unit throttles and takes less heat from the air. It stops lowering once the inlet would be more than `frost_max_gap` above the setpoint, keeping the margin to thermo off.
 - **Defrost.** During a defrost and for 5 minutes after it, nothing happens: the defrost cools the water, and the dip would otherwise lower the setpoint.
 - **Oil boost.** After about 60 minutes below roughly 1500 rpm the unit spins the compressor up to about 3600 rpm for a moment to bring the compressor oil back (oil return). After 55 minutes below `low_rpm`, AutoTemp raises the setpoint to inlet + 3 °C (up to `boost_ceiling`, 45 °C), waits until the compressor has been at or above `low_rpm` for 60 seconds, then sets it to 2 °C below the inlet so the compressor slows down again. Running above 1500 rpm appears to reset the unit's count, so the hard spike is replaced by a few minutes at about 1700 rpm.
-- **Off.** At or below `off_setpoint` (20 °C) it does nothing at all. Setting the slider to 20 °C or lower by hand (it goes down to 15 °C) switches the unit off for the rest of the day without AutoTemp working against it; this also ends a running oil boost.
+- **Off.** At or below `off_setpoint` (20 °C) it does nothing at all. Setting the slider to 20 °C (its lowest position) by hand switches the unit off for the rest of the day without AutoTemp working against it; this also ends a running oil boost.
 
 It re-checks every 5 minutes, so it catches up after a restart of Home Assistant or after being switched on again.
 
