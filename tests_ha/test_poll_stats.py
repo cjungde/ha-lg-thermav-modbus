@@ -79,7 +79,11 @@ async def test_error_sensors_count_failed_requests(hass, unit) -> None:
     assert errors.state == "0"
     assert errors.attributes["refusals"] == 1
     assert errors.attributes["state_class"] == "total_increasing"
-    assert hass.states.get(LAST_ERROR).state == "unknown"
+    # No error yet: "none" (shown as None), not unknown, and since when.
+    last = hass.states.get(LAST_ERROR)
+    assert last.state == "none"
+    assert last.attributes["time"] is None
+    assert last.attributes["since"] == errors.attributes["since"]
 
     # The coil block stops answering: the poll fails, the heat pump's
     # entities go unavailable, the error sensors stay and say why.
@@ -97,6 +101,7 @@ async def test_error_sensors_count_failed_requests(hass, unit) -> None:
     assert last.state == "ModbusTimeoutError: coil 0: no answer"
     assert last.attributes["request"] == "read_coils(0, 6)"
     assert last.attributes["time"] is not None
+    assert last.attributes["since"] == errors.attributes["since"]
 
     # Answering again: the data is back, the count and the last error stay.
     unit.silent = set()
