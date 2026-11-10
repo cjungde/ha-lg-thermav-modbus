@@ -768,8 +768,17 @@ class LGModbusErrorsSensor(_LGModbusErrorEntity):
         }
 
 
+#: Last Modbus Error's state while there was no error (translated: None).
+NO_ERROR = "none"
+
+
 class LGLastModbusErrorSensor(_LGModbusErrorEntity):
-    """The last request without a valid answer: type and message as state."""
+    """The last request without a valid answer: type and message as state.
+
+    "none" (shown translated, *None*) while there was no error since start,
+    rather than *unknown*, which reads like the integration does not know;
+    ``since`` says since when.
+    """
 
     _attr_icon = "mdi:message-alert-outline"
 
@@ -777,17 +786,19 @@ class LGLastModbusErrorSensor(_LGModbusErrorEntity):
         super().__init__(coordinator, entry, pollstats.KEY_LAST_MODBUS_ERROR)
 
     @property
-    def native_value(self) -> str | None:
-        return self.coordinator.modbus_errors.last_text()
+    def native_value(self) -> str:
+        return self.coordinator.modbus_errors.last_text() or NO_ERROR
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        last = self.coordinator.modbus_errors.last
-        if last is None:
-            return {"time": None, "request": None}
+        log = self.coordinator.modbus_errors
+        since = dt_util.utc_from_timestamp(log.since).isoformat()
+        if log.last is None:
+            return {"time": None, "request": None, "since": since}
         return {
-            "time": dt_util.utc_from_timestamp(last["time"]).isoformat(),
-            "request": last["request"],
+            "time": dt_util.utc_from_timestamp(log.last["time"]).isoformat(),
+            "request": log.last["request"],
+            "since": since,
         }
 
 

@@ -548,7 +548,10 @@
         "name": "Modbus Errors"
       },
       "last_modbus_error": {
-        "name": "Last Modbus Error"
+        "name": "Last Modbus Error",
+        "state": {
+          "none": "None"
+        }
       },
       "bus_load": {
         "name": "Bus Load"
